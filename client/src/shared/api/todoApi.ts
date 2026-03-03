@@ -1,6 +1,6 @@
 import type { Todo } from "@/entities/todo/model/types";
 
-const API_BASE = "http://localhost:3000/api/todos";
+const API_BASE = "/api/todos";
 
 export const todoApi = {
   getAll: async (): Promise<Todo[]> => {

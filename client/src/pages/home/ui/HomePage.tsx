@@ -1,10 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTodos } from "@/features/todo/model/hooks";
 import { TodoCreate } from "@/features/todo/ui/TodoCreate";
 import { TodoList } from "@/features/todo/ui/TodoList";
+import { Button } from "@/shared/ui/Button";
 import { format } from "date-fns";
+import { Plus } from "lucide-react";
 
 export function HomePage() {
+  const [isCreating, setIsCreating] = useState(false);
   const { data: todos = [] } = useTodos();
 
   // Parse today
@@ -65,14 +68,29 @@ export function HomePage() {
 
   return (
     <div className="mx-auto max-w-3xl p-4 md:p-8 space-y-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-          Big Stone Task Manager
-        </h1>
-        <p className="text-gray-500 mt-2">중요한 돌부터 담으세요.</p>
+      <header className="mb-8 flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Big Stone Task Manager
+          </h1>
+          <p className="text-gray-500 mt-2">중요한 돌부터 담으세요.</p>
+        </div>
       </header>
 
-      <TodoCreate />
+      {isCreating ? (
+        <TodoCreate
+          onSuccess={() => setIsCreating(false)}
+          onCancel={() => setIsCreating(false)}
+        />
+      ) : (
+        <Button
+          onClick={() => setIsCreating(true)}
+          className="w-full flex items-center justify-center gap-2 py-6 text-lg border-2 border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900"
+          variant="outline"
+        >
+          <Plus className="h-6 w-6" />할 일 추가하기
+        </Button>
+      )}
 
       <div className="space-y-6">
         <section>

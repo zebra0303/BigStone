@@ -3,11 +3,19 @@ import type { RecurringType, TodoStatus } from "@/entities/todo/model/types";
 import { useCreateTodo } from "@/features/todo/model/hooks";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
+import { Textarea } from "@/shared/ui/Textarea";
 import { Select } from "@/shared/ui/Select";
 import { Checkbox } from "@/shared/ui/Checkbox";
 import { format } from "date-fns";
 
-export function TodoCreate() {
+import { X } from "lucide-react";
+
+interface TodoCreateProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
   const createTodo = useCreateTodo();
   const titleInputRef = useRef<HTMLInputElement>(null);
 
@@ -16,6 +24,23 @@ export function TodoCreate() {
   const [isImportant, setIsImportant] = useState(false);
   const [dueDate, setDueDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [recurring, setRecurring] = useState<RecurringType>("NONE");
+  const [weeklyDays, setWeeklyDays] = useState<number[]>([]);
+
+  const DAYS_OF_WEEK = [
+    { value: 0, label: "일" },
+    { value: 1, label: "월" },
+    { value: 2, label: "화" },
+    { value: 3, label: "수" },
+    { value: 4, label: "목" },
+    { value: 5, label: "금" },
+    { value: 6, label: "토" },
+  ];
+
+  const handleDayToggle = (day: number) => {
+    setWeeklyDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +53,10 @@ export function TodoCreate() {
         isImportant,
         dueDate: new Date(dueDate),
         status: "TODO" as TodoStatus,
-        recurring: { type: recurring },
+        recurring: {
+          type: recurring,
+          weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
+        },
       },
       {
         onSuccess: () => {
@@ -38,9 +66,14 @@ export function TodoCreate() {
           setIsImportant(false);
           setDueDate(format(new Date(), "yyyy-MM-dd"));
           setRecurring("NONE");
+          setWeeklyDays([]);
 
-          // Accessibility & UX focus feature described in GEMINI.md
-          titleInputRef.current?.focus();
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            // Accessibility & UX focus feature described in GEMINI.md
+            titleInputRef.current?.focus();
+          }
         },
       },
     );
@@ -49,9 +82,16 @@ export function TodoCreate() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+      className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm relative"
     >
-      <h3 className="font-semibold text-lg">새 할일 추가 (Add Big Stone)</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-lg">새 할일 추가 (Add Big Stone)</h3>
+        {onCancel && (
+          <Button type="button" variant="ghost" size="icon" onClick={onCancel}>
+            <X className="h-5 w-5 text-gray-500" />
+          </Button>
+        )}
+      </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <Input
@@ -77,10 +117,11 @@ export function TodoCreate() {
         </div>
       </div>
 
-      <Input
+      <Textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="내용 (선택)"
+        placeholder="내용 (선택) - 상세한 할 일 내용을 적어보세요."
+        className="resize-y"
       />
 
       <div className="flex flex-col sm:flex-row gap-4">
@@ -107,6 +148,28 @@ export function TodoCreate() {
           추가
         </Button>
       </div>
+
+      {recurring === "WEEKLY" && (
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-sm font-medium text-gray-700 mr-2">
+            반복 요일:
+          </span>
+          {DAYS_OF_WEEK.map((day) => (
+            <button
+              key={day.value}
+              type="button"
+              onClick={() => handleDayToggle(day.value)}
+              className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
+                weeklyDays.includes(day.value)
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {day.label}
+            </button>
+          ))}
+        </div>
+      )}
     </form>
   );
 }
