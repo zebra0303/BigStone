@@ -1,7 +1,15 @@
 import sqlite3 from "sqlite3";
 import path from "path";
+import fs from "fs";
 
 const dbPath = path.resolve(__dirname, "../../data/database.sqlite");
+const dbDir = path.dirname(dbPath);
+
+// Ensure that the directory for the database file exists
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("Error opening database", err.message);
