@@ -19,6 +19,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
         recurringType TEXT DEFAULT 'NONE',
         recurringWeeklyDays TEXT,
         recurringMonthlyDay INTEGER,
+        recurringMonthlyNthWeek INTEGER,
+        recurringMonthlyDayOfWeek INTEGER,
         recurringYearlyMonth INTEGER,
         recurringYearlyDay INTEGER,
         notificationMinutesBefore INTEGER,

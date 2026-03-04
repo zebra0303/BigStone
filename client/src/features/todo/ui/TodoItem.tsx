@@ -46,6 +46,22 @@ export function TodoItem({ todo }: TodoItemProps) {
     todo.recurring.monthlyDayOfWeek || 0,
   );
 
+  // Sync state when entering edit mode or when todo prop changes
+
+  const handleEditClick = () => {
+    setEditTitle(todo.title);
+    setEditDesc(todo.description || "");
+    setEditImportant(todo.isImportant);
+    setEditRecurringType(todo.recurring.type);
+    setEditWeeklyDays(todo.recurring.weeklyDays || []);
+    setEditMonthlyType(todo.recurring.monthlyDay ? "DATE" : "NTH");
+    setEditMonthlyDay(todo.recurring.monthlyDay || 1);
+    setEditMonthlyNthWeek(todo.recurring.monthlyNthWeek || 1);
+    setEditMonthlyDayOfWeek(todo.recurring.monthlyDayOfWeek || 0);
+
+    setIsEditing(true);
+  };
+
   const DAYS_OF_WEEK = [
     { value: 0, label: "일" },
     { value: 1, label: "월" },
@@ -290,7 +306,7 @@ export function TodoItem({ todo }: TodoItemProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsEditing(true)}
+            onClick={handleEditClick}
             className="text-gray-400 hover:text-blue-600 flex-shrink-0"
             aria-label="Edit todo"
           >

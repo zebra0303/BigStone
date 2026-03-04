@@ -41,6 +41,7 @@ router.get("/", (req: Request, res: Response) => {
 
 // Create
 router.post("/", (req: Request, res: Response) => {
+  console.log("POST Body:", JSON.stringify(req.body, null, 2));
   const {
     title,
     description,
@@ -68,12 +69,24 @@ router.post("/", (req: Request, res: Response) => {
     dueDate,
     status || "TODO",
     recurring?.type || "NONE",
-    recurring?.weeklyDays ? JSON.stringify(recurring.weeklyDays) : null,
-    recurring?.monthlyDay || null,
-    recurring?.monthlyNthWeek || null,
-    recurring?.monthlyDayOfWeek || null,
-    recurring?.yearlyMonth || null,
-    recurring?.yearlyDay || null,
+    recurring?.type === "WEEKLY" && recurring?.weeklyDays
+      ? JSON.stringify(recurring.weeklyDays)
+      : null,
+    recurring?.type === "MONTHLY" && recurring?.monthlyDay
+      ? recurring.monthlyDay
+      : null,
+    recurring?.type === "MONTHLY" && recurring?.monthlyNthWeek
+      ? recurring.monthlyNthWeek
+      : null,
+    recurring?.type === "MONTHLY" && recurring?.monthlyDayOfWeek !== undefined
+      ? recurring.monthlyDayOfWeek
+      : null,
+    recurring?.type === "YEARLY" && recurring?.yearlyMonth
+      ? recurring.yearlyMonth
+      : null,
+    recurring?.type === "YEARLY" && recurring?.yearlyDay
+      ? recurring.yearlyDay
+      : null,
     notification?.minutesBefore || null,
     null,
   ];
@@ -86,6 +99,7 @@ router.post("/", (req: Request, res: Response) => {
 
 // Update
 router.put("/:id", (req: Request, res: Response) => {
+  console.log("PUT Body:", JSON.stringify(req.body, null, 2));
   const { id } = req.params;
   const {
     title,
@@ -105,10 +119,13 @@ router.put("/:id", (req: Request, res: Response) => {
       dueDate = COALESCE(?, dueDate),
       status = COALESCE(?, status),
       completedAt = COALESCE(?, completedAt),
-      recurringType = COALESCE(?, recurringType),
-      recurringMonthlyDay = COALESCE(?, recurringMonthlyDay),
-      recurringMonthlyNthWeek = COALESCE(?, recurringMonthlyNthWeek),
-      recurringMonthlyDayOfWeek = COALESCE(?, recurringMonthlyDayOfWeek)
+      recurringType = ?,
+      recurringWeeklyDays = ?,
+      recurringMonthlyDay = ?,
+      recurringMonthlyNthWeek = ?,
+      recurringMonthlyDayOfWeek = ?,
+      recurringYearlyMonth = ?,
+      recurringYearlyDay = ?
     WHERE id = ?
   `;
 
@@ -119,10 +136,25 @@ router.put("/:id", (req: Request, res: Response) => {
     dueDate,
     status,
     completedAt,
-    recurring?.type,
-    recurring?.monthlyDay,
-    recurring?.monthlyNthWeek,
-    recurring?.monthlyDayOfWeek,
+    recurring?.type || "NONE",
+    recurring?.type === "WEEKLY" && recurring?.weeklyDays
+      ? JSON.stringify(recurring.weeklyDays)
+      : null,
+    recurring?.type === "MONTHLY" && recurring?.monthlyDay
+      ? recurring.monthlyDay
+      : null,
+    recurring?.type === "MONTHLY" && recurring?.monthlyNthWeek
+      ? recurring.monthlyNthWeek
+      : null,
+    recurring?.type === "MONTHLY" && recurring?.monthlyDayOfWeek !== undefined
+      ? recurring.monthlyDayOfWeek
+      : null,
+    recurring?.type === "YEARLY" && recurring?.yearlyMonth
+      ? recurring.yearlyMonth
+      : null,
+    recurring?.type === "YEARLY" && recurring?.yearlyDay
+      ? recurring.yearlyDay
+      : null,
     id,
   ];
 
