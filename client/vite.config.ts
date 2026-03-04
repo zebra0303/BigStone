@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
     preview: {
       host: true,
       port: clientPort,
+      allowedHosts: true,
     },
   };
 });
