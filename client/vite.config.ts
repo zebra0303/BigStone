@@ -28,5 +28,8 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    preview: {
+      port: clientPort,
+    },
   };
 });
