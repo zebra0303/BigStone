@@ -70,13 +70,22 @@ export function HomePage() {
   const getTodosForDate = (date: Date, isFirstVisibleDate: boolean) => {
     return activeTodos
       .filter((todo) => {
+        // 1. If completed, show it exactly on the date it was completed.
+        if (todo.status === "DONE" && todo.completedAt) {
+          const compDate = new Date(todo.completedAt);
+          compDate.setHours(0, 0, 0, 0);
+          return compDate.getTime() === date.getTime();
+        }
+
+        // 2. Uncompleted tasks logic
         const dueDate = new Date(todo.dueDate);
         dueDate.setHours(0, 0, 0, 0);
 
         // If this is the earliest visible date in the current view, include overdue tasks
         if (isFirstVisibleDate && dueDate.getTime() < date.getTime()) {
-          return todo.status !== "DONE";
+          return true; // We know it's not DONE from step 1
         }
+
         return dueDate.getTime() === date.getTime();
       })
       .sort((a, b) => {
