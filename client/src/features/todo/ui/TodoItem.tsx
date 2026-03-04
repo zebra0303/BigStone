@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Todo } from "@/entities/todo/model/types";
+import type { Todo, RecurringType } from "@/entities/todo/model/types";
 import {
   useUpdateTodoStatus,
   useDeleteTodo,
@@ -12,6 +12,7 @@ import { Star, Trash2, Edit2, Repeat } from "lucide-react";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
+import { Select } from "@/shared/ui/Select";
 
 interface TodoItemProps {
   todo: Todo;
@@ -26,6 +27,28 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [editTitle, setEditTitle] = useState(todo.title);
   const [editDesc, setEditDesc] = useState(todo.description || "");
   const [editImportant, setEditImportant] = useState(todo.isImportant);
+  const [editRecurringType, setEditRecurringType] = useState<RecurringType>(
+    todo.recurring.type,
+  );
+  const [editWeeklyDays, setEditWeeklyDays] = useState<number[]>(
+    todo.recurring.weeklyDays || [],
+  );
+
+  const DAYS_OF_WEEK = [
+    { value: 0, label: "일" },
+    { value: 1, label: "월" },
+    { value: 2, label: "화" },
+    { value: 3, label: "수" },
+    { value: 4, label: "목" },
+    { value: 5, label: "금" },
+    { value: 6, label: "토" },
+  ];
+
+  const handleDayToggle = (day: number) => {
+    setEditWeeklyDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+    );
+  };
 
   const isDone = todo.status === "DONE";
   const isOverdue =
@@ -52,6 +75,11 @@ export function TodoItem({ todo }: TodoItemProps) {
           title: editTitle.trim(),
           description: editDesc.trim(),
           isImportant: editImportant,
+          recurring: {
+            type: editRecurringType,
+            weeklyDays:
+              editRecurringType === "WEEKLY" ? editWeeklyDays : undefined,
+          },
         },
       },
       {
@@ -83,6 +111,40 @@ export function TodoItem({ todo }: TodoItemProps) {
           className="bg-white"
           placeholder="상세 내용"
         />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select
+            value={editRecurringType}
+            onChange={(e) =>
+              setEditRecurringType(e.target.value as RecurringType)
+            }
+            className="w-full sm:w-40 bg-white"
+          >
+            <option value="NONE">반복 안함</option>
+            <option value="DAILY">매일</option>
+            <option value="WEEKLY">매주</option>
+            <option value="MONTHLY">매월</option>
+            <option value="YEARLY">매년</option>
+          </Select>
+
+          {editRecurringType === "WEEKLY" && (
+            <div className="flex items-center gap-1">
+              {DAYS_OF_WEEK.map((day) => (
+                <button
+                  key={day.value}
+                  type="button"
+                  onClick={() => handleDayToggle(day.value)}
+                  className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${
+                    editWeeklyDays.includes(day.value)
+                      ? "bg-blue-600 text-white"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  {day.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setIsEditing(false)}>
             취소
