@@ -31,6 +31,11 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
   const [monthlyNthWeek, setMonthlyNthWeek] = useState<number>(1);
   const [monthlyDayOfWeek, setMonthlyDayOfWeek] = useState<number>(0);
 
+  const [yearlyMonth, setYearlyMonth] = useState<number>(
+    new Date().getMonth() + 1,
+  );
+  const [yearlyDay, setYearlyDay] = useState<number>(new Date().getDate());
+
   const DAYS_OF_WEEK = [
     { value: 0, label: "일" },
     { value: 1, label: "월" },
@@ -71,6 +76,8 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
             recurring === "MONTHLY" && monthlyType === "NTH"
               ? monthlyDayOfWeek
               : undefined,
+          yearlyMonth: recurring === "YEARLY" ? yearlyMonth : undefined,
+          yearlyDay: recurring === "YEARLY" ? yearlyDay : undefined,
         }),
         status: "TODO" as TodoStatus,
         recurring: {
@@ -88,6 +95,8 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
             recurring === "MONTHLY" && monthlyType === "NTH"
               ? monthlyDayOfWeek
               : undefined,
+          yearlyMonth: recurring === "YEARLY" ? yearlyMonth : undefined,
+          yearlyDay: recurring === "YEARLY" ? yearlyDay : undefined,
         },
       },
       {
@@ -103,6 +112,8 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           setMonthlyDay(1);
           setMonthlyNthWeek(1);
           setMonthlyDayOfWeek(0);
+          setYearlyMonth(new Date().getMonth() + 1);
+          setYearlyDay(new Date().getDate());
 
           if (onSuccess) {
             onSuccess();
@@ -195,10 +206,11 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
               key={day.value}
               type="button"
               onClick={() => handleDayToggle(day.value)}
-              className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${weeklyDays.includes(day.value)
+              className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
+                weeklyDays.includes(day.value)
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+              }`}
             >
               {day.label}
             </button>
@@ -256,6 +268,34 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
               </Select>
             </div>
           )}
+        </div>
+      )}
+
+      {recurring === "YEARLY" && (
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-sm font-medium text-gray-700 mx-1">매년:</span>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min={1}
+              max={12}
+              value={yearlyMonth}
+              onChange={(e) => setYearlyMonth(Number(e.target.value))}
+              className="w-16"
+            />
+            <span className="text-sm">월</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min={1}
+              max={31}
+              value={yearlyDay}
+              onChange={(e) => setYearlyDay(Number(e.target.value))}
+              className="w-16"
+            />
+            <span className="text-sm">일</span>
+          </div>
         </div>
       )}
     </form>

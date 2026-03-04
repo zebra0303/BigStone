@@ -32,7 +32,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
     `,
       (err) => {
         if (err) {
-          console.error("Warning: Could not verify table schema (possibly locked by external tool)", err.message);
+          console.error(
+            "Warning: Could not verify table schema (possibly locked by external tool)",
+            err.message,
+          );
         }
       },
     );

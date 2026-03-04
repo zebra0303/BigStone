@@ -46,6 +46,12 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [editMonthlyDayOfWeek, setEditMonthlyDayOfWeek] = useState<number>(
     todo.recurring.monthlyDayOfWeek || 0,
   );
+  const [editYearlyMonth, setEditYearlyMonth] = useState<number>(
+    todo.recurring.yearlyMonth || new Date().getMonth() + 1,
+  );
+  const [editYearlyDay, setEditYearlyDay] = useState<number>(
+    todo.recurring.yearlyDay || new Date().getDate(),
+  );
 
   // Sync state when entering edit mode or when todo prop changes
 
@@ -59,6 +65,8 @@ export function TodoItem({ todo }: TodoItemProps) {
     setEditMonthlyDay(todo.recurring.monthlyDay || 1);
     setEditMonthlyNthWeek(todo.recurring.monthlyNthWeek || 1);
     setEditMonthlyDayOfWeek(todo.recurring.monthlyDayOfWeek || 0);
+    setEditYearlyMonth(todo.recurring.yearlyMonth || new Date().getMonth() + 1);
+    setEditYearlyDay(todo.recurring.yearlyDay || new Date().getDate());
 
     setIsEditing(true);
   };
@@ -120,6 +128,10 @@ export function TodoItem({ todo }: TodoItemProps) {
               editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
                 ? editMonthlyDayOfWeek
                 : undefined,
+            yearlyMonth:
+              editRecurringType === "YEARLY" ? editYearlyMonth : undefined,
+            yearlyDay:
+              editRecurringType === "YEARLY" ? editYearlyDay : undefined,
           }),
           recurring: {
             type: editRecurringType,
@@ -137,6 +149,10 @@ export function TodoItem({ todo }: TodoItemProps) {
               editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
                 ? editMonthlyDayOfWeek
                 : undefined,
+            yearlyMonth:
+              editRecurringType === "YEARLY" ? editYearlyMonth : undefined,
+            yearlyDay:
+              editRecurringType === "YEARLY" ? editYearlyDay : undefined,
           },
         },
       },
@@ -191,10 +207,11 @@ export function TodoItem({ todo }: TodoItemProps) {
                   key={day.value}
                   type="button"
                   onClick={() => handleDayToggle(day.value)}
-                  className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${editWeeklyDays.includes(day.value)
-                    ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
-                    }`}
+                  className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${
+                    editWeeklyDays.includes(day.value)
+                      ? "bg-blue-600 text-white"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
+                  }`}
                 >
                   {day.label}
                 </button>
@@ -260,6 +277,36 @@ export function TodoItem({ todo }: TodoItemProps) {
                   </Select>
                 </div>
               )}
+            </div>
+          )}
+
+          {editRecurringType === "YEARLY" && (
+            <div className="flex items-center gap-2 mt-2 sm:mt-0">
+              <span className="text-sm font-medium text-gray-700 mx-1">
+                매년:
+              </span>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={editYearlyMonth}
+                  onChange={(e) => setEditYearlyMonth(Number(e.target.value))}
+                  className="w-16 text-xs bg-white"
+                />
+                <span className="text-sm">월</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={editYearlyDay}
+                  onChange={(e) => setEditYearlyDay(Number(e.target.value))}
+                  className="w-16 text-xs bg-white"
+                />
+                <span className="text-sm">일</span>
+              </div>
             </div>
           )}
         </div>
