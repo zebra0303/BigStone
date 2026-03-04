@@ -23,5 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment Variables
+.env
+.env.*
+!.env.example
+
 # Server Database
 server/data/

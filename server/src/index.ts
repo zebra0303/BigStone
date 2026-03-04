@@ -1,3 +1,8 @@
+import path from "path";
+import * as dotenv from "dotenv";
+// Load environment variables from the root .env file
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
 import express from "express";
 import cors from "cors";
 import todosRouter from "./routes/todos";
