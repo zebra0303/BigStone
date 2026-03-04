@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      host: true,
       port: clientPort,
       proxy: {
         "/api": {
@@ -29,6 +30,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     preview: {
+      host: true,
       port: clientPort,
     },
   };
