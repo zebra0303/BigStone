@@ -7,6 +7,7 @@ import { describe, it, expect, vi } from "vitest";
 vi.mock("@/features/todo/model/hooks", () => ({
   useUpdateTodoStatus: () => ({ mutate: vi.fn() }),
   useDeleteTodo: () => ({ mutate: vi.fn() }),
+  useCreateTodo: () => ({ mutate: vi.fn() }),
 }));
 
 const mockTodo = {
