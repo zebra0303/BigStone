@@ -25,6 +25,9 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
   const [dueDate, setDueDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [recurring, setRecurring] = useState<RecurringType>("NONE");
   const [weeklyDays, setWeeklyDays] = useState<number[]>([]);
+
+  const [monthlyType, setMonthlyType] = useState<"DATE" | "NTH">("DATE");
+  const [monthlyDay, setMonthlyDay] = useState<number>(1);
   const [monthlyNthWeek, setMonthlyNthWeek] = useState<number>(1);
   const [monthlyDayOfWeek, setMonthlyDayOfWeek] = useState<number>(0);
 
@@ -58,9 +61,18 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
         recurring: {
           type: recurring,
           weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
-          monthlyNthWeek: recurring === "MONTHLY" ? monthlyNthWeek : undefined,
+          monthlyDay:
+            recurring === "MONTHLY" && monthlyType === "DATE"
+              ? monthlyDay
+              : undefined,
+          monthlyNthWeek:
+            recurring === "MONTHLY" && monthlyType === "NTH"
+              ? monthlyNthWeek
+              : undefined,
           monthlyDayOfWeek:
-            recurring === "MONTHLY" ? monthlyDayOfWeek : undefined,
+            recurring === "MONTHLY" && monthlyType === "NTH"
+              ? monthlyDayOfWeek
+              : undefined,
         },
       },
       {
@@ -72,6 +84,8 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           setDueDate(format(new Date(), "yyyy-MM-dd"));
           setRecurring("NONE");
           setWeeklyDays([]);
+          setMonthlyType("DATE");
+          setMonthlyDay(1);
           setMonthlyNthWeek(1);
           setMonthlyDayOfWeek(0);
 
@@ -182,27 +196,52 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
         <div className="flex items-center gap-2 mt-2">
           <span className="text-sm font-medium text-gray-700 mr-2">매월:</span>
           <Select
-            value={monthlyNthWeek}
-            onChange={(e) => setMonthlyNthWeek(Number(e.target.value))}
-            className="w-24 bg-white"
+            value={monthlyType}
+            onChange={(e) => setMonthlyType(e.target.value as "DATE" | "NTH")}
+            className="w-32 bg-white"
           >
-            <option value={1}>첫째 주</option>
-            <option value={2}>둘째 주</option>
-            <option value={3}>셋째 주</option>
-            <option value={4}>넷째 주</option>
-            <option value={5}>마지막 주</option>
+            <option value="DATE">특정 일자</option>
+            <option value="NTH">특정 요일</option>
           </Select>
-          <Select
-            value={monthlyDayOfWeek}
-            onChange={(e) => setMonthlyDayOfWeek(Number(e.target.value))}
-            className="w-24 bg-white"
-          >
-            {DAYS_OF_WEEK.map((day) => (
-              <option key={day.value} value={day.value}>
-                {day.label}요일
-              </option>
-            ))}
-          </Select>
+
+          {monthlyType === "DATE" ? (
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                value={monthlyDay}
+                onChange={(e) => setMonthlyDay(Number(e.target.value))}
+                className="w-20"
+              />
+              <span className="text-sm">일</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Select
+                value={monthlyNthWeek}
+                onChange={(e) => setMonthlyNthWeek(Number(e.target.value))}
+                className="w-24 bg-white"
+              >
+                <option value={1}>첫째 주</option>
+                <option value={2}>둘째 주</option>
+                <option value={3}>셋째 주</option>
+                <option value={4}>넷째 주</option>
+                <option value={5}>마지막 주</option>
+              </Select>
+              <Select
+                value={monthlyDayOfWeek}
+                onChange={(e) => setMonthlyDayOfWeek(Number(e.target.value))}
+                className="w-24 bg-white"
+              >
+                {DAYS_OF_WEEK.map((day) => (
+                  <option key={day.value} value={day.value}>
+                    {day.label}요일
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
         </div>
       )}
     </form>

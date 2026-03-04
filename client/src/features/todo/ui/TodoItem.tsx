@@ -33,6 +33,12 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [editWeeklyDays, setEditWeeklyDays] = useState<number[]>(
     todo.recurring.weeklyDays || [],
   );
+  const [editMonthlyType, setEditMonthlyType] = useState<"DATE" | "NTH">(
+    todo.recurring.monthlyDay ? "DATE" : "NTH",
+  );
+  const [editMonthlyDay, setEditMonthlyDay] = useState<number>(
+    todo.recurring.monthlyDay || 1,
+  );
   const [editMonthlyNthWeek, setEditMonthlyNthWeek] = useState<number>(
     todo.recurring.monthlyNthWeek || 1,
   );
@@ -158,34 +164,63 @@ export function TodoItem({ todo }: TodoItemProps) {
           )}
 
           {editRecurringType === "MONTHLY" && (
-            <div className="flex items-center gap-1 mt-2 sm:mt-0">
+            <div className="flex items-center gap-2 mt-2 sm:mt-0">
               <span className="text-sm font-medium text-gray-700 mx-1">
                 매월:
               </span>
               <Select
-                value={editMonthlyNthWeek}
-                onChange={(e) => setEditMonthlyNthWeek(Number(e.target.value))}
+                value={editMonthlyType}
+                onChange={(e) =>
+                  setEditMonthlyType(e.target.value as "DATE" | "NTH")
+                }
                 className="w-24 bg-white text-xs"
               >
-                <option value={1}>첫째 주</option>
-                <option value={2}>둘째 주</option>
-                <option value={3}>셋째 주</option>
-                <option value={4}>넷째 주</option>
-                <option value={5}>마지막 주</option>
+                <option value="DATE">특정 일자</option>
+                <option value="NTH">특정 요일</option>
               </Select>
-              <Select
-                value={editMonthlyDayOfWeek}
-                onChange={(e) =>
-                  setEditMonthlyDayOfWeek(Number(e.target.value))
-                }
-                className="w-20 bg-white text-xs"
-              >
-                {DAYS_OF_WEEK.map((day) => (
-                  <option key={day.value} value={day.value}>
-                    {day.label}
-                  </option>
-                ))}
-              </Select>
+
+              {editMonthlyType === "DATE" ? (
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={editMonthlyDay}
+                    onChange={(e) => setEditMonthlyDay(Number(e.target.value))}
+                    className="w-16 text-xs"
+                  />
+                  <span className="text-sm">일</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Select
+                    value={editMonthlyNthWeek}
+                    onChange={(e) =>
+                      setEditMonthlyNthWeek(Number(e.target.value))
+                    }
+                    className="w-20 bg-white text-xs"
+                  >
+                    <option value={1}>첫째 주</option>
+                    <option value={2}>둘째 주</option>
+                    <option value={3}>셋째 주</option>
+                    <option value={4}>넷째 주</option>
+                    <option value={5}>마지막 주</option>
+                  </Select>
+                  <Select
+                    value={editMonthlyDayOfWeek}
+                    onChange={(e) =>
+                      setEditMonthlyDayOfWeek(Number(e.target.value))
+                    }
+                    className="w-20 bg-white text-xs"
+                  >
+                    {DAYS_OF_WEEK.map((day) => (
+                      <option key={day.value} value={day.value}>
+                        {day.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
             </div>
           )}
         </div>
