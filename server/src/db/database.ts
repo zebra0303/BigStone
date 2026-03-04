@@ -6,7 +6,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("Error opening database", err.message);
   } else {
-    // Create Todo table
+    // Set WAL mode to improve concurrency with external tools like DBeaver
+    db.run("PRAGMA journal_mode = WAL");
+    db.run("PRAGMA busy_timeout = 5000");
+
     db.run(
       `
       CREATE TABLE IF NOT EXISTS todos (
@@ -29,7 +32,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     `,
       (err) => {
         if (err) {
-          console.error("Error creating table", err.message);
+          console.error("Warning: Could not verify table schema (possibly locked by external tool)", err.message);
         }
       },
     );
