@@ -8,6 +8,7 @@ import { Checkbox } from "@/shared/ui/Checkbox";
 import { Badge } from "@/shared/ui/Badge";
 import { format } from "date-fns";
 import { Star, Trash2, Edit2, Repeat } from "lucide-react";
+import { getNextValidDueDate } from "@/shared/lib/recurringDate";
 
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
@@ -103,14 +104,37 @@ export function TodoItem({ todo }: TodoItemProps) {
           title: editTitle.trim(),
           description: editDesc.trim(),
           isImportant: editImportant,
+          dueDate: getNextValidDueDate(todo.dueDate, {
+            type: editRecurringType,
+            weeklyDays:
+              editRecurringType === "WEEKLY" ? editWeeklyDays : undefined,
+            monthlyDay:
+              editRecurringType === "MONTHLY" && editMonthlyType === "DATE"
+                ? editMonthlyDay
+                : undefined,
+            monthlyNthWeek:
+              editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
+                ? editMonthlyNthWeek
+                : undefined,
+            monthlyDayOfWeek:
+              editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
+                ? editMonthlyDayOfWeek
+                : undefined,
+          }),
           recurring: {
             type: editRecurringType,
             weeklyDays:
               editRecurringType === "WEEKLY" ? editWeeklyDays : undefined,
+            monthlyDay:
+              editRecurringType === "MONTHLY" && editMonthlyType === "DATE"
+                ? editMonthlyDay
+                : undefined,
             monthlyNthWeek:
-              editRecurringType === "MONTHLY" ? editMonthlyNthWeek : undefined,
+              editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
+                ? editMonthlyNthWeek
+                : undefined,
             monthlyDayOfWeek:
-              editRecurringType === "MONTHLY"
+              editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
                 ? editMonthlyDayOfWeek
                 : undefined,
           },
@@ -167,11 +191,10 @@ export function TodoItem({ todo }: TodoItemProps) {
                   key={day.value}
                   type="button"
                   onClick={() => handleDayToggle(day.value)}
-                  className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${
-                    editWeeklyDays.includes(day.value)
-                      ? "bg-blue-600 text-white"
-                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
-                  }`}
+                  className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${editWeeklyDays.includes(day.value)
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
                 >
                   {day.label}
                 </button>

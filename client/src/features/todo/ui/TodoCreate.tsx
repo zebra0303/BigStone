@@ -7,8 +7,8 @@ import { Textarea } from "@/shared/ui/Textarea";
 import { Select } from "@/shared/ui/Select";
 import { Checkbox } from "@/shared/ui/Checkbox";
 import { format } from "date-fns";
-
 import { X } from "lucide-react";
+import { getNextValidDueDate } from "@/shared/lib/recurringDate";
 
 interface TodoCreateProps {
   onSuccess?: () => void;
@@ -56,7 +56,22 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
         title: title.trim(),
         description: description.trim(),
         isImportant,
-        dueDate: new Date(dueDate),
+        dueDate: getNextValidDueDate(dueDate, {
+          type: recurring,
+          weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
+          monthlyDay:
+            recurring === "MONTHLY" && monthlyType === "DATE"
+              ? monthlyDay
+              : undefined,
+          monthlyNthWeek:
+            recurring === "MONTHLY" && monthlyType === "NTH"
+              ? monthlyNthWeek
+              : undefined,
+          monthlyDayOfWeek:
+            recurring === "MONTHLY" && monthlyType === "NTH"
+              ? monthlyDayOfWeek
+              : undefined,
+        }),
         status: "TODO" as TodoStatus,
         recurring: {
           type: recurring,
@@ -180,11 +195,10 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
               key={day.value}
               type="button"
               onClick={() => handleDayToggle(day.value)}
-              className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
-                weeklyDays.includes(day.value)
+              className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${weeklyDays.includes(day.value)
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+                }`}
             >
               {day.label}
             </button>
