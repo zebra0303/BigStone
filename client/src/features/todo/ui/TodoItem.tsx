@@ -33,6 +33,12 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [editWeeklyDays, setEditWeeklyDays] = useState<number[]>(
     todo.recurring.weeklyDays || [],
   );
+  const [editMonthlyNthWeek, setEditMonthlyNthWeek] = useState<number>(
+    todo.recurring.monthlyNthWeek || 1,
+  );
+  const [editMonthlyDayOfWeek, setEditMonthlyDayOfWeek] = useState<number>(
+    todo.recurring.monthlyDayOfWeek || 0,
+  );
 
   const DAYS_OF_WEEK = [
     { value: 0, label: "일" },
@@ -79,6 +85,12 @@ export function TodoItem({ todo }: TodoItemProps) {
             type: editRecurringType,
             weeklyDays:
               editRecurringType === "WEEKLY" ? editWeeklyDays : undefined,
+            monthlyNthWeek:
+              editRecurringType === "MONTHLY" ? editMonthlyNthWeek : undefined,
+            monthlyDayOfWeek:
+              editRecurringType === "MONTHLY"
+                ? editMonthlyDayOfWeek
+                : undefined,
           },
         },
       },
@@ -142,6 +154,38 @@ export function TodoItem({ todo }: TodoItemProps) {
                   {day.label}
                 </button>
               ))}
+            </div>
+          )}
+
+          {editRecurringType === "MONTHLY" && (
+            <div className="flex items-center gap-1 mt-2 sm:mt-0">
+              <span className="text-sm font-medium text-gray-700 mx-1">
+                매월:
+              </span>
+              <Select
+                value={editMonthlyNthWeek}
+                onChange={(e) => setEditMonthlyNthWeek(Number(e.target.value))}
+                className="w-24 bg-white text-xs"
+              >
+                <option value={1}>첫째 주</option>
+                <option value={2}>둘째 주</option>
+                <option value={3}>셋째 주</option>
+                <option value={4}>넷째 주</option>
+                <option value={5}>마지막 주</option>
+              </Select>
+              <Select
+                value={editMonthlyDayOfWeek}
+                onChange={(e) =>
+                  setEditMonthlyDayOfWeek(Number(e.target.value))
+                }
+                className="w-20 bg-white text-xs"
+              >
+                {DAYS_OF_WEEK.map((day) => (
+                  <option key={day.value} value={day.value}>
+                    {day.label}
+                  </option>
+                ))}
+              </Select>
             </div>
           )}
         </div>

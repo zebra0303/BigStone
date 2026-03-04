@@ -5,7 +5,9 @@ export type RecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 export interface RecurringConfig {
   type: RecurringType;
   weeklyDays?: number[]; // 0 (Sun) to 6 (Sat)
-  monthlyDay?: number; // 1 to 31
+  monthlyDay?: number; // 1 to 31 (Specific date)
+  monthlyNthWeek?: number; // 1 to 4 or 5 for 'Last'
+  monthlyDayOfWeek?: number; // 0 (Sun) to 6 (Sat)
   yearlyMonth?: number; // 1 to 12
   yearlyDay?: number; // 1 to 31
 }

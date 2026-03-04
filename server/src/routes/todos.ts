@@ -24,6 +24,8 @@ router.get("/", (req: Request, res: Response) => {
           ? JSON.parse(r.recurringWeeklyDays)
           : undefined,
         monthlyDay: r.recurringMonthlyDay,
+        monthlyNthWeek: r.recurringMonthlyNthWeek,
+        monthlyDayOfWeek: r.recurringMonthlyDayOfWeek,
         yearlyMonth: r.recurringYearlyMonth,
         yearlyDay: r.recurringYearlyDay,
       },
@@ -53,9 +55,9 @@ router.post("/", (req: Request, res: Response) => {
   const sql = `
     INSERT INTO todos (
       id, title, description, isImportant, dueDate, status, 
-      recurringType, recurringWeeklyDays, recurringMonthlyDay, recurringYearlyMonth, recurringYearlyDay, 
+      recurringType, recurringWeeklyDays, recurringMonthlyDay, recurringMonthlyNthWeek, recurringMonthlyDayOfWeek, recurringYearlyMonth, recurringYearlyDay, 
       notificationMinutesBefore, completedAt
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
@@ -68,6 +70,8 @@ router.post("/", (req: Request, res: Response) => {
     recurring?.type || "NONE",
     recurring?.weeklyDays ? JSON.stringify(recurring.weeklyDays) : null,
     recurring?.monthlyDay || null,
+    recurring?.monthlyNthWeek || null,
+    recurring?.monthlyDayOfWeek || null,
     recurring?.yearlyMonth || null,
     recurring?.yearlyDay || null,
     notification?.minutesBefore || null,
@@ -101,7 +105,10 @@ router.put("/:id", (req: Request, res: Response) => {
       dueDate = COALESCE(?, dueDate),
       status = COALESCE(?, status),
       completedAt = COALESCE(?, completedAt),
-      recurringType = COALESCE(?, recurringType)
+      recurringType = COALESCE(?, recurringType),
+      recurringMonthlyDay = COALESCE(?, recurringMonthlyDay),
+      recurringMonthlyNthWeek = COALESCE(?, recurringMonthlyNthWeek),
+      recurringMonthlyDayOfWeek = COALESCE(?, recurringMonthlyDayOfWeek)
     WHERE id = ?
   `;
 
@@ -113,6 +120,9 @@ router.put("/:id", (req: Request, res: Response) => {
     status,
     completedAt,
     recurring?.type,
+    recurring?.monthlyDay,
+    recurring?.monthlyNthWeek,
+    recurring?.monthlyDayOfWeek,
     id,
   ];
 
