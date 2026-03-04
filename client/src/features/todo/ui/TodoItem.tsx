@@ -6,9 +6,12 @@ import {
 } from "@/features/todo/model/hooks";
 import { Checkbox } from "@/shared/ui/Checkbox";
 import { Badge } from "@/shared/ui/Badge";
-import { Button } from "@/shared/ui/Button";
 import { format } from "date-fns";
-import { Star, Trash2 } from "lucide-react";
+import { Star, Trash2, Edit2, Repeat } from "lucide-react";
+
+import { Button } from "@/shared/ui/Button";
+import { Input } from "@/shared/ui/Input";
+import { Textarea } from "@/shared/ui/Textarea";
 
 interface TodoItemProps {
   todo: Todo;
@@ -16,8 +19,13 @@ interface TodoItemProps {
 
 export function TodoItem({ todo }: TodoItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const updateTodo = useUpdateTodoStatus();
   const deleteTodo = useDeleteTodo();
+
+  const [editTitle, setEditTitle] = useState(todo.title);
+  const [editDesc, setEditDesc] = useState(todo.description || "");
+  const [editImportant, setEditImportant] = useState(todo.isImportant);
 
   const isDone = todo.status === "DONE";
   const isOverdue =
@@ -34,6 +42,56 @@ export function TodoItem({ todo }: TodoItemProps) {
       },
     });
   };
+
+  const handleSaveEdit = () => {
+    if (!editTitle.trim()) return;
+    updateTodo.mutate(
+      {
+        id: todo.id,
+        updates: {
+          title: editTitle.trim(),
+          description: editDesc.trim(),
+          isImportant: editImportant,
+        },
+      },
+      {
+        onSuccess: () => setIsEditing(false),
+      },
+    );
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex flex-col gap-3 rounded-lg border p-4 bg-gray-50">
+        <div className="flex items-center gap-2">
+          <Input
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            className="flex-1 bg-white"
+            placeholder="할 일 제목"
+            autoFocus
+          />
+          <Checkbox
+            checked={editImportant}
+            onChange={(e) => setEditImportant(e.target.checked)}
+          />
+          <span className="text-sm font-medium">중요</span>
+        </div>
+        <Textarea
+          value={editDesc}
+          onChange={(e) => setEditDesc(e.target.value)}
+          className="bg-white"
+          placeholder="상세 내용"
+        />
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setIsEditing(false)}>
+            취소
+          </Button>
+          <Button onClick={handleSaveEdit}>저장</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -76,8 +134,9 @@ export function TodoItem({ todo }: TodoItemProps) {
                   <span>•</span>
                   <Badge
                     variant="secondary"
-                    className="px-1.5 py-0 text-[10px]"
+                    className="px-1.5 py-0.5 text-[10px] flex items-center gap-1"
                   >
+                    <Repeat className="h-3 w-3" />
                     {todo.recurring.type}
                   </Badge>
                 </>
@@ -86,15 +145,26 @@ export function TodoItem({ todo }: TodoItemProps) {
           </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => deleteTodo.mutate(todo.id)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-600 flex-shrink-0"
-          aria-label="Delete todo"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsEditing(true)}
+            className="text-gray-400 hover:text-blue-600 flex-shrink-0"
+            aria-label="Edit todo"
+          >
+            <Edit2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => deleteTodo.mutate(todo.id)}
+            className="text-gray-400 hover:text-red-600 flex-shrink-0"
+            aria-label="Delete todo"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {isExpanded && todo.description && (
