@@ -396,7 +396,9 @@ export function TodoItem({ todo }: TodoItemProps) {
 
   return (
     <div
-      className={`group flex flex-col gap-2 rounded-lg border p-4 transition-all hover:bg-gray-50 bg-white ${isDone ? "opacity-60" : ""}`}
+      className={`group flex flex-col gap-2 rounded-lg border p-4 transition-all hover:bg-gray-50 bg-white 
+      ${isDone ? "opacity-60" : ""} 
+      ${todo.isVirtual ? "opacity-70 border-dashed bg-gray-50" : ""}`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-1 overflow-hidden">
@@ -404,11 +406,13 @@ export function TodoItem({ todo }: TodoItemProps) {
             checked={isDone}
             onChange={handleToggle}
             className="h-5 w-5 rounded-full"
+            disabled={todo.isVirtual}
           />
 
           <div
             className="flex flex-col gap-1 overflow-hidden cursor-pointer"
             onClick={() => setIsExpanded(!isExpanded)}
+            title={todo.isVirtual ? "이전 일정을 먼저 완료해주세요." : ""}
           >
             <div className="flex items-center gap-2">
               {todo.isImportant && (
@@ -446,26 +450,28 @@ export function TodoItem({ todo }: TodoItemProps) {
           </div>
         </div>
 
-        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleEditClick}
-            className="text-gray-400 hover:text-blue-600 flex-shrink-0"
-            aria-label="Edit todo"
-          >
-            <Edit2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => deleteTodo.mutate(todo.id)}
-            className="text-gray-400 hover:text-red-600 flex-shrink-0"
-            aria-label="Delete todo"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        {!todo.isVirtual && (
+          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleEditClick}
+              className="text-gray-400 hover:text-blue-600 flex-shrink-0"
+              aria-label="Edit todo"
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => deleteTodo.mutate(todo.id)}
+              className="text-gray-400 hover:text-red-600 flex-shrink-0"
+              aria-label="Delete todo"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {isExpanded && todo.description && (

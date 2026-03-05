@@ -16,6 +16,7 @@ export interface RecurringConfig {
   endOption?: RecurringEndOption;
   endDate?: string;
   endOccurrences?: number;
+  occurrenceCount?: number;
 }
 
 export interface TodoNotification {
@@ -33,4 +34,5 @@ export interface Todo {
   recurring: RecurringConfig;
   notification?: TodoNotification;
   completedAt?: Date;
+  isVirtual?: boolean;
 }

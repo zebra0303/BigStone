@@ -3,7 +3,7 @@ import { useTodos } from "@/features/todo/model/hooks";
 import { TodoCreate } from "@/features/todo/ui/TodoCreate";
 import { TodoList } from "@/features/todo/ui/TodoList";
 import { Button } from "@/shared/ui/Button";
-import { format, addDays, subDays, startOfWeek, getDay } from "date-fns";
+import { format, addDays, subDays, startOfWeek, getDay, startOfDay } from "date-fns";
 import {
   Plus,
   ChevronLeft,
@@ -12,7 +12,7 @@ import {
   Archive,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { safeParseDate } from "@/shared/lib/recurringDate";
+import { safeParseDate, getNextOccurrence } from "@/shared/lib/recurringDate";
 
 type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
@@ -54,20 +54,74 @@ export function HomePage() {
     return dates;
   }, [baseDate, viewMode]);
 
-  // Filter out archived/stale tasks
-  const activeTodos = useMemo(
-    () =>
-      todos.filter((todo) => {
-        if (todo.status === "DONE" && todo.completedAt) {
-          const compDateStr = format(safeParseDate(todo.completedAt), "yyyy-MM-dd");
-          return displayDates.some(
-            (d) => format(d, "yyyy-MM-dd") === compDateStr,
-          );
+  // Filter out archived/stale tasks AND pre-calculate virtual projections
+  const activeTodos = useMemo(() => {
+    const validTodos = todos.filter((todo) => {
+      if (todo.status === "DONE" && todo.completedAt) {
+        const compDateStr = format(safeParseDate(todo.completedAt), "yyyy-MM-dd");
+        return displayDates.some(
+          (d) => format(d, "yyyy-MM-dd") === compDateStr,
+        );
+      }
+      return true;
+    });
+
+    // Generate Virtual Projections for Recurring tasks
+    // If a task is not DONE and is RECURRING, we should project its future occurrences
+    // up to the latest date in the current displayDates view.
+    const projected: typeof validTodos = [];
+    const maxDateMs = displayDates.length > 0
+      ? Math.max(...displayDates.map(d => startOfDay(d).getTime()))
+      : 0;
+
+    validTodos.forEach((todo) => {
+      if (todo.status !== "DONE" && todo.recurring.type !== "NONE") {
+        let currentRefDate = safeParseDate(todo.dueDate);
+
+        // Keep searching for the next occurrences until we pass the view window or hit end limits
+        // We cap virtual occurrences to a reasonable small limit (e.g. 7) to prevent infinite loops
+        let projectionCount = 0;
+        let runningOccurences = todo.recurring.occurrenceCount || 1; // 1 is default for the DB instance itself
+
+        while (projectionCount < 7) {
+          const nextDate = getNextOccurrence(currentRefDate, todo.recurring);
+          if (!nextDate) break;
+
+          const nextDateMs = startOfDay(nextDate).getTime();
+
+          // Stop projecting if it's beyond our current calendar view
+          if (nextDateMs > maxDateMs) {
+            break;
+          }
+
+          // Check End Conditions before projecting
+          if (todo.recurring.endOption === "DATE" && todo.recurring.endDate) {
+            const endLimitMs = startOfDay(safeParseDate(todo.recurring.endDate)).getTime();
+            if (nextDateMs > endLimitMs) break;
+          }
+
+          if (todo.recurring.endOption === "OCCURRENCES" && todo.recurring.endOccurrences) {
+            if (runningOccurences >= todo.recurring.endOccurrences) break;
+          }
+
+          // Generate Virtual item
+          projected.push({
+            ...todo,
+            id: `virtual-${todo.id}-${projectionCount}`,
+            dueDate: nextDate,
+            isVirtual: true,
+          });
+
+          // Step forward
+          currentRefDate = nextDate;
+          projectionCount++;
+          runningOccurences++;
         }
-        return true;
-      }),
-    [todos, displayDates],
-  );
+      }
+    });
+
+    return [...validTodos, ...projected];
+  }, [todos, displayDates]);
 
   const getTodosForDate = (date: Date, isFirstVisibleDate: boolean) => {
     return activeTodos
