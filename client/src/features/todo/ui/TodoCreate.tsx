@@ -27,7 +27,6 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
   const [weeklyDays, setWeeklyDays] = useState<number[]>([]);
 
   // Advanced Recurring
-  const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [endOption, setEndOption] = useState<RecurringEndOption>("NONE");
   const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [endOccurrences, setEndOccurrences] = useState<number>(10);
@@ -67,7 +66,8 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
         title: title.trim(),
         description: description.trim(),
         isImportant,
-        dueDate: getNextValidDueDate(recurring !== "NONE" ? startDate : dueDate, {
+        // dueDate serves as the start anchor for recurrences universally now
+        dueDate: getNextValidDueDate(dueDate, {
           type: recurring,
           weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
           monthlyDay:
@@ -103,7 +103,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
               : undefined,
           yearlyMonth: recurring === "YEARLY" ? yearlyMonth : undefined,
           yearlyDay: recurring === "YEARLY" ? yearlyDay : undefined,
-          startDate: recurring !== "NONE" ? startDate : undefined,
+          startDate: recurring !== "NONE" ? dueDate : undefined,
           endOption: recurring !== "NONE" ? endOption : "NONE",
           endDate: endOption === "DATE" ? endDate : undefined,
           endOccurrences: endOption === "OCCURRENCES" ? endOccurrences : undefined,
@@ -124,7 +124,6 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           setMonthlyDayOfWeek(0);
           setYearlyMonth(new Date().getMonth() + 1);
           setYearlyDay(new Date().getDate());
-          setStartDate(format(new Date(), "yyyy-MM-dd"));
           setEndOption("NONE");
           setEndDate(format(new Date(), "yyyy-MM-dd"));
           setEndOccurrences(10);
@@ -161,6 +160,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="할일 제목 (필수)"
           required
+          autoFocus
           className="flex-1"
         />
         <div className="flex items-center gap-2 px-2">
@@ -315,16 +315,6 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
       {recurring !== "NONE" && (
         <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 pt-4">
           <div className="flex bg-gray-50 p-4 rounded-lg flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700 w-20 shrink-0">시작일자:</span>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-40 bg-white"
-              />
-            </div>
-
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <span className="text-sm font-medium text-gray-700 w-20 shrink-0">종료 조건:</span>
               <div className="flex flex-wrap items-center gap-2">

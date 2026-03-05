@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Todo, RecurringType, RecurringEndOption } from "@/entities/todo/model/types";
+import type { Todo } from "@/entities/todo/model/types";
 import {
   useUpdateTodoStatus,
   useDeleteTodo,
@@ -8,101 +8,21 @@ import { Checkbox } from "@/shared/ui/Checkbox";
 import { Badge } from "@/shared/ui/Badge";
 import { format } from "date-fns";
 import { Star, Trash2, Edit2, Repeat } from "lucide-react";
-import { getNextValidDueDate, safeParseDate } from "@/shared/lib/recurringDate";
+import { safeParseDate } from "@/shared/lib/recurringDate";
 
 import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
-import { Textarea } from "@/shared/ui/Textarea";
-import { Select } from "@/shared/ui/Select";
+import { TodoEditModal } from "./TodoEditModal";
 
 interface TodoItemProps {
   todo: Todo;
 }
 
 export function TodoItem({ todo }: TodoItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const updateTodo = useUpdateTodoStatus();
   const deleteTodo = useDeleteTodo();
 
-  const [editTitle, setEditTitle] = useState(todo.title);
-  const [editDesc, setEditDesc] = useState(todo.description || "");
-  const [editImportant, setEditImportant] = useState(todo.isImportant);
-  const [editRecurringType, setEditRecurringType] = useState<RecurringType>(
-    todo.recurring.type,
-  );
-  const [editWeeklyDays, setEditWeeklyDays] = useState<number[]>(
-    todo.recurring.weeklyDays || [],
-  );
-  const [editMonthlyType, setEditMonthlyType] = useState<"DATE" | "NTH">(
-    todo.recurring.monthlyDay ? "DATE" : "NTH",
-  );
-  const [editMonthlyDay, setEditMonthlyDay] = useState<number>(
-    todo.recurring.monthlyDay || 1,
-  );
-  const [editMonthlyNthWeek, setEditMonthlyNthWeek] = useState<number>(
-    todo.recurring.monthlyNthWeek || 1,
-  );
-  const [editMonthlyDayOfWeek, setEditMonthlyDayOfWeek] = useState<number>(
-    todo.recurring.monthlyDayOfWeek || 0,
-  );
-  const [editYearlyMonth, setEditYearlyMonth] = useState<number>(
-    todo.recurring.yearlyMonth || new Date().getMonth() + 1,
-  );
-  const [editYearlyDay, setEditYearlyDay] = useState<number>(
-    todo.recurring.yearlyDay || new Date().getDate(),
-  );
-
-  const [editStartDate, setEditStartDate] = useState(
-    todo.recurring.startDate || format(new Date(todo.dueDate), "yyyy-MM-dd")
-  );
-  const [editEndOption, setEditEndOption] = useState<RecurringEndOption>(
-    todo.recurring.endOption || "NONE"
-  );
-  const [editEndDate, setEditEndDate] = useState(
-    todo.recurring.endDate || format(new Date(todo.dueDate), "yyyy-MM-dd")
-  );
-  const [editEndOccurrences, setEditEndOccurrences] = useState<number>(
-    todo.recurring.endOccurrences || 10
-  );
-
-  // Sync state when entering edit mode or when todo prop changes
-
-  const handleEditClick = () => {
-    setEditTitle(todo.title);
-    setEditDesc(todo.description || "");
-    setEditImportant(todo.isImportant);
-    setEditRecurringType(todo.recurring.type);
-    setEditWeeklyDays(todo.recurring.weeklyDays || []);
-    setEditMonthlyType(todo.recurring.monthlyDay ? "DATE" : "NTH");
-    setEditMonthlyDay(todo.recurring.monthlyDay || 1);
-    setEditMonthlyNthWeek(todo.recurring.monthlyNthWeek || 1);
-    setEditMonthlyDayOfWeek(todo.recurring.monthlyDayOfWeek || 0);
-    setEditYearlyMonth(todo.recurring.yearlyMonth || new Date().getMonth() + 1);
-    setEditYearlyDay(todo.recurring.yearlyDay || new Date().getDate());
-    setEditStartDate(todo.recurring.startDate || format(new Date(todo.dueDate), "yyyy-MM-dd"));
-    setEditEndOption(todo.recurring.endOption || "NONE");
-    setEditEndDate(todo.recurring.endDate || format(new Date(todo.dueDate), "yyyy-MM-dd"));
-    setEditEndOccurrences(todo.recurring.endOccurrences || 10);
-
-    setIsEditing(true);
-  };
-
-  const DAYS_OF_WEEK = [
-    { value: 0, label: "일" },
-    { value: 1, label: "월" },
-    { value: 2, label: "화" },
-    { value: 3, label: "수" },
-    { value: 4, label: "목" },
-    { value: 5, label: "금" },
-    { value: 6, label: "토" },
-  ];
-
-  const handleDayToggle = (day: number) => {
-    setEditWeeklyDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
-    );
-  };
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const isDone = todo.status === "DONE";
   const isOverdue =
@@ -121,278 +41,10 @@ export function TodoItem({ todo }: TodoItemProps) {
     });
   };
 
-  const handleSaveEdit = () => {
-    if (!editTitle.trim()) return;
-    updateTodo.mutate(
-      {
-        id: todo.id,
-        updates: {
-          title: editTitle.trim(),
-          description: editDesc.trim(),
-          isImportant: editImportant,
-          dueDate: getNextValidDueDate(todo.dueDate, {
-            type: editRecurringType,
-            weeklyDays:
-              editRecurringType === "WEEKLY" ? editWeeklyDays : undefined,
-            monthlyDay:
-              editRecurringType === "MONTHLY" && editMonthlyType === "DATE"
-                ? editMonthlyDay
-                : undefined,
-            monthlyNthWeek:
-              editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
-                ? editMonthlyNthWeek
-                : undefined,
-            monthlyDayOfWeek:
-              editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
-                ? editMonthlyDayOfWeek
-                : undefined,
-            yearlyMonth:
-              editRecurringType === "YEARLY" ? editYearlyMonth : undefined,
-            yearlyDay:
-              editRecurringType === "YEARLY" ? editYearlyDay : undefined,
-          }),
-          recurring: {
-            type: editRecurringType,
-            weeklyDays:
-              editRecurringType === "WEEKLY" ? editWeeklyDays : undefined,
-            monthlyDay:
-              editRecurringType === "MONTHLY" && editMonthlyType === "DATE"
-                ? editMonthlyDay
-                : undefined,
-            monthlyNthWeek:
-              editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
-                ? editMonthlyNthWeek
-                : undefined,
-            monthlyDayOfWeek:
-              editRecurringType === "MONTHLY" && editMonthlyType === "NTH"
-                ? editMonthlyDayOfWeek
-                : undefined,
-            yearlyMonth:
-              editRecurringType === "YEARLY" ? editYearlyMonth : undefined,
-            yearlyDay:
-              editRecurringType === "YEARLY" ? editYearlyDay : undefined,
-            startDate: editRecurringType !== "NONE" ? editStartDate : undefined,
-            endOption: editRecurringType !== "NONE" ? editEndOption : "NONE",
-            endDate: editEndOption === "DATE" ? editEndDate : undefined,
-            endOccurrences: editEndOption === "OCCURRENCES" ? editEndOccurrences : undefined,
-          },
-        },
-      },
-      {
-        onSuccess: () => setIsEditing(false),
-      },
-    );
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditModalOpen(true);
   };
-
-  if (isEditing) {
-    return (
-      <div className="flex flex-col gap-3 rounded-lg border p-4 bg-gray-50">
-        <div className="flex items-center gap-2">
-          <Input
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            className="flex-1 bg-white"
-            placeholder="할 일 제목"
-            autoFocus
-          />
-          <Checkbox
-            checked={editImportant}
-            onChange={(e) => setEditImportant(e.target.checked)}
-          />
-          <span className="text-sm font-medium">중요</span>
-        </div>
-        <Textarea
-          value={editDesc}
-          onChange={(e) => setEditDesc(e.target.value)}
-          className="bg-white"
-          placeholder="상세 내용"
-        />
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Select
-            value={editRecurringType}
-            onChange={(e) =>
-              setEditRecurringType(e.target.value as RecurringType)
-            }
-            className="w-full sm:w-40 bg-white"
-          >
-            <option value="NONE">반복 안함</option>
-            <option value="DAILY">매일</option>
-            <option value="WEEKLY">매주</option>
-            <option value="MONTHLY">매월</option>
-            <option value="YEARLY">매년</option>
-          </Select>
-
-          {editRecurringType === "WEEKLY" && (
-            <div className="flex items-center gap-1">
-              {DAYS_OF_WEEK.map((day) => (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => handleDayToggle(day.value)}
-                  className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${editWeeklyDays.includes(day.value)
-                    ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
-                    }`}
-                >
-                  {day.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {editRecurringType === "MONTHLY" && (
-            <div className="flex items-center gap-2 mt-2 sm:mt-0">
-              <span className="text-sm font-medium text-gray-700 mx-1">
-                매월:
-              </span>
-              <Select
-                value={editMonthlyType}
-                onChange={(e) =>
-                  setEditMonthlyType(e.target.value as "DATE" | "NTH")
-                }
-                className="w-24 bg-white text-xs"
-              >
-                <option value="DATE">특정 일자</option>
-                <option value="NTH">특정 요일</option>
-              </Select>
-
-              {editMonthlyType === "DATE" ? (
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={31}
-                    value={editMonthlyDay}
-                    onChange={(e) => setEditMonthlyDay(Number(e.target.value))}
-                    className="w-16 text-xs"
-                  />
-                  <span className="text-sm">일</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Select
-                    value={editMonthlyNthWeek}
-                    onChange={(e) =>
-                      setEditMonthlyNthWeek(Number(e.target.value))
-                    }
-                    className="w-20 bg-white text-xs"
-                  >
-                    <option value={1}>첫째 주</option>
-                    <option value={2}>둘째 주</option>
-                    <option value={3}>셋째 주</option>
-                    <option value={4}>넷째 주</option>
-                    <option value={5}>마지막 주</option>
-                  </Select>
-                  <Select
-                    value={editMonthlyDayOfWeek}
-                    onChange={(e) =>
-                      setEditMonthlyDayOfWeek(Number(e.target.value))
-                    }
-                    className="w-20 bg-white text-xs"
-                  >
-                    {DAYS_OF_WEEK.map((day) => (
-                      <option key={day.value} value={day.value}>
-                        {day.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              )}
-            </div>
-          )}
-
-          {editRecurringType === "YEARLY" && (
-            <div className="flex items-center gap-2 mt-2 sm:mt-0">
-              <span className="text-sm font-medium text-gray-700 mx-1">
-                매년:
-              </span>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={editYearlyMonth}
-                  onChange={(e) => setEditYearlyMonth(Number(e.target.value))}
-                  className="w-16 text-xs bg-white"
-                />
-                <span className="text-sm">월</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={editYearlyDay}
-                  onChange={(e) => setEditYearlyDay(Number(e.target.value))}
-                  className="w-16 text-xs bg-white"
-                />
-                <span className="text-sm">일</span>
-              </div>
-            </div>
-          )}
-
-          {editRecurringType !== "NONE" && (
-            <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 pt-4">
-              <div className="flex bg-white border border-gray-200 p-4 rounded-lg flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700 w-20 shrink-0">시작일자:</span>
-                  <Input
-                    type="date"
-                    value={editStartDate}
-                    onChange={(e) => setEditStartDate(e.target.value)}
-                    className="w-40 bg-white"
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <span className="text-sm font-medium text-gray-700 w-20 shrink-0">종료 조건:</span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Select
-                      value={editEndOption}
-                      onChange={(e) => setEditEndOption(e.target.value as RecurringEndOption)}
-                      className="w-32 bg-white"
-                    >
-                      <option value="NONE">없음</option>
-                      <option value="DATE">날짜 지정</option>
-                      <option value="OCCURRENCES">횟수 지정</option>
-                    </Select>
-
-                    {editEndOption === "DATE" && (
-                      <Input
-                        type="date"
-                        value={editEndDate}
-                        onChange={(e) => setEditEndDate(e.target.value)}
-                        className="w-40 bg-white"
-                      />
-                    )}
-
-                    {editEndOption === "OCCURRENCES" && (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min={1}
-                          value={editEndOccurrences}
-                          onChange={(e) => setEditEndOccurrences(Number(e.target.value))}
-                          className="w-20 bg-white"
-                        />
-                        <span className="text-sm text-gray-600">회 반복 후 종료</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setIsEditing(false)}>
-            취소
-          </Button>
-          <Button onClick={handleSaveEdit}>저장</Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -478,6 +130,13 @@ export function TodoItem({ todo }: TodoItemProps) {
         <div className="mt-2 pl-9 pr-8 text-sm text-gray-700 whitespace-pre-wrap">
           {todo.description}
         </div>
+      )}
+
+      {isEditModalOpen && (
+        <TodoEditModal
+          todo={todo}
+          onClose={() => setIsEditModalOpen(false)}
+        />
       )}
     </div>
   );
