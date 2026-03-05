@@ -10,7 +10,7 @@ import {
 } from "date-fns";
 import type { RecurringConfig } from "@/entities/todo/model/types";
 
-function safeParseDate(input: Date | string): Date {
+export function safeParseDate(input: Date | string): Date {
   if (typeof input === "string" && input.includes("T") === false) {
     const [y, m, d] = input.split("-").map(Number);
     return new Date(y, m - 1, d);

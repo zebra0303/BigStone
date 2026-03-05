@@ -12,6 +12,7 @@ import {
   Archive,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { safeParseDate } from "@/shared/lib/recurringDate";
 
 type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
@@ -58,7 +59,7 @@ export function HomePage() {
     () =>
       todos.filter((todo) => {
         if (todo.status === "DONE" && todo.completedAt) {
-          const compDateStr = format(new Date(todo.completedAt), "yyyy-MM-dd");
+          const compDateStr = format(safeParseDate(todo.completedAt), "yyyy-MM-dd");
           return displayDates.some(
             (d) => format(d, "yyyy-MM-dd") === compDateStr,
           );
@@ -73,18 +74,35 @@ export function HomePage() {
       .filter((todo) => {
         // 1. If completed, show it exactly on the date it was completed.
         if (todo.status === "DONE" && todo.completedAt) {
-          return format(new Date(todo.completedAt), "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
+          return format(safeParseDate(todo.completedAt), "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
         }
 
         // 2. Uncompleted tasks logic
-        const dueDateStr = format(new Date(todo.dueDate), "yyyy-MM-dd");
+        const parsedDue = safeParseDate(todo.dueDate);
+        const dueDateStr = format(parsedDue, "yyyy-MM-dd");
         const dateStr = format(date, "yyyy-MM-dd");
-        const dueTime = new Date(todo.dueDate).setHours(0, 0, 0, 0);
+        const dueTime = parsedDue.setHours(0, 0, 0, 0);
         const currTime = date.getTime();
 
         // If this is the earliest visible date in the current view, include overdue tasks
         if (isFirstVisibleDate && dueTime < currTime) {
-          return true; // We know it's not DONE from step 1
+          // Extra guard: If this is an overdue recurring task with an end condition, we should NOT show it as overdue
+          // if the current timeline view (date) is fully AFTER its end condition.
+          // Wait, if it's a generated `Todo` row and it's TODO, it implies it hasn't met the occurrence limit yet when it was spawned.
+          // However, if it has an endDate, and the current Date being viewed is strictly AFTER the endDate,
+          // then the task shouldn't keep floating forward forever.
+          // But actually, it's a real Todo instance in the DB. If it's overdue, the user probably still needs to do it or delete it.
+          // What if the user wants it to hide? Usually overdue tasks carry forward.
+          // BUT let's respect the endDate if it's past it to avoid infinite display of stale templates.
+          if (todo.recurring?.endOption === "DATE" && todo.recurring.endDate) {
+            const parsedEnd = safeParseDate(todo.recurring.endDate);
+            const endDateMs = parsedEnd.setHours(0, 0, 0, 0);
+            if (currTime > endDateMs) {
+              return false; // Stop showing it forward if we are past the end date
+            }
+          }
+
+          return true;
         }
 
         return dueDateStr === dateStr;
@@ -92,7 +110,7 @@ export function HomePage() {
       .sort((a, b) => {
         if (a.isImportant && !b.isImportant) return -1;
         if (!a.isImportant && b.isImportant) return 1;
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        return safeParseDate(a.dueDate).getTime() - safeParseDate(b.dueDate).getTime();
       });
   };
 
