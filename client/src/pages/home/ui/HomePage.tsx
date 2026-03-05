@@ -8,7 +8,6 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Calendar as CalendarIcon,
   Archive,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -253,19 +252,14 @@ export function HomePage() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <div className="relative flex items-center bg-white border border-gray-300 rounded-md px-3 py-1.5 shadow-sm hover:bg-gray-50 transition-colors">
-              <CalendarIcon className="h-4 w-4 text-gray-500 mr-2" />
-              <span className="font-medium text-gray-700 select-none">
-                {format(baseDate, "yyyy년 MM월 dd일")} (
-                {DAYS_KO[getDay(baseDate)]})
-              </span>
+            <div className="flex items-center bg-white border border-gray-300 rounded-md px-2 py-1 shadow-sm hover:bg-gray-50 focus-within:ring-2 focus-within:ring-blue-500 transition-colors">
               <input
                 type="date"
                 value={baseDateStr}
                 onChange={(e) => {
                   if (e.target.value) setBaseDateStr(e.target.value);
                 }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="w-full bg-transparent border-none text-gray-700 font-medium text-sm focus:outline-none focus:ring-0 cursor-pointer"
                 aria-label="날짜 선택"
               />
             </div>
