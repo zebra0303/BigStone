@@ -83,7 +83,9 @@ export function HomePage() {
         let runningOccurences = todo.recurring.occurrenceCount || 1; // 1 is default for the DB instance itself
 
         while (projectionCount < 7) {
-          const nextDate = getNextOccurrence(currentRefDate, todo.recurring);
+          // Pass `true` for ignoreToday so virtual projections strictly sequence forward 
+          // from the last computed date, rather than clustering repeatedly on `today`.
+          const nextDate = getNextOccurrence(currentRefDate, todo.recurring, true);
           if (!nextDate) break;
 
           const nextDateMs = startOfDay(nextDate).getTime();
