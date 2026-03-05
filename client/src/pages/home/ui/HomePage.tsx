@@ -81,12 +81,13 @@ export function HomePage() {
         const dueMs = startOfDay(safeParseDate(todo.dueDate)).getTime();
         let currentRefDate = new Date(Math.max(dueMs, todayMs));
 
-        // Keep searching for the next occurrences until we pass the view window or hit end limits
-        // We cap virtual occurrences to a reasonable small limit (e.g. 7) to prevent infinite loops
+        // We use a safe maximum iterator (e.g. 30) instead of 7. 
+        // 7 is too small because skipping 2 weekend days means 7 iterations only spans 5 working days, 
+        // causing next week's tasks to disappear from view in WEEK_ALL mode.
         let projectionCount = 0;
         let runningOccurences = todo.recurring.occurrenceCount || 1; // 1 is default for the DB instance itself
 
-        while (projectionCount < 7) {
+        while (projectionCount < 30) {
           // Pass `true` for ignoreToday so virtual projections strictly sequence forward 
           // from the last computed date, rather than clustering repeatedly on `today`.
           const nextDate = getNextOccurrence(currentRefDate, todo.recurring, true);
