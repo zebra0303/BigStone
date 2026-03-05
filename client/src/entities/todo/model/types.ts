@@ -18,6 +18,7 @@ export interface TodoNotification {
 
 export interface Todo {
   id: string;
+  groupId?: string;
   title: string;
   description?: string;
   isImportant: boolean;

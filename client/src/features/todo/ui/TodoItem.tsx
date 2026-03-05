@@ -3,13 +3,12 @@ import type { Todo, RecurringType } from "@/entities/todo/model/types";
 import {
   useUpdateTodoStatus,
   useDeleteTodo,
-  useCreateTodo,
 } from "@/features/todo/model/hooks";
 import { Checkbox } from "@/shared/ui/Checkbox";
 import { Badge } from "@/shared/ui/Badge";
 import { format } from "date-fns";
 import { Star, Trash2, Edit2, Repeat } from "lucide-react";
-import { getNextValidDueDate, getNextOccurrence } from "@/shared/lib/recurringDate";
+import { getNextValidDueDate } from "@/shared/lib/recurringDate";
 
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
@@ -25,7 +24,6 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const updateTodo = useUpdateTodoStatus();
   const deleteTodo = useDeleteTodo();
-  const createTodo = useCreateTodo();
 
   const [editTitle, setEditTitle] = useState(todo.title);
   const [editDesc, setEditDesc] = useState(todo.description || "");
@@ -96,21 +94,6 @@ export function TodoItem({ todo }: TodoItemProps) {
 
   const handleToggle = () => {
     const newStatus = isDone ? "TODO" : "DONE";
-
-    // If completing a recurring task, spawn the next occurrence
-    if (newStatus === "DONE" && todo.recurring.type !== "NONE") {
-      const nextDate = getNextOccurrence(todo.dueDate, todo.recurring);
-      if (nextDate) {
-        createTodo.mutate({
-          title: todo.title,
-          description: todo.description || "",
-          isImportant: todo.isImportant,
-          dueDate: nextDate,
-          status: "TODO",
-          recurring: todo.recurring,
-        });
-      }
-    }
 
     updateTodo.mutate({
       id: todo.id,

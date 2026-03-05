@@ -18,35 +18,39 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("PRAGMA journal_mode = WAL");
     db.run("PRAGMA busy_timeout = 5000");
 
-    db.run(
-      `
-      CREATE TABLE IF NOT EXISTS todos (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        description TEXT,
-        isImportant BOOLEAN DEFAULT 0,
-        dueDate TEXT NOT NULL,
-        status TEXT DEFAULT 'TODO',
-        recurringType TEXT DEFAULT 'NONE',
-        recurringWeeklyDays TEXT,
-        recurringMonthlyDay INTEGER,
-        recurringMonthlyNthWeek INTEGER,
-        recurringMonthlyDayOfWeek INTEGER,
-        recurringYearlyMonth INTEGER,
-        recurringYearlyDay INTEGER,
-        notificationMinutesBefore INTEGER,
-        completedAt TEXT
-      )
-    `,
-      (err) => {
-        if (err) {
-          console.error(
-            "Warning: Could not verify table schema (possibly locked by external tool)",
-            err.message,
-          );
-        }
-      },
-    );
+    db.serialize(() => {
+      db.run(`
+        CREATE TABLE IF NOT EXISTS todo_groups (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT,
+          isImportant BOOLEAN DEFAULT 0,
+          recurringType TEXT DEFAULT 'NONE',
+          recurringWeeklyDays TEXT,
+          recurringMonthlyDay INTEGER,
+          recurringMonthlyNthWeek INTEGER,
+          recurringMonthlyDayOfWeek INTEGER,
+          recurringYearlyMonth INTEGER,
+          recurringYearlyDay INTEGER,
+          notificationMinutesBefore INTEGER
+        )
+      `, (err) => {
+        if (err) console.error("Could not create todo_groups table", err.message);
+      });
+
+      db.run(`
+        CREATE TABLE IF NOT EXISTS todos (
+          id TEXT PRIMARY KEY,
+          groupId TEXT NOT NULL,
+          dueDate TEXT NOT NULL,
+          status TEXT DEFAULT 'TODO',
+          completedAt TEXT,
+          FOREIGN KEY (groupId) REFERENCES todo_groups(id) ON DELETE CASCADE
+        )
+      `, (err) => {
+        if (err) console.error("Could not create todos table", err.message);
+      });
+    });
   }
 });
 
