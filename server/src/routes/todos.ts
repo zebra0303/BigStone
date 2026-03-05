@@ -127,99 +127,108 @@ router.post("/", (req: Request, res: Response) => {
 router.put("/:id", (req: Request, res: Response) => {
   console.log("PUT Body:", JSON.stringify(req.body, null, 2));
   const { id } = req.params;
-  const {
-    title,
-    description,
-    isImportant,
-    dueDate,
-    status,
-    completedAt,
-    recurring,
-  } = req.body;
+  const updates = req.body;
 
-  // First we need to find the groupId associated with this todo
-  db.get("SELECT groupId FROM todos WHERE id = ?", [id], (err, row: any) => {
+  // Fetch the existing todo + group combined
+  const fetchSql = `
+    SELECT 
+      t.id, t.groupId, t.dueDate, t.status, t.completedAt,
+      g.title, g.description, g.isImportant, 
+      g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay, 
+      g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek, 
+      g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore
+    FROM todos t
+    JOIN todo_groups g ON t.groupId = g.id
+    WHERE t.id = ?
+  `;
+
+  db.get(fetchSql, [id], (err, row: any) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ error: "Todo not found" });
+
+    // Identify effective values
+    const effectiveTitle = updates.title !== undefined ? updates.title : row.title;
+    const effectiveDesc = updates.description !== undefined ? updates.description : row.description;
+    const effectiveImportant = updates.isImportant !== undefined ? (updates.isImportant ? 1 : 0) : row.isImportant;
+
+    // We expect `recurring` as an object if sent from frontend
+    let effRecType = row.recurringType;
+    let effRecWeekly = row.recurringWeeklyDays ? JSON.parse(row.recurringWeeklyDays) : null;
+    let effRecMonthDay = row.recurringMonthlyDay;
+    let effRecMonthNth = row.recurringMonthlyNthWeek;
+    let effRecMonthDOW = row.recurringMonthlyDayOfWeek;
+    let effRecYearMonth = row.recurringYearlyMonth;
+    let effRecYearDay = row.recurringYearlyDay;
+
+    if (updates.recurring) {
+      effRecType = updates.recurring.type;
+      effRecWeekly = updates.recurring.weeklyDays || null;
+      effRecMonthDay = updates.recurring.monthlyDay || null;
+      effRecMonthNth = updates.recurring.monthlyNthWeek || null;
+      effRecMonthDOW = updates.recurring.monthlyDayOfWeek !== undefined ? updates.recurring.monthlyDayOfWeek : null;
+      effRecYearMonth = updates.recurring.yearlyMonth || null;
+      effRecYearDay = updates.recurring.yearlyDay || null;
+    }
+
+    const effectiveDueDate = updates.dueDate !== undefined ? updates.dueDate : row.dueDate;
+    const effectiveStatus = updates.status !== undefined ? updates.status : row.status;
+    const effectiveCompletedAt = updates.completedAt !== undefined ? updates.completedAt : row.completedAt;
 
     const groupId = row.groupId;
 
     const groupSql = `
       UPDATE todo_groups SET 
-        title = COALESCE(?, title),
-        description = COALESCE(?, description),
-        isImportant = COALESCE(?, isImportant),
-        recurringType = ?,
-        recurringWeeklyDays = ?,
-        recurringMonthlyDay = ?,
-        recurringMonthlyNthWeek = ?,
-        recurringMonthlyDayOfWeek = ?,
-        recurringYearlyMonth = ?,
-        recurringYearlyDay = ?
+        title = ?, description = ?, isImportant = ?,
+        recurringType = ?, recurringWeeklyDays = ?, recurringMonthlyDay = ?,
+        recurringMonthlyNthWeek = ?, recurringMonthlyDayOfWeek = ?,
+        recurringYearlyMonth = ?, recurringYearlyDay = ?
       WHERE id = ?
     `;
 
     const groupParams = [
-      title,
-      description,
-      isImportant !== undefined ? (isImportant ? 1 : 0) : null,
-      recurring?.type || "NONE",
-      recurring?.type === "WEEKLY" && recurring?.weeklyDays
-        ? JSON.stringify(recurring.weeklyDays)
-        : null,
-      recurring?.type === "MONTHLY" && recurring?.monthlyDay
-        ? recurring.monthlyDay
-        : null,
-      recurring?.type === "MONTHLY" && recurring?.monthlyNthWeek
-        ? recurring.monthlyNthWeek
-        : null,
-      recurring?.type === "MONTHLY" && recurring?.monthlyDayOfWeek !== undefined
-        ? recurring.monthlyDayOfWeek
-        : null,
-      recurring?.type === "YEARLY" && recurring?.yearlyMonth
-        ? recurring.yearlyMonth
-        : null,
-      recurring?.type === "YEARLY" && recurring?.yearlyDay
-        ? recurring.yearlyDay
-        : null,
-      groupId,
+      effectiveTitle,
+      effectiveDesc,
+      effectiveImportant,
+      effRecType,
+      effRecWeekly ? JSON.stringify(effRecWeekly) : null,
+      effRecMonthDay,
+      effRecMonthNth,
+      effRecMonthDOW,
+      effRecYearMonth,
+      effRecYearDay,
+      groupId
     ];
 
     db.run(groupSql, groupParams, function (errGroup) {
       if (errGroup) return res.status(500).json({ error: errGroup.message });
 
       const todoSql = `
-        UPDATE todos SET 
-          dueDate = COALESCE(?, dueDate),
-          status = COALESCE(?, status),
-          completedAt = COALESCE(?, completedAt)
-        WHERE id = ?
+        UPDATE todos SET dueDate = ?, status = ?, completedAt = ? WHERE id = ?
       `;
-
-      const todoParams = [
-        dueDate,
-        status,
-        completedAt,
-        id,
-      ];
+      const todoParams = [effectiveDueDate, effectiveStatus, effectiveCompletedAt, id];
 
       db.run(todoSql, todoParams, async function (errTodo) {
         if (errTodo) return res.status(500).json({ error: errTodo.message });
 
         // Backend Task Spawning Logic 
-        // If this task was just marked DONE and has recurrence, spawn next occurrence.
-        if (status === "DONE" && recurring && recurring.type !== "NONE") {
+        if (effectiveStatus === "DONE" && row.status !== "DONE" && effRecType !== "NONE") {
           try {
             const { getNextOccurrence } = await import("../utils/recurringDate");
-            const nextDate = getNextOccurrence(dueDate, recurring);
+            const nextDate = getNextOccurrence(effectiveDueDate, {
+              type: effRecType,
+              weeklyDays: effRecWeekly,
+              monthlyDay: effRecMonthDay,
+              monthlyNthWeek: effRecMonthNth,
+              monthlyDayOfWeek: effRecMonthDOW,
+              yearlyMonth: effRecYearMonth,
+              yearlyDay: effRecYearDay
+            });
 
             if (nextDate) {
               const spawnSql = `
                    INSERT INTO todos (id, groupId, dueDate, status, completedAt)
                    VALUES (?, ?, ?, 'TODO', NULL)
                  `;
-
-              // Import format dynamically if needed, or just ISO string
               const { format } = await import("date-fns-tz");
               db.run(spawnSql, [uuidv4(), groupId, format(nextDate, "yyyy-MM-dd")], (spawnErr) => {
                 if (spawnErr) console.error("Could not spawn next task event:", spawnErr.message);
