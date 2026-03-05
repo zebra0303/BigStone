@@ -41,9 +41,9 @@ export function getNextValidDueDate(
   const baseDate = startOfDay(safeParseDate(baseDateInput));
   const today = startOfDay(new Date());
 
-  // Use the later of baseDate or today to ensure we don't schedule in the past
-  // unless baseDate is intentionally in the past and we just want to align it.
-  const referenceDate = baseDate > today ? baseDate : today;
+  // Strictly respect the baseDate, even if it is in the past. This allows users 
+  // to create recurring schedules that retroactively start from a past date.
+  const referenceDate = baseDate;
 
   if (recurring.type === "DAILY") {
     // If it's a daily task, it should just be due on the reference date

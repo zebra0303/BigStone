@@ -67,7 +67,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
         title: title.trim(),
         description: description.trim(),
         isImportant,
-        dueDate: getNextValidDueDate(dueDate, {
+        dueDate: getNextValidDueDate(recurring !== "NONE" ? startDate : dueDate, {
           type: recurring,
           weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
           monthlyDay:

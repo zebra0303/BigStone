@@ -76,10 +76,9 @@ export function HomePage() {
     validTodos.forEach((todo) => {
       if (todo.status !== "DONE" && todo.recurring.type !== "NONE") {
         // Start projection from Math.max(dueDate, today). The backend skips missed 
-        // occurrences when checking off old overdue recurring tasks, so we shouldn't project them.
-        const todayMs = startOfDay(new Date()).getTime();
-        const dueMs = startOfDay(safeParseDate(todo.dueDate)).getTime();
-        let currentRefDate = new Date(Math.max(dueMs, todayMs));
+        // strictly sequence forward from the last true due date.
+        // This ensures the visual calendar paints intermediate missed days correctly.
+        let currentRefDate = safeParseDate(todo.dueDate);
 
         // We use a safe maximum iterator (e.g. 30) instead of 7. 
         // 7 is too small because skipping 2 weekend days means 7 iterations only spans 5 working days, 
