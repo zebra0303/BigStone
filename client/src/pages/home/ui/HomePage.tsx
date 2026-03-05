@@ -23,7 +23,10 @@ export function HomePage() {
   );
   const { data: todos = [] } = useTodos();
 
-  const baseDate = useMemo(() => new Date(baseDateStr), [baseDateStr]);
+  const baseDate = useMemo(() => {
+    const [y, m, d] = baseDateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [baseDateStr]);
 
   // Determine the display dates based on viewMode
   const displayDates = useMemo(() => {
@@ -53,13 +56,9 @@ export function HomePage() {
     () =>
       todos.filter((todo) => {
         if (todo.status === "DONE" && todo.completedAt) {
-          const completedDate = new Date(todo.completedAt);
-          completedDate.setHours(0, 0, 0, 0);
-          // Keep done tasks only if they were completed on or after the earliest visible date,
-          // or just keep them if they were completed exactly on their due date (simplified: show if completed within the view)
-          // For simplicity, let's just show DONE tasks if their completedDate is within the displayDates
+          const compDateStr = format(new Date(todo.completedAt), "yyyy-MM-dd");
           return displayDates.some(
-            (d) => d.getTime() === completedDate.getTime(),
+            (d) => format(d, "yyyy-MM-dd") === compDateStr,
           );
         }
         return true;
@@ -72,21 +71,21 @@ export function HomePage() {
       .filter((todo) => {
         // 1. If completed, show it exactly on the date it was completed.
         if (todo.status === "DONE" && todo.completedAt) {
-          const compDate = new Date(todo.completedAt);
-          compDate.setHours(0, 0, 0, 0);
-          return compDate.getTime() === date.getTime();
+          return format(new Date(todo.completedAt), "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
         }
 
         // 2. Uncompleted tasks logic
-        const dueDate = new Date(todo.dueDate);
-        dueDate.setHours(0, 0, 0, 0);
+        const dueDateStr = format(new Date(todo.dueDate), "yyyy-MM-dd");
+        const dateStr = format(date, "yyyy-MM-dd");
+        const dueTime = new Date(todo.dueDate).setHours(0, 0, 0, 0);
+        const currTime = date.getTime();
 
         // If this is the earliest visible date in the current view, include overdue tasks
-        if (isFirstVisibleDate && dueDate.getTime() < date.getTime()) {
+        if (isFirstVisibleDate && dueTime < currTime) {
           return true; // We know it's not DONE from step 1
         }
 
-        return dueDate.getTime() === date.getTime();
+        return dueDateStr === dateStr;
       })
       .sort((a, b) => {
         if (a.isImportant && !b.isImportant) return -1;
