@@ -9,7 +9,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
+  Archive,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
@@ -129,7 +131,16 @@ export function HomePage() {
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
               Big Stone Task Manager
             </h1>
-            <p className="text-gray-500 mt-1">중요한 돌부터 담으세요.</p>
+            <div className="flex items-center gap-4 mt-1">
+              <p className="text-gray-500">중요한 돌부터 담으세요.</p>
+              <span className="text-gray-300">|</span>
+              <Link
+                to="/archive"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                <Archive className="w-4 h-4" /> 보관함 보기
+              </Link>
+            </div>
           </div>
         </div>
 

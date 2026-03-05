@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import { HomePage } from "@/pages/home";
-// import { ArchivePage } from '@/pages/archive';
+import { ArchivePage } from "@/pages/archive/ui/ArchivePage";
 // import { AdminPage } from '@/pages/admin';
 
 export const appRouter = createBrowserRouter([
@@ -10,8 +10,7 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: "/archive",
-    // element: <ArchivePage />,
-    element: <div>Archive</div>,
+    element: <ArchivePage />,
   },
   {
     path: "/admin",

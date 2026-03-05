@@ -17,6 +17,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     // Set WAL mode to improve concurrency with external tools like DBeaver
     db.run("PRAGMA journal_mode = WAL");
     db.run("PRAGMA busy_timeout = 5000");
+    // Enable foreign key constraints for ON DELETE CASCADE to work
+    db.run("PRAGMA foreign_keys = ON");
 
     db.serialize(() => {
       db.run(`
