@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Todo, RecurringType } from "@/entities/todo/model/types";
+import type { Todo, RecurringType, RecurringEndOption } from "@/entities/todo/model/types";
 import {
   useUpdateTodoStatus,
   useDeleteTodo,
@@ -53,6 +53,19 @@ export function TodoItem({ todo }: TodoItemProps) {
     todo.recurring.yearlyDay || new Date().getDate(),
   );
 
+  const [editStartDate, setEditStartDate] = useState(
+    todo.recurring.startDate || format(new Date(todo.dueDate), "yyyy-MM-dd")
+  );
+  const [editEndOption, setEditEndOption] = useState<RecurringEndOption>(
+    todo.recurring.endOption || "NONE"
+  );
+  const [editEndDate, setEditEndDate] = useState(
+    todo.recurring.endDate || format(new Date(todo.dueDate), "yyyy-MM-dd")
+  );
+  const [editEndOccurrences, setEditEndOccurrences] = useState<number>(
+    todo.recurring.endOccurrences || 10
+  );
+
   // Sync state when entering edit mode or when todo prop changes
 
   const handleEditClick = () => {
@@ -67,6 +80,10 @@ export function TodoItem({ todo }: TodoItemProps) {
     setEditMonthlyDayOfWeek(todo.recurring.monthlyDayOfWeek || 0);
     setEditYearlyMonth(todo.recurring.yearlyMonth || new Date().getMonth() + 1);
     setEditYearlyDay(todo.recurring.yearlyDay || new Date().getDate());
+    setEditStartDate(todo.recurring.startDate || format(new Date(todo.dueDate), "yyyy-MM-dd"));
+    setEditEndOption(todo.recurring.endOption || "NONE");
+    setEditEndDate(todo.recurring.endDate || format(new Date(todo.dueDate), "yyyy-MM-dd"));
+    setEditEndOccurrences(todo.recurring.endOccurrences || 10);
 
     setIsEditing(true);
   };
@@ -154,6 +171,10 @@ export function TodoItem({ todo }: TodoItemProps) {
               editRecurringType === "YEARLY" ? editYearlyMonth : undefined,
             yearlyDay:
               editRecurringType === "YEARLY" ? editYearlyDay : undefined,
+            startDate: editRecurringType !== "NONE" ? editStartDate : undefined,
+            endOption: editRecurringType !== "NONE" ? editEndOption : "NONE",
+            endDate: editEndOption === "DATE" ? editEndDate : undefined,
+            endOccurrences: editEndOption === "OCCURRENCES" ? editEndOccurrences : undefined,
           },
         },
       },
@@ -306,6 +327,59 @@ export function TodoItem({ todo }: TodoItemProps) {
                   className="w-16 text-xs bg-white"
                 />
                 <span className="text-sm">일</span>
+              </div>
+            </div>
+          )}
+
+          {editRecurringType !== "NONE" && (
+            <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 pt-4">
+              <div className="flex bg-white border border-gray-200 p-4 rounded-lg flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 w-20 shrink-0">시작일자:</span>
+                  <Input
+                    type="date"
+                    value={editStartDate}
+                    onChange={(e) => setEditStartDate(e.target.value)}
+                    className="w-40 bg-white"
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <span className="text-sm font-medium text-gray-700 w-20 shrink-0">종료 조건:</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Select
+                      value={editEndOption}
+                      onChange={(e) => setEditEndOption(e.target.value as RecurringEndOption)}
+                      className="w-32 bg-white"
+                    >
+                      <option value="NONE">없음</option>
+                      <option value="DATE">날짜 지정</option>
+                      <option value="OCCURRENCES">횟수 지정</option>
+                    </Select>
+
+                    {editEndOption === "DATE" && (
+                      <Input
+                        type="date"
+                        value={editEndDate}
+                        onChange={(e) => setEditEndDate(e.target.value)}
+                        className="w-40 bg-white"
+                      />
+                    )}
+
+                    {editEndOption === "OCCURRENCES" && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          value={editEndOccurrences}
+                          onChange={(e) => setEditEndOccurrences(Number(e.target.value))}
+                          className="w-20 bg-white"
+                        />
+                        <span className="text-sm text-gray-600">회 반복 후 종료</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}

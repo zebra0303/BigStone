@@ -10,6 +10,8 @@ import {
 } from "date-fns";
 export type RecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
+export type RecurringEndOption = "NONE" | "DATE" | "OCCURRENCES";
+
 export interface RecurringConfig {
   type: RecurringType;
   weeklyDays?: number[]; // 0 (Sun) to 6 (Sat)
@@ -18,6 +20,10 @@ export interface RecurringConfig {
   monthlyDayOfWeek?: number; // 0 (Sun) to 6 (Sat)
   yearlyMonth?: number; // 1 to 12
   yearlyDay?: number; // 1 to 31
+  startDate?: string;
+  endOption?: RecurringEndOption;
+  endDate?: string;
+  endOccurrences?: number;
 }
 
 function safeParseDate(input: Date | string): Date {

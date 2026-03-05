@@ -34,7 +34,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
           recurringMonthlyDayOfWeek INTEGER,
           recurringYearlyMonth INTEGER,
           recurringYearlyDay INTEGER,
-          notificationMinutesBefore INTEGER
+          notificationMinutesBefore INTEGER,
+          startDate TEXT,
+          endOption TEXT DEFAULT 'NONE',
+          endDate TEXT,
+          endOccurrences INTEGER,
+          occurrenceCount INTEGER DEFAULT 0
         )
       `, (err) => {
         if (err) console.error("Could not create todo_groups table", err.message);

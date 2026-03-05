@@ -12,7 +12,8 @@ router.get("/", (req: Request, res: Response) => {
       g.title, g.description, g.isImportant, 
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay, 
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek, 
-      g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore
+      g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
+      g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount
     FROM todos t
     JOIN todo_groups g ON t.groupId = g.id
   `;
@@ -40,6 +41,10 @@ router.get("/", (req: Request, res: Response) => {
         monthlyDayOfWeek: r.recurringMonthlyDayOfWeek,
         yearlyMonth: r.recurringYearlyMonth,
         yearlyDay: r.recurringYearlyDay,
+        startDate: r.startDate,
+        endOption: r.endOption,
+        endDate: r.endDate,
+        endOccurrences: r.endOccurrences,
       },
       notification: r.notificationMinutesBefore
         ? { minutesBefore: r.notificationMinutesBefore }
@@ -70,8 +75,8 @@ router.post("/", (req: Request, res: Response) => {
     INSERT INTO todo_groups (
       id, title, description, isImportant,  
       recurringType, recurringWeeklyDays, recurringMonthlyDay, recurringMonthlyNthWeek, recurringMonthlyDayOfWeek, recurringYearlyMonth, recurringYearlyDay, 
-      notificationMinutesBefore
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      notificationMinutesBefore, startDate, endOption, endDate, endOccurrences, occurrenceCount
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `;
 
   const groupParams = [
@@ -99,6 +104,10 @@ router.post("/", (req: Request, res: Response) => {
       ? recurring.yearlyDay
       : null,
     notification?.minutesBefore || null,
+    recurring?.startDate || dueDate,
+    recurring?.endOption || "NONE",
+    recurring?.endDate || null,
+    recurring?.endOccurrences || null,
   ];
 
   db.run(groupSql, groupParams, function (err) {
@@ -160,6 +169,11 @@ router.put("/:id", (req: Request, res: Response) => {
     let effRecYearMonth = row.recurringYearlyMonth;
     let effRecYearDay = row.recurringYearlyDay;
 
+    let effStartDate = row.startDate;
+    let effEndOption = row.endOption;
+    let effEndDate = row.endDate;
+    let effEndOccurrences = row.endOccurrences;
+
     if (updates.recurring) {
       effRecType = updates.recurring.type;
       effRecWeekly = updates.recurring.weeklyDays || null;
@@ -168,6 +182,10 @@ router.put("/:id", (req: Request, res: Response) => {
       effRecMonthDOW = updates.recurring.monthlyDayOfWeek !== undefined ? updates.recurring.monthlyDayOfWeek : null;
       effRecYearMonth = updates.recurring.yearlyMonth || null;
       effRecYearDay = updates.recurring.yearlyDay || null;
+      effStartDate = updates.recurring.startDate !== undefined ? updates.recurring.startDate : row.startDate;
+      effEndOption = updates.recurring.endOption !== undefined ? updates.recurring.endOption : row.endOption;
+      effEndDate = updates.recurring.endDate !== undefined ? updates.recurring.endDate : row.endDate;
+      effEndOccurrences = updates.recurring.endOccurrences !== undefined ? updates.recurring.endOccurrences : row.endOccurrences;
     }
 
     const effectiveDueDate = updates.dueDate !== undefined ? updates.dueDate : row.dueDate;
@@ -181,7 +199,8 @@ router.put("/:id", (req: Request, res: Response) => {
         title = ?, description = ?, isImportant = ?,
         recurringType = ?, recurringWeeklyDays = ?, recurringMonthlyDay = ?,
         recurringMonthlyNthWeek = ?, recurringMonthlyDayOfWeek = ?,
-        recurringYearlyMonth = ?, recurringYearlyDay = ?
+        recurringYearlyMonth = ?, recurringYearlyDay = ?,
+        startDate = ?, endOption = ?, endDate = ?, endOccurrences = ?
       WHERE id = ?
     `;
 
@@ -196,6 +215,10 @@ router.put("/:id", (req: Request, res: Response) => {
       effRecMonthDOW,
       effRecYearMonth,
       effRecYearDay,
+      effStartDate,
+      effEndOption,
+      effEndDate,
+      effEndOccurrences,
       groupId
     ];
 
@@ -213,6 +236,12 @@ router.put("/:id", (req: Request, res: Response) => {
         // Backend Task Spawning Logic 
         if (effectiveStatus === "DONE" && row.status !== "DONE" && effRecType !== "NONE") {
           try {
+            // Check count condition
+            if (effEndOption === "OCCURRENCES" && effEndOccurrences && row.occurrenceCount >= effEndOccurrences) {
+              // Hit the limit, do not spawn
+              return res.json({ message: "Updated", changes: this.changes });
+            }
+
             const { getNextOccurrence } = await import("../utils/recurringDate");
             const nextDate = getNextOccurrence(effectiveDueDate, {
               type: effRecType,
@@ -221,10 +250,19 @@ router.put("/:id", (req: Request, res: Response) => {
               monthlyNthWeek: effRecMonthNth,
               monthlyDayOfWeek: effRecMonthDOW,
               yearlyMonth: effRecYearMonth,
-              yearlyDay: effRecYearDay
+              yearlyDay: effRecYearDay,
             });
 
             if (nextDate) {
+              // Check date condition
+              if (effEndOption === "DATE" && effEndDate) {
+                const { startOfDay } = await import("date-fns");
+                if (nextDate.getTime() > startOfDay(new Date(effEndDate)).getTime()) {
+                  // Hit the end date limit, do not spawn
+                  return res.json({ message: "Updated", changes: this.changes });
+                }
+              }
+
               const spawnSql = `
                    INSERT INTO todos (id, groupId, dueDate, status, completedAt)
                    VALUES (?, ?, ?, 'TODO', NULL)
@@ -232,7 +270,13 @@ router.put("/:id", (req: Request, res: Response) => {
               const { format } = await import("date-fns-tz");
               db.run(spawnSql, [uuidv4(), groupId, format(nextDate, "yyyy-MM-dd")], (spawnErr) => {
                 if (spawnErr) console.error("Could not spawn next task event:", spawnErr.message);
+
+                // Increment occurrence count
+                db.run("UPDATE todo_groups SET occurrenceCount = occurrenceCount + 1 WHERE id = ?", [groupId], () => {
+                  res.json({ message: "Updated", changes: this.changes });
+                });
               });
+              return; // We return early because the increment callback will fire res.json
             }
           } catch (e) {
             console.error("Error spanning next date:", e);
