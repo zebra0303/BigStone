@@ -75,7 +75,11 @@ export function HomePage() {
 
     validTodos.forEach((todo) => {
       if (todo.status !== "DONE" && todo.recurring.type !== "NONE") {
-        let currentRefDate = safeParseDate(todo.dueDate);
+        // Start projection from Math.max(dueDate, today). The backend skips missed 
+        // occurrences when checking off old overdue recurring tasks, so we shouldn't project them.
+        const todayMs = startOfDay(new Date()).getTime();
+        const dueMs = startOfDay(safeParseDate(todo.dueDate)).getTime();
+        let currentRefDate = new Date(Math.max(dueMs, todayMs));
 
         // Keep searching for the next occurrences until we pass the view window or hit end limits
         // We cap virtual occurrences to a reasonable small limit (e.g. 7) to prevent infinite loops
@@ -140,7 +144,7 @@ export function HomePage() {
         const currTime = date.getTime();
 
         // If this is the earliest visible date in the current view, include overdue tasks
-        if (isFirstVisibleDate && dueTime < currTime) {
+        if (isFirstVisibleDate && dueTime < currTime && !todo.isVirtual) {
           // Extra guard: If this is an overdue recurring task with an end condition, we should NOT show it as overdue
           // if the current timeline view (date) is fully AFTER its end condition.
           // Wait, if it's a generated `Todo` row and it's TODO, it implies it hasn't met the occurrence limit yet when it was spawned.
