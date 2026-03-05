@@ -8,7 +8,7 @@ import { Checkbox } from "@/shared/ui/Checkbox";
 import { Badge } from "@/shared/ui/Badge";
 import { format } from "date-fns";
 import { Star, Trash2, Edit2, Repeat } from "lucide-react";
-import { getNextValidDueDate } from "@/shared/lib/recurringDate";
+import { getNextValidDueDate, safeParseDate } from "@/shared/lib/recurringDate";
 
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
@@ -107,7 +107,7 @@ export function TodoItem({ todo }: TodoItemProps) {
   const isDone = todo.status === "DONE";
   const isOverdue =
     !isDone &&
-    new Date(todo.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
+    safeParseDate(todo.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
 
   const handleToggle = () => {
     const newStatus = isDone ? "TODO" : "DONE";

@@ -129,7 +129,7 @@ export function HomePage() {
     return [...validTodos, ...projected];
   }, [todos, displayDates]);
 
-  const getTodosForDate = (date: Date, isFirstVisibleDate: boolean) => {
+  const getTodosForDate = (date: Date) => {
     return activeTodos
       .filter((todo) => {
         // 1. If completed, show it exactly on the date it was completed.
@@ -141,30 +141,8 @@ export function HomePage() {
         const parsedDue = safeParseDate(todo.dueDate);
         const dueDateStr = format(parsedDue, "yyyy-MM-dd");
         const dateStr = format(date, "yyyy-MM-dd");
-        const dueTime = parsedDue.setHours(0, 0, 0, 0);
-        const currTime = date.getTime();
 
-        // If this is the earliest visible date in the current view, include overdue tasks
-        if (isFirstVisibleDate && dueTime < currTime && !todo.isVirtual) {
-          // Extra guard: If this is an overdue recurring task with an end condition, we should NOT show it as overdue
-          // if the current timeline view (date) is fully AFTER its end condition.
-          // Wait, if it's a generated `Todo` row and it's TODO, it implies it hasn't met the occurrence limit yet when it was spawned.
-          // However, if it has an endDate, and the current Date being viewed is strictly AFTER the endDate,
-          // then the task shouldn't keep floating forward forever.
-          // But actually, it's a real Todo instance in the DB. If it's overdue, the user probably still needs to do it or delete it.
-          // What if the user wants it to hide? Usually overdue tasks carry forward.
-          // BUT let's respect the endDate if it's past it to avoid infinite display of stale templates.
-          if (todo.recurring?.endOption === "DATE" && todo.recurring.endDate) {
-            const parsedEnd = safeParseDate(todo.recurring.endDate);
-            const endDateMs = parsedEnd.setHours(0, 0, 0, 0);
-            if (currTime > endDateMs) {
-              return false; // Stop showing it forward if we are past the end date
-            }
-          }
-
-          return true;
-        }
-
+        // Strict match on the exact date. Overdue tasks no longer slide to 'today'
         return dueDateStr === dateStr;
       })
       .sort((a, b) => {
@@ -299,11 +277,10 @@ export function HomePage() {
       <div
         className={`grid gap-6 ${displayDates.length > 2 ? "grid-cols-1 md:grid-cols-3" : displayDates.length === 2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}
       >
-        {displayDates.map((date, index) => {
+        {displayDates.map((date) => {
           const isToday =
             format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
-          const isFirst = index === 0;
-          const dayTodos = getTodosForDate(date, isFirst);
+          const dayTodos = getTodosForDate(date);
 
           return (
             <section
