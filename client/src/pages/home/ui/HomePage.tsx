@@ -22,6 +22,7 @@ import {
 import { Link } from "react-router-dom";
 import { safeParseDate, getNextOccurrence } from "@/shared/lib/recurringDate";
 import { getDateLocale } from "@/shared/lib/localeUtils";
+import { cn } from "@/shared/lib/utils";
 
 type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
@@ -267,16 +268,17 @@ export function HomePage() {
         </div>
 
         <div className="flex flex-col items-end gap-3 shrink-0">
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg border dark:border-gray-700 flex-nowrap overflow-x-auto no-scrollbar">
             <Button
               variant={viewMode === "1DAY" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("1DAY")}
-              className={
+              className={cn(
+                "whitespace-nowrap",
                 viewMode === "1DAY"
-                  ? "shadow-sm"
-                  : "text-gray-500 dark:text-gray-400"
-              }
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-gray-500 dark:text-gray-400",
+              )}
             >
               {t("home.view_1day")}
             </Button>
@@ -284,11 +286,12 @@ export function HomePage() {
               variant={viewMode === "3DAY" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("3DAY")}
-              className={
+              className={cn(
+                "whitespace-nowrap",
                 viewMode === "3DAY"
-                  ? "shadow-sm"
-                  : "text-gray-500 dark:text-gray-400"
-              }
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-gray-500 dark:text-gray-400",
+              )}
             >
               {t("home.view_3day")}
             </Button>
@@ -296,11 +299,12 @@ export function HomePage() {
               variant={viewMode === "WEEK_WORK" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("WEEK_WORK")}
-              className={
+              className={cn(
+                "whitespace-nowrap",
                 viewMode === "WEEK_WORK"
-                  ? "shadow-sm"
-                  : "text-gray-500 dark:text-gray-400"
-              }
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-gray-500 dark:text-gray-400",
+              )}
             >
               {t("home.view_week_work")}
             </Button>
@@ -308,11 +312,12 @@ export function HomePage() {
               variant={viewMode === "WEEK_ALL" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("WEEK_ALL")}
-              className={
+              className={cn(
+                "whitespace-nowrap",
                 viewMode === "WEEK_ALL"
-                  ? "shadow-sm"
-                  : "text-gray-500 dark:text-gray-400"
-              }
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-gray-500 dark:text-gray-400",
+              )}
             >
               {t("home.view_week_all")}
             </Button>
@@ -412,7 +417,6 @@ export function HomePage() {
               <div className="flex-1">
                 <TodoList
                   todos={dayTodos}
-                  showYear={viewMode === "1DAY"}
                   emptyMessage={
                     isToday ? t("home.no_tasks_today") : t("home.no_tasks")
                   }

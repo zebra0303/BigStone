@@ -8,7 +8,7 @@
     "delete": "삭제",
     "today": "오늘",
     "loading": "로딩 중...",
-    "search": "일정 검색",
+    "search": "검색",
     "search_desc": "모든 일정을 한곳에서 찾아보고 수정하세요.",
     "add": "추가",
     "date": "일자",
@@ -80,7 +80,7 @@
     "date_format_year": "M월 d일, yyyy"
   },
   "admin": {
-    "title": "관리자 설정",
+    "title": "관리자",
     "logout": "로그아웃",
     "setup_title": "관리자 초기 설정",
     "setup_desc": "앞으로 사용할 관리자 비밀번호를 설정해주세요.",

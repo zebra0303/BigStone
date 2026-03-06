@@ -20,10 +20,9 @@ import { LinkifiedText } from "@/shared/lib/linkify";
 
 interface TodoItemProps {
   todo: Todo;
-  showYear?: boolean;
 }
 
-export function TodoItem({ todo, showYear = true }: TodoItemProps) {
+export function TodoItem({ todo }: TodoItemProps) {
   const { t } = useTranslation();
   const updateTodo = useUpdateTodoStatus();
   const deleteTodo = useDeleteTodo();
@@ -123,15 +122,9 @@ export function TodoItem({ todo, showYear = true }: TodoItemProps) {
                       : ""
                   }
                 >
-                  {format(
-                    new Date(todo.dueDate),
-                    showYear
-                      ? t("task.date_format_year")
-                      : t("task.date_format"),
-                    {
-                      locale: getDateLocale(),
-                    },
-                  )}
+                  {format(new Date(todo.dueDate), t("task.date_format"), {
+                    locale: getDateLocale(),
+                  })}
                 </span>
                 {todo.recurring.type !== "NONE" && (
                   <>
