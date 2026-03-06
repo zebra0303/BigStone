@@ -95,6 +95,7 @@ export function getNextValidDueDate(
 export function getNextOccurrence(
   baseDateInput: Date | string,
   recurring: RecurringConfig,
+  ignoreToday: boolean = false
 ): Date | null {
   if (recurring.type === "NONE") return null;
 
@@ -102,8 +103,8 @@ export function getNextOccurrence(
   const today = startOfDay(new Date());
 
   // We want the next occurrence strictly AFTER the current due date, 
-  // or strictly AFTER today if the task is overdue.
-  const referenceDate = baseDate > today ? baseDate : today;
+  // or strictly AFTER today if the task is overdue, UNLESS ignoreToday is true.
+  const referenceDate = (!ignoreToday && baseDate < today) ? today : baseDate;
   let nextDate = addDays(referenceDate, 1);
 
   if (recurring.type === "DAILY") {

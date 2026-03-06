@@ -243,15 +243,19 @@ router.put("/:id", (req: Request, res: Response) => {
             }
 
             const { getNextOccurrence } = await import("../utils/recurringDate");
-            const nextDate = getNextOccurrence(effectiveDueDate, {
-              type: effRecType,
-              weeklyDays: effRecWeekly,
-              monthlyDay: effRecMonthDay,
-              monthlyNthWeek: effRecMonthNth,
-              monthlyDayOfWeek: effRecMonthDOW,
-              yearlyMonth: effRecYearMonth,
-              yearlyDay: effRecYearDay,
-            });
+            const nextDate = getNextOccurrence(
+              effectiveDueDate,
+              {
+                type: effRecType,
+                weeklyDays: effRecWeekly,
+                monthlyDay: effRecMonthDay,
+                monthlyNthWeek: effRecMonthNth,
+                monthlyDayOfWeek: effRecMonthDOW,
+                yearlyMonth: effRecYearMonth,
+                yearlyDay: effRecYearDay,
+              },
+              true // ignoreToday=true ensures we sequentially spawn missed past dates
+            );
 
             if (nextDate) {
               // Check date condition

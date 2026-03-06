@@ -56,10 +56,10 @@ export function HomePage() {
   // Filter out archived/stale tasks AND pre-calculate virtual projections
   const activeTodos = useMemo(() => {
     const validTodos = todos.filter((todo) => {
-      if (todo.status === "DONE" && todo.completedAt) {
-        const compDateStr = format(safeParseDate(todo.completedAt), "yyyy-MM-dd");
+      if (todo.status === "DONE") {
+        const dueDateStr = format(safeParseDate(todo.dueDate), "yyyy-MM-dd");
         return displayDates.some(
-          (d) => format(d, "yyyy-MM-dd") === compDateStr,
+          (d) => format(d, "yyyy-MM-dd") === dueDateStr,
         );
       }
       return true;
@@ -135,12 +135,8 @@ export function HomePage() {
   const getTodosForDate = (date: Date) => {
     return activeTodos
       .filter((todo) => {
-        // 1. If completed, show it exactly on the date it was completed.
-        if (todo.status === "DONE" && todo.completedAt) {
-          return format(safeParseDate(todo.completedAt), "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
-        }
-
-        // 2. Uncompleted tasks logic
+        // Strict match on the exact date. Overdue tasks do not slide to 'today',
+        // and DONE tasks stay precisely on the date they were due.
         const parsedDue = safeParseDate(todo.dueDate);
         const dueDateStr = format(parsedDue, "yyyy-MM-dd");
         const dateStr = format(date, "yyyy-MM-dd");
