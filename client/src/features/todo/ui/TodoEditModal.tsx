@@ -3,13 +3,13 @@ import type {
   Todo,
   RecurringType,
   RecurringEndOption,
+  TodoPriority,
 } from "@/entities/todo/model/types";
 import { useUpdateTodoStatus } from "@/features/todo/model/hooks";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Select } from "@/shared/ui/Select";
-import { Checkbox } from "@/shared/ui/Checkbox";
 import { format } from "date-fns";
 import { X } from "lucide-react";
 import { getNextValidDueDate, safeParseDate } from "@/shared/lib/recurringDate";
@@ -35,9 +35,14 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
 
   const [title, setTitle] = useState(todo.title);
   const [description, setDescription] = useState(todo.description || "");
-  const [isImportant, setIsImportant] = useState(todo.isImportant);
+  const [priority, setPriority] = useState<TodoPriority>(
+    todo.priority || (todo.isImportant ? "HIGH" : "MEDIUM"),
+  );
   const [dueDate, setDueDate] = useState(
-    format(safeParseDate(todo.recurring.startDate || todo.dueDate), "yyyy-MM-dd"),
+    format(
+      safeParseDate(todo.recurring.startDate || todo.dueDate),
+      "yyyy-MM-dd",
+    ),
   );
 
   const [recurring, setRecurring] = useState<RecurringType>(
@@ -115,7 +120,8 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
         updates: {
           title: title.trim(),
           description: description.trim(),
-          isImportant,
+          isImportant: priority === "HIGH", // legacy fallback
+          priority,
           dueDate: getNextValidDueDate(dueDate, {
             type: recurring,
             weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
@@ -195,19 +201,15 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
               required
               className="flex-1"
             />
-            <div className="flex items-center gap-2 px-2 shrink-0">
-              <Checkbox
-                id="edit-important-check"
-                checked={isImportant}
-                onChange={(e) => setIsImportant(e.target.checked)}
-              />
-              <label
-                htmlFor="edit-important-check"
-                className="text-sm cursor-pointer select-none"
-              >
-                중요
-              </label>
-            </div>
+            <Select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as TodoPriority)}
+              className="w-full sm:w-32 bg-white shrink-0"
+            >
+              <option value="HIGH">🔴 높음</option>
+              <option value="MEDIUM">🟡 보통</option>
+              <option value="LOW">🟢 낮음</option>
+            </Select>
           </div>
 
           <Textarea

@@ -3,13 +3,13 @@ import type {
   RecurringType,
   TodoStatus,
   RecurringEndOption,
+  TodoPriority,
 } from "@/entities/todo/model/types";
 import { useCreateTodo } from "@/features/todo/model/hooks";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Select } from "@/shared/ui/Select";
-import { Checkbox } from "@/shared/ui/Checkbox";
 import { format } from "date-fns";
 import { X } from "lucide-react";
 import { getNextValidDueDate } from "@/shared/lib/recurringDate";
@@ -25,7 +25,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [isImportant, setIsImportant] = useState(false);
+  const [priority, setPriority] = useState<TodoPriority>("MEDIUM");
   const [dueDate, setDueDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [recurring, setRecurring] = useState<RecurringType>("NONE");
   const [weeklyDays, setWeeklyDays] = useState<number[]>([]);
@@ -69,7 +69,8 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
       {
         title: title.trim(),
         description: description.trim(),
-        isImportant,
+        isImportant: priority === "HIGH", // legacy fallback
+        priority,
         // dueDate serves as the start anchor for recurrences universally now
         dueDate: getNextValidDueDate(dueDate, {
           type: recurring,
@@ -119,7 +120,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           // Reset form and focus title for UX (Continuous entry)
           setTitle("");
           setDescription("");
-          setIsImportant(false);
+          setPriority("MEDIUM");
           setDueDate(format(new Date(), "yyyy-MM-dd"));
           setRecurring("NONE");
           setWeeklyDays([]);
@@ -168,19 +169,15 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           autoFocus
           className="flex-1"
         />
-        <div className="flex items-center gap-2 px-2">
-          <Checkbox
-            id="important-check"
-            checked={isImportant}
-            onChange={(e) => setIsImportant(e.target.checked)}
-          />
-          <label
-            htmlFor="important-check"
-            className="text-sm cursor-pointer select-none"
-          >
-            중요
-          </label>
-        </div>
+        <Select
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as TodoPriority)}
+          className="w-full sm:w-32 bg-white"
+        >
+          <option value="HIGH">🔴 높음</option>
+          <option value="MEDIUM">🟡 보통</option>
+          <option value="LOW">🟢 낮음</option>
+        </Select>
       </div>
 
       <Textarea

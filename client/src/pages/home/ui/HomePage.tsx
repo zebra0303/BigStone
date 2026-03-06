@@ -183,8 +183,23 @@ export function HomePage() {
         return dueDateStr === dateStr;
       })
       .sort((a, b) => {
-        if (a.isImportant && !b.isImportant) return -1;
-        if (!a.isImportant && b.isImportant) return 1;
+        // Priority sorting mapping
+        const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+        
+        // Fallback for legacy data without priority
+        const getPriorityScore = (todo: typeof a) => {
+          if (todo.priority) return priorityOrder[todo.priority];
+          if (todo.isImportant) return priorityOrder.HIGH;
+          return priorityOrder.MEDIUM;
+        };
+
+        const scoreA = getPriorityScore(a);
+        const scoreB = getPriorityScore(b);
+
+        if (scoreA !== scoreB) {
+          return scoreB - scoreA; // Descending order (HIGH first)
+        }
+
         return (
           safeParseDate(a.dueDate).getTime() -
           safeParseDate(b.dueDate).getTime()

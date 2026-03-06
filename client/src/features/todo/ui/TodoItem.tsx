@@ -84,8 +84,18 @@ export function TodoItem({ todo }: TodoItemProps) {
               onClick={() => setIsExpanded(!isExpanded)}
             >
               <div className="flex items-center gap-2">
-                {todo.isImportant && (
-                  <Star className="h-4 w-4 fill-primary text-primary" />
+                {todo.priority === "HIGH" && (
+                  <Star className="h-4 w-4 fill-red-500 text-red-500 flex-shrink-0" />
+                )}
+                {todo.priority === "MEDIUM" && (
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-500 flex-shrink-0" />
+                )}
+                {todo.priority === "LOW" && (
+                  <Star className="h-4 w-4 fill-green-500 text-green-500 flex-shrink-0" />
+                )}
+                {/* Fallback for old data without priority */}
+                {todo.isImportant && !todo.priority && (
+                  <Star className="h-4 w-4 fill-red-500 text-red-500 flex-shrink-0" />
                 )}
                 <span
                   className={`font-medium truncate ${isDone ? "line-through text-gray-500" : "text-gray-900"}`}

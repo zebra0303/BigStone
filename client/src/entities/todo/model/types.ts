@@ -1,5 +1,7 @@
 export type TodoStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
+export type TodoPriority = "HIGH" | "MEDIUM" | "LOW";
+
 export type RecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
 export type RecurringEndOption = "NONE" | "DATE" | "OCCURRENCES";
@@ -28,7 +30,8 @@ export interface Todo {
   groupId?: string;
   title: string;
   description?: string;
-  isImportant: boolean;
+  isImportant: boolean; // deprecated: use priority instead, kept for migration
+  priority?: TodoPriority;
   dueDate: Date;
   status: TodoStatus;
   recurring: RecurringConfig;

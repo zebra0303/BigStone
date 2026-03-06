@@ -9,7 +9,7 @@ router.get("/", (req: Request, res: Response) => {
   const sql = `
     SELECT 
       t.id, t.groupId, t.dueDate, t.status, t.completedAt,
-      g.title, g.description, g.isImportant, 
+      g.title, g.description, g.isImportant, g.priority,
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay, 
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek, 
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
@@ -29,6 +29,7 @@ router.get("/", (req: Request, res: Response) => {
       title: r.title,
       description: r.description,
       isImportant: Boolean(r.isImportant),
+      priority: r.priority || (r.isImportant ? "HIGH" : "MEDIUM"), // migration fallback
       dueDate: r.dueDate,
       status: r.status,
       recurring: {
@@ -64,6 +65,7 @@ router.post("/", (req: Request, res: Response) => {
     title,
     description,
     isImportant,
+    priority,
     dueDate,
     status,
     recurring,
@@ -72,19 +74,22 @@ router.post("/", (req: Request, res: Response) => {
   const groupId = uuidv4();
   const todoId = uuidv4();
 
+  const effectivePriority = priority || (isImportant ? "HIGH" : "MEDIUM");
+
   const groupSql = `
     INSERT INTO todo_groups (
-      id, title, description, isImportant,  
+      id, title, description, isImportant, priority,
       recurringType, recurringWeeklyDays, recurringMonthlyDay, recurringMonthlyNthWeek, recurringMonthlyDayOfWeek, recurringYearlyMonth, recurringYearlyDay, 
       notificationMinutesBefore, startDate, endOption, endDate, endOccurrences, occurrenceCount
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `;
 
   const groupParams = [
     groupId,
     title,
     description || null,
-    isImportant ? 1 : 0,
+    isImportant ? 1 : 0, // Keep for backward compatibility
+    effectivePriority,
     recurring?.type || "NONE",
     recurring?.type === "WEEKLY" && recurring?.weeklyDays
       ? JSON.stringify(recurring.weeklyDays)
@@ -143,7 +148,7 @@ router.put("/:id", (req: Request, res: Response) => {
   const fetchSql = `
     SELECT 
       t.id, t.groupId, t.dueDate, t.status, t.completedAt,
-      g.title, g.description, g.isImportant, 
+      g.title, g.description, g.isImportant, g.priority,
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay, 
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek, 
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
@@ -161,6 +166,7 @@ router.put("/:id", (req: Request, res: Response) => {
     const effectiveTitle = updates.title !== undefined ? updates.title : row.title;
     const effectiveDesc = updates.description !== undefined ? updates.description : row.description;
     const effectiveImportant = updates.isImportant !== undefined ? (updates.isImportant ? 1 : 0) : row.isImportant;
+    const effectivePriority = updates.priority !== undefined ? updates.priority : (row.priority || (effectiveImportant ? "HIGH" : "MEDIUM"));
 
     // We expect `recurring` as an object if sent from frontend
     let effRecType = row.recurringType;
@@ -198,7 +204,7 @@ router.put("/:id", (req: Request, res: Response) => {
 
     const groupSql = `
       UPDATE todo_groups SET 
-        title = ?, description = ?, isImportant = ?,
+        title = ?, description = ?, isImportant = ?, priority = ?,
         recurringType = ?, recurringWeeklyDays = ?, recurringMonthlyDay = ?,
         recurringMonthlyNthWeek = ?, recurringMonthlyDayOfWeek = ?,
         recurringYearlyMonth = ?, recurringYearlyDay = ?,
@@ -210,6 +216,7 @@ router.put("/:id", (req: Request, res: Response) => {
       effectiveTitle,
       effectiveDesc,
       effectiveImportant,
+      effectivePriority,
       effRecType,
       effRecWeekly ? JSON.stringify(effRecWeekly) : null,
       effRecMonthDay,

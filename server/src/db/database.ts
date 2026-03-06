@@ -27,6 +27,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
           title TEXT NOT NULL,
           description TEXT,
           isImportant BOOLEAN DEFAULT 0,
+          priority TEXT DEFAULT 'MEDIUM',
           recurringType TEXT DEFAULT 'NONE',
           recurringWeeklyDays TEXT,
           recurringMonthlyDay INTEGER,
@@ -42,7 +43,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
           occurrenceCount INTEGER DEFAULT 0
         )
       `, (err) => {
-        if (err) console.error("Could not create todo_groups table", err.message);
+        if (err) {
+          console.error("Could not create todo_groups table", err.message);
+        } else {
+          // Attempt to add priority column if it doesn't exist (for existing DBs)
+          db.run("ALTER TABLE todo_groups ADD COLUMN priority TEXT DEFAULT 'MEDIUM'", (err2) => {
+            // Ignore error if column already exists
+          });
+        }
       });
 
       db.run(`
