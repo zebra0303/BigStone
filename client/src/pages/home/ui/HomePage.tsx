@@ -268,13 +268,13 @@ export function HomePage() {
         </div>
 
         <div className="flex flex-col items-end gap-3 shrink-0">
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-0.5 rounded-lg border dark:border-gray-700">
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               onClick={() => setViewMode("1DAY")}
               className={cn(
-                "whitespace-nowrap px-4 font-medium transition-all duration-200",
+                "whitespace-nowrap px-3 transition-all duration-200",
                 viewMode === "1DAY"
                   ? "shadow-sm font-bold"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
@@ -292,10 +292,10 @@ export function HomePage() {
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               onClick={() => setViewMode("3DAY")}
               className={cn(
-                "whitespace-nowrap px-4 font-medium transition-all duration-200",
+                "whitespace-nowrap px-3 transition-all duration-200",
                 viewMode === "3DAY"
                   ? "shadow-sm font-bold"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
@@ -313,10 +313,10 @@ export function HomePage() {
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               onClick={() => setViewMode("WEEK_WORK")}
               className={cn(
-                "whitespace-nowrap px-4 font-medium transition-all duration-200",
+                "whitespace-nowrap px-3 transition-all duration-200",
                 viewMode === "WEEK_WORK"
                   ? "shadow-sm font-bold"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
@@ -334,10 +334,10 @@ export function HomePage() {
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               onClick={() => setViewMode("WEEK_ALL")}
               className={cn(
-                "whitespace-nowrap px-4 font-medium transition-all duration-200",
+                "whitespace-nowrap px-3 transition-all duration-200",
                 viewMode === "WEEK_ALL"
                   ? "shadow-sm font-bold"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
@@ -358,37 +358,38 @@ export function HomePage() {
           <div className="flex items-center gap-2 flex-nowrap">
             <Button
               variant="outline"
-              size="icon"
+              size="xs"
               onClick={handlePrev}
-              className="dark:bg-gray-800 dark:border-gray-700 shrink-0"
+              className="dark:bg-gray-800 dark:border-gray-700 shrink-0 w-7 h-7 p-0"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
 
-            <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-2 py-1 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus-within:ring-2 focus-within:ring-primary transition-colors shrink-0">
+            <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-2 h-7 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus-within:ring-2 focus-within:ring-primary transition-colors shrink-0">
               <input
                 type="date"
                 value={baseDateStr}
                 onChange={(e) => {
                   if (e.target.value) setBaseDateStr(e.target.value);
                 }}
-                className="bg-transparent border-none text-gray-700 dark:text-gray-200 font-medium text-sm focus:outline-none focus:ring-0 cursor-pointer [color-scheme:light] dark:[color-scheme:dark] w-[110px]"
+                className="bg-transparent border-none text-gray-700 dark:text-gray-200 font-medium text-xs focus:outline-none focus:ring-0 cursor-pointer [color-scheme:light] dark:[color-scheme:dark] w-[95px]"
                 aria-label="Select Date"
               />
             </div>
 
             <Button
               variant="outline"
-              size="icon"
+              size="xs"
               onClick={handleNext}
-              className="dark:bg-gray-800 dark:border-gray-700 shrink-0"
+              className="dark:bg-gray-800 dark:border-gray-700 shrink-0 w-7 h-7 p-0"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="secondary"
+              size="xs"
               onClick={handleToday}
-              className="dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 shrink-0"
+              className="dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 shrink-0 px-3"
             >
               {t("common.today")}
             </Button>
