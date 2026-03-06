@@ -17,11 +17,16 @@ import { X } from "lucide-react";
 import { getNextValidDueDate } from "@/shared/lib/recurringDate";
 
 interface TodoCreateProps {
+  initialDate?: string;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
+export function TodoCreate({
+  initialDate,
+  onSuccess,
+  onCancel,
+}: TodoCreateProps) {
   const { t } = useTranslation();
   const createTodo = useCreateTodo();
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +34,9 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TodoPriority>("MEDIUM");
-  const [dueDate, setDueDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [dueDate, setDueDate] = useState(
+    initialDate || format(new Date(), "yyyy-MM-dd"),
+  );
   const [recurring, setRecurring] = useState<RecurringType>("NONE");
   const [weeklyDays, setWeeklyDays] = useState<number[]>([]);
 
@@ -243,8 +250,12 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
             onChange={(e) => setMonthlyType(e.target.value as "DATE" | "NTH")}
             className="w-32 bg-white"
           >
-            <option value="DATE">{t("task.monthly_type_date", "특정 일자")}</option>
-            <option value="NTH">{t("task.monthly_type_nth", "특정 요일")}</option>
+            <option value="DATE">
+              {t("task.monthly_type_date", "특정 일자")}
+            </option>
+            <option value="NTH">
+              {t("task.monthly_type_nth", "특정 요일")}
+            </option>
           </Select>
 
           {monthlyType === "DATE" ? (

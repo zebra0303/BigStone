@@ -67,5 +67,5 @@ export const todoApi = {
     });
     if (!res.ok) throw new Error("Failed to delete attachment");
     return res.json();
-  }
+  },
 };

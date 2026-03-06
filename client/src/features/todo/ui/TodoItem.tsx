@@ -165,24 +165,26 @@ export function TodoItem({ todo }: TodoItemProps) {
                 <LinkifiedText text={todo.description} />
               </div>
             )}
-            
+
             {todo.attachments && todo.attachments.length > 0 && (
               <div className="flex flex-col gap-1.5 pt-2 border-t border-gray-100">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                   {t("task.attachments", "첨부파일")}
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {todo.attachments.map(att => (
-                    <a 
+                  {todo.attachments.map((att) => (
+                    <a
                       key={att.id}
-                      href={`/api/todos/attachments/${att.id}/download`} 
-                      target="_blank" 
+                      href={`/api/todos/attachments/${att.id}/download`}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-xs font-medium text-gray-700 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Paperclip className="h-3.5 w-3.5" />
-                      <span className="truncate max-w-[150px]">{att.originalName}</span>
+                      <span className="truncate max-w-[150px]">
+                        {att.originalName}
+                      </span>
                     </a>
                   ))}
                 </div>

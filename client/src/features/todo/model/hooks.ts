@@ -60,7 +60,7 @@ export function useCompleteVirtualTodo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, targetDate }: { id: string; targetDate: string }) => 
+    mutationFn: ({ id, targetDate }: { id: string; targetDate: string }) =>
       todoApi.completeVirtual(id, targetDate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
@@ -84,7 +84,8 @@ export function useDeleteAttachment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (attachmentId: string) => todoApi.deleteAttachment(attachmentId),
+    mutationFn: (attachmentId: string) =>
+      todoApi.deleteAttachment(attachmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
     },

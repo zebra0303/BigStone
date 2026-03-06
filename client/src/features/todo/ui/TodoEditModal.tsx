@@ -6,10 +6,10 @@ import type {
   RecurringEndOption,
   TodoPriority,
 } from "@/entities/todo/model/types";
-import { 
-  useUpdateTodoStatus, 
-  useUploadAttachment, 
-  useDeleteAttachment 
+import {
+  useUpdateTodoStatus,
+  useUploadAttachment,
+  useDeleteAttachment,
 } from "@/features/todo/model/hooks";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
@@ -117,16 +117,18 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    
-    // For attachments, we need the true group ID. 
+
+    // For attachments, we need the true group ID.
     // Virtual tasks have 'groupId' field populated from DB fetch in backend.
     // If not, we fallback to parsing the id.
-    const realGroupId = todo.groupId || (todo.id.startsWith("virtual-")
-      ? todo.id.replace(/^virtual-/, "").replace(/-\d+$/, "")
-      : todo.id);
+    const realGroupId =
+      todo.groupId ||
+      (todo.id.startsWith("virtual-")
+        ? todo.id.replace(/^virtual-/, "").replace(/-\d+$/, "")
+        : todo.id);
 
     const file = e.target.files[0];
-    
+
     // Max size 10MB check
     if (file.size > 10 * 1024 * 1024) {
       alert("File size exceeds 10MB limit.");
@@ -134,7 +136,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
     }
 
     uploadAttachment.mutate({ groupId: realGroupId, file });
-    
+
     // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -264,13 +266,13 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
               placeholder={t("task.desc_placeholder")}
               className="resize-y min-h-[100px]"
             />
-            
+
             {/* Attachment Section */}
             <div className="flex items-center gap-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 className="text-gray-600 flex items-center gap-1.5"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadAttachment.isPending}
@@ -282,24 +284,27 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 )}
                 {t("task.attach_file", "파일 첨부")}
               </Button>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
                 onChange={handleFileUpload}
               />
             </div>
-            
+
             {/* Attachment List */}
             {todo.attachments && todo.attachments.length > 0 && (
               <div className="mt-3 flex flex-col gap-2">
-                {todo.attachments.map(att => (
-                  <div key={att.id} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md p-2 text-sm">
+                {todo.attachments.map((att) => (
+                  <div
+                    key={att.id}
+                    className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md p-2 text-sm"
+                  >
                     <div className="flex items-center gap-2 overflow-hidden">
                       <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
-                      <a 
-                        href={`/api/todos/attachments/${att.id}/download`} 
-                        target="_blank" 
+                      <a
+                        href={`/api/todos/attachments/${att.id}/download`}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline truncate"
                       >
@@ -309,10 +314,10 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                         ({(att.size / 1024).toFixed(1)} KB)
                       </span>
                     </div>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       className="h-6 w-6 text-gray-400 hover:text-red-500"
                       onClick={() => handleFileDelete(att.id)}
                       disabled={deleteAttachment.isPending}

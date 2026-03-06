@@ -79,7 +79,10 @@ export function SearchPage() {
               {t("common.search")}
             </h1>
             <p className="text-gray-500 mt-1">
-              {t("admin.lang_title", "모든 일정을 한곳에서 찾아보고 수정하세요.")}
+              {t(
+                "admin.lang_title",
+                "모든 일정을 한곳에서 찾아보고 수정하세요.",
+              )}
             </p>
           </div>
         </div>
@@ -89,7 +92,8 @@ export function SearchPage() {
           onClick={() => navigate("/")}
           className="shrink-0 flex items-center gap-2"
         >
-          <ChevronLeft className="h-4 w-4" /> {t("admin.back_to_home", "홈으로 돌아가기")}
+          <ChevronLeft className="h-4 w-4" />{" "}
+          {t("admin.back_to_home", "홈으로 돌아가기")}
         </Button>
       </header>
 
@@ -101,7 +105,10 @@ export function SearchPage() {
             </div>
             <Input
               type="text"
-              placeholder={t("task.search_placeholder", "일정 제목이나 내용을 검색하세요...")}
+              placeholder={t(
+                "task.search_placeholder",
+                "일정 제목이나 내용을 검색하세요...",
+              )}
               className="pl-10 w-full"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
@@ -113,7 +120,9 @@ export function SearchPage() {
             className="w-full md:w-40"
           >
             <option value="ALL">{t("common.all_status", "모든 상태")}</option>
-            <option value="TODO">{t("common.todo_status", "진행 중 (할 일)")}</option>
+            <option value="TODO">
+              {t("common.todo_status", "진행 중 (할 일)")}
+            </option>
             <option value="DONE">{t("common.done_status", "완료됨")}</option>
           </Select>
         </div>
@@ -133,14 +142,20 @@ export function SearchPage() {
         {searchResults.length === 0 ? (
           <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-300">
             <p className="text-gray-500 text-lg">
-              {t("common.no_search_results", "조건에 맞는 일정을 찾을 수 없습니다.")}
+              {t(
+                "common.no_search_results",
+                "조건에 맞는 일정을 찾을 수 없습니다.",
+              )}
             </p>
           </div>
         ) : (
           <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-100 shadow-sm">
             <TodoList
               todos={searchResults}
-              emptyMessage={t("common.no_search_results", "조건에 맞는 일정을 찾을 수 없습니다.")}
+              emptyMessage={t(
+                "common.no_search_results",
+                "조건에 맞는 일정을 찾을 수 없습니다.",
+              )}
             />
           </div>
         )}

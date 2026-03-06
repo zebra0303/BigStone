@@ -27,7 +27,7 @@ type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
 export function HomePage() {
   const { t } = useTranslation();
-  const [isCreating, setIsCreating] = useState(false);
+  const [creatingDate, setCreatingDate] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("1DAY");
   const [baseDateStr, setBaseDateStr] = useState(
     format(new Date(), "yyyy-MM-dd"),
@@ -323,19 +323,12 @@ export function HomePage() {
         </div>
       </header>
 
-      {isCreating ? (
+      {creatingDate && (
         <TodoCreate
-          onSuccess={() => setIsCreating(false)}
-          onCancel={() => setIsCreating(false)}
+          initialDate={creatingDate}
+          onSuccess={() => setCreatingDate(null)}
+          onCancel={() => setCreatingDate(null)}
         />
-      ) : (
-        <Button
-          onClick={() => setIsCreating(true)}
-          className="w-full flex items-center justify-center gap-2 py-6 text-lg border-2 border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900"
-          variant="outline"
-        >
-          <Plus className="h-6 w-6" /> {t("home.add_task_btn")}
-        </Button>
       )}
 
       <div
@@ -359,15 +352,26 @@ export function HomePage() {
                     {format(date, "MMM d", { locale: getDateLocale() })} (
                     {format(date, "EEE", { locale: getDateLocale() })})
                   </h2>
+                  <span className="bg-gray-100 text-gray-600 text-xs font-bold py-0.5 px-2 rounded-full">
+                    {dayTodos.length}
+                  </span>
                   {isToday && (
                     <span className="text-xs font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full">
                       {t("common.today")}
                     </span>
                   )}
                 </div>
-                <span className="bg-gray-100 text-gray-600 text-xs font-bold py-0.5 px-2 rounded-full">
-                  {dayTodos.length}
-                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCreatingDate(format(date, "yyyy-MM-dd"))}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-1 h-8 px-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="text-xs">
+                    {t("home.add_task_btn", "할 일 추가")}
+                  </span>
+                </Button>
               </div>
               <div className="flex-1">
                 <TodoList

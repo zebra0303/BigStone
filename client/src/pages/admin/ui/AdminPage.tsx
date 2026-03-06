@@ -13,9 +13,7 @@ export function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [token, setToken] = useState(
-    localStorage.getItem("admin_token") || "",
-  );
+  const [token, setToken] = useState(localStorage.getItem("admin_token") || "");
 
   // Settings State
   const [language, setLanguage] = useState("ko");
@@ -86,10 +84,15 @@ export function AdminPage() {
         // Setup successful, now switch to login mode
         setIsSetup(true);
         setPassword("");
-        setError(t("admin.setup_complete_msg", "비밀번호 설정이 완료되었습니다. 다시 로그인해주세요."));
+        setError(
+          t(
+            "admin.setup_complete_msg",
+            "비밀번호 설정이 완료되었습니다. 다시 로그인해주세요.",
+          ),
+        );
       }
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError((e as Error).message);
     }
   };
 
@@ -112,8 +115,8 @@ export function AdminPage() {
         const data = await res.json();
         alert(`${t("common.save_failed", "저장 실패")}: ${data.error}`);
       }
-    } catch (e: any) {
-      alert(`${t("common.save_failed", "저장 실패")}: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`${t("common.save_failed", "저장 실패")}: ${(e as Error).message}`);
     } finally {
       setIsSaving(false);
     }
@@ -195,7 +198,8 @@ export function AdminPage() {
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-6">
-              <Globe className="h-5 w-5 text-gray-400" /> {t("admin.lang_title")}
+              <Globe className="h-5 w-5 text-gray-400" />{" "}
+              {t("admin.lang_title")}
             </h3>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
