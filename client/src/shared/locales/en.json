@@ -9,6 +9,7 @@
     "today": "Today",
     "loading": "Loading...",
     "search": "Search",
+    "search_desc": "Find and edit all your tasks in one place.",
     "add": "Add",
     "date": "Date",
     "repeat": "Repeat",
@@ -92,6 +93,8 @@
     "theme_label": "Display Theme",
     "theme_light": "Light",
     "theme_dark": "Dark",
+    "color_title": "Color Settings",
+    "primary_color_label": "Primary Color",
     "save_success": "Settings saved. Please refresh the page to apply.",
     "setup_complete_msg": "Password set successfully. Please login again.",
     "back_to_home": "Back to Home"

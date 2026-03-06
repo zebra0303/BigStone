@@ -66,8 +66,8 @@ export function SearchPage() {
   }, [todos, keyword, filterStatus]);
 
   return (
-    <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-8">
-      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 pb-6">
+    <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-8 min-h-screen">
+      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
         <div className="flex items-center gap-3">
           <img
             src="/stone.png"
@@ -75,12 +75,12 @@ export function SearchPage() {
             className="w-12 h-12 object-contain drop-shadow-sm opacity-80"
           />
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-800">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-gray-100">
               {t("common.search")}
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
               {t(
-                "admin.lang_title",
+                "common.search_desc",
                 "모든 일정을 한곳에서 찾아보고 수정하세요.",
               )}
             </p>
@@ -90,14 +90,14 @@ export function SearchPage() {
         <Button
           variant="outline"
           onClick={() => navigate("/")}
-          className="shrink-0 flex items-center gap-2"
+          className="shrink-0 flex items-center gap-2 dark:bg-gray-800 dark:border-gray-700"
         >
           <ChevronLeft className="h-4 w-4" />{" "}
           {t("admin.back_to_home", "홈으로 돌아가기")}
         </Button>
       </header>
 
-      <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+      <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -130,18 +130,18 @@ export function SearchPage() {
 
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
             {t("common.search_result", "검색 결과")}
           </h2>
-          <div className="h-px bg-gray-200 flex-1"></div>
-          <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+          <div className="h-px bg-gray-200 dark:bg-gray-800 flex-1"></div>
+          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
             {searchResults.length} {t("common.count_unit", "건")}
           </span>
         </div>
 
         {searchResults.length === 0 ? (
-          <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <p className="text-gray-500 text-lg">
+          <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+            <p className="text-gray-500 dark:text-gray-400 text-lg">
               {t(
                 "common.no_search_results",
                 "조건에 맞는 일정을 찾을 수 없습니다.",
@@ -149,7 +149,7 @@ export function SearchPage() {
             </p>
           </div>
         ) : (
-          <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-100 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
             <TodoList
               todos={searchResults}
               emptyMessage={t(

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Select } from "@/shared/ui/Select";
-import { ChevronLeft, Lock, Globe, Save, Moon } from "lucide-react";
+import { ChevronLeft, Lock, Globe, Save, Moon, Palette } from "lucide-react";
 
 export function AdminPage() {
   const { t, i18n } = useTranslation();
@@ -18,6 +18,9 @@ export function AdminPage() {
   // Settings State
   const [language, setLanguage] = useState("ko");
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const [primaryColor, setPrimaryColor] = useState(
+    localStorage.getItem("primary_color") || "#3b82f6",
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -120,6 +123,22 @@ export function AdminPage() {
           document.documentElement.classList.remove("dark");
         }
 
+        // Save primary color to localStorage and apply it
+        localStorage.setItem("primary_color", primaryColor);
+        document.documentElement.style.setProperty("--primary", primaryColor);
+
+        // Basic brightness check to set foreground color
+        const hex = primaryColor.replace("#", "");
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        const foreground = brightness > 155 ? "#000000" : "#ffffff";
+        document.documentElement.style.setProperty(
+          "--primary-foreground",
+          foreground,
+        );
+
         alert(t("admin.save_success"));
       } else {
         const data = await res.json();
@@ -143,8 +162,8 @@ export function AdminPage() {
     return <div className="p-8 text-center">{t("common.loading")}</div>;
 
   return (
-    <div className="mx-auto max-w-2xl p-4 md:p-8 space-y-8">
-      <header className="mb-6 flex items-center justify-between gap-4 border-b border-gray-200 pb-6">
+    <div className="mx-auto max-w-2xl p-4 md:p-8 space-y-8 min-h-screen">
+      <header className="mb-6 flex items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -155,28 +174,33 @@ export function AdminPage() {
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-800">
+            <h1 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-gray-100">
               {t("admin.title")}
             </h1>
           </div>
         </div>
         {isAuthenticated && (
-          <Button variant="outline" size="sm" onClick={handleLogout}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="dark:bg-gray-800 dark:border-gray-700"
+          >
             {t("admin.logout")}
           </Button>
         )}
       </header>
 
       {!isAuthenticated ? (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm max-w-sm mx-auto mt-12">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm max-w-sm mx-auto mt-12">
           <div className="flex flex-col items-center mb-6 text-center">
-            <div className="bg-blue-50 p-3 rounded-full mb-4">
-              <Lock className="h-6 w-6 text-blue-600" />
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-full mb-4">
+              <Lock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
               {isSetup ? t("admin.login_title") : t("admin.setup_title")}
             </h2>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
               {isSetup ? t("admin.login_desc") : t("admin.setup_desc")}
             </p>
           </div>
@@ -194,7 +218,7 @@ export function AdminPage() {
             </div>
             {error && (
               <p
-                className={`text-sm ${error.includes("완료") || error.includes("complete") ? "text-green-600" : "text-red-500"}`}
+                className={`text-sm ${error.includes("완료") || error.includes("complete") ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}
               >
                 {error}
               </p>
@@ -206,14 +230,14 @@ export function AdminPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-6">
-              <Globe className="h-5 w-5 text-gray-400" />{" "}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
+              <Globe className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
               {t("admin.lang_title")}
             </h3>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 w-32 shrink-0">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
                 {t("admin.lang_label")}
               </label>
               <Select
@@ -227,14 +251,14 @@ export function AdminPage() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-6">
-              <Moon className="h-5 w-5 text-gray-400" />{" "}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
+              <Moon className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
               {t("admin.theme_title", "테마 설정")}
             </h3>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 w-32 shrink-0">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
                 {t("admin.theme_label", "화면 테마")}
               </label>
               <Select
@@ -247,6 +271,30 @@ export function AdminPage() {
                 </option>
                 <option value="dark">🌙 {t("admin.theme_dark", "다크")}</option>
               </Select>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
+              <Palette className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
+              {t("admin.color_title", "색상 설정")}
+            </h3>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
+                {t("admin.primary_color_label", "대표 색상")}
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  className="h-10 w-20 cursor-pointer rounded border border-gray-300 dark:border-gray-700 bg-transparent"
+                />
+                <span className="text-sm font-mono text-gray-500 uppercase">
+                  {primaryColor}
+                </span>
+              </div>
             </div>
 
             <div className="mt-8 flex justify-end">

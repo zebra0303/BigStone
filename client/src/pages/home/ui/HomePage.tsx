@@ -241,22 +241,24 @@ export function HomePage() {
             className="w-12 h-12 object-contain drop-shadow-sm"
           />
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
               {t("home.title")}
             </h1>
             <div className="flex items-center gap-4 mt-1">
-              <p className="text-gray-500">{t("home.subtitle")}</p>
-              <span className="text-gray-300">|</span>
+              <p className="text-gray-500 dark:text-gray-400">
+                {t("home.subtitle")}
+              </p>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
               <Link
                 to="/search"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <SearchIcon className="w-4 h-4" /> {t("common.search")}
               </Link>
-              <span className="text-gray-300">|</span>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
               <Link
                 to="/admin"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <SettingsIcon className="w-4 h-4" /> {t("admin.title")}
               </Link>
@@ -265,7 +267,7 @@ export function HomePage() {
         </div>
 
         <div className="flex flex-col items-end gap-3">
-          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+          <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
             <Button
               variant={viewMode === "1DAY" ? "primary" : "ghost"}
               size="sm"
@@ -297,26 +299,40 @@ export function HomePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={handlePrev}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePrev}
+              className="dark:bg-gray-800 dark:border-gray-700"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <div className="flex items-center bg-white border border-gray-300 rounded-md px-2 py-1 shadow-sm hover:bg-gray-50 focus-within:ring-2 focus-within:ring-blue-500 transition-colors">
+            <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-2 py-1 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus-within:ring-2 focus-within:ring-primary transition-colors">
               <input
                 type="date"
                 value={baseDateStr}
                 onChange={(e) => {
                   if (e.target.value) setBaseDateStr(e.target.value);
                 }}
-                className="w-full bg-transparent border-none text-gray-700 font-medium text-sm focus:outline-none focus:ring-0 cursor-pointer"
+                className="w-full bg-transparent border-none text-gray-700 dark:text-gray-200 font-medium text-sm focus:outline-none focus:ring-0 cursor-pointer [color-scheme:light] dark:[color-scheme:dark]"
                 aria-label="Select Date"
               />
             </div>
 
-            <Button variant="outline" size="icon" onClick={handleNext}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleNext}
+              className="dark:bg-gray-800 dark:border-gray-700"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="secondary" onClick={handleToday}>
+            <Button
+              variant="secondary"
+              onClick={handleToday}
+              className="dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+            >
               {t("common.today")}
             </Button>
           </div>
@@ -342,23 +358,23 @@ export function HomePage() {
           return (
             <section
               key={date.getTime()}
-              className={`flex flex-col bg-white rounded-xl border ${isToday ? "border-blue-200 shadow-sm ring-1 ring-blue-100" : "border-gray-100"} p-4 md:p-5 h-full`}
+              className={`flex flex-col bg-white dark:bg-gray-800 rounded-xl border ${isToday ? "border-blue-200 dark:border-blue-900 shadow-sm ring-1 ring-blue-100 dark:ring-blue-900" : "border-gray-100 dark:border-gray-700"} p-4 md:p-5 h-full`}
             >
-              <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="mb-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
                 <div className="flex items-center gap-2">
                   <h2
-                    className={`text-lg font-bold flex items-center gap-2 ${isToday ? "text-blue-700" : "text-gray-800"}`}
+                    className={`text-lg font-bold flex items-center gap-2 ${isToday ? "text-blue-700 dark:text-blue-400" : "text-gray-800 dark:text-gray-100"}`}
                   >
                     {format(date, t("home.date_format", "MMM d'일'"), {
                       locale: getDateLocale(),
                     })}{" "}
                     ({format(date, "EEE", { locale: getDateLocale() })})
                   </h2>
-                  <span className="bg-gray-100 text-gray-600 text-xs font-bold py-0.5 px-2 rounded-full">
+                  <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold py-0.5 px-2 rounded-full">
                     {dayTodos.length}
                   </span>
                   {isToday && (
-                    <span className="text-xs font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                       {t("common.today")}
                     </span>
                   )}
@@ -367,7 +383,7 @@ export function HomePage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setCreatingDate(format(date, "yyyy-MM-dd"))}
-                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-1 h-8 px-2"
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 h-8 px-2"
                 >
                   <Plus className="h-4 w-4" />
                   <span className="text-xs">

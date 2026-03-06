@@ -227,28 +227,28 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
       <div
-        className="w-full max-w-2xl bg-white rounded-xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden"
+        className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden dark:border dark:border-gray-800"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
           <div className="flex items-center gap-2">
             <img
               src="/stone.png"
               alt="Big Stone"
               className="h-6 w-6 object-contain"
             />
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {t("task.edit_task")}
             </h2>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5 text-gray-500 hover:text-gray-900" />
+            <X className="h-5 w-5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100" />
           </Button>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 bg-white"
+          className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 bg-white dark:bg-gray-900"
         >
           <div className="flex flex-col gap-4 sm:flex-row">
             <Input
@@ -280,7 +280,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="text-gray-600 flex items-center gap-1.5"
+                className="text-gray-600 dark:text-gray-400 flex items-center gap-1.5"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadAttachment.isPending}
               >
@@ -305,7 +305,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 {todo.attachments.map((att) => (
                   <div
                     key={att.id}
-                    className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md p-2 text-sm"
+                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-2 text-sm"
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
                       <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
@@ -313,7 +313,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                         href={`/api/todos/attachments/${att.id}/download`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline truncate"
+                        className="text-blue-600 dark:text-blue-400 hover:underline truncate"
                       >
                         {att.originalName}
                       </a>
@@ -339,18 +339,18 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
 
           <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center">
             <div className="w-full sm:w-auto flex-1 sm:flex-none">
-              <label className="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">
                 {t("common.date", "일자")}
               </label>
               <Input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full sm:w-40"
+                className="w-full sm:w-40 [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
             <div className="w-full sm:w-auto flex-1 sm:flex-none">
-              <label className="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">
                 {t("common.repeat", "반복")}
               </label>
               <Select
@@ -369,7 +369,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
 
           {recurring === "WEEKLY" && (
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-sm font-medium text-gray-700 mr-2 shrink-0">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2 shrink-0">
                 {t("task.repeat_days", "반복 요일:")}
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -380,8 +380,8 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                     onClick={() => handleDayToggle(day.value)}
                     className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
                       weeklyDays.includes(day.value)
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                     }`}
                   >
                     {day.label}
@@ -393,7 +393,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
 
           {recurring === "MONTHLY" && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mt-2">
-              <span className="text-sm font-medium text-gray-700 shrink-0">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0">
                 {t("task.repeat_monthly_label", "매월:")}
               </span>
               <Select
@@ -401,7 +401,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 onChange={(e) =>
                   setMonthlyType(e.target.value as "DATE" | "NTH")
                 }
-                className="w-full sm:w-32 bg-white"
+                className="w-full sm:w-32 bg-white dark:bg-gray-800"
               >
                 <option value="DATE">
                   {t("task.monthly_type_date", "특정 일자")}
@@ -419,9 +419,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                     max={31}
                     value={monthlyDay}
                     onChange={(e) => setMonthlyDay(parseInt(e.target.value))}
-                    className="w-20 bg-white"
+                    className="w-20 bg-white dark:bg-gray-800"
                   />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
                     {t("common.day_unit", "일")}
                   </span>
                 </div>
@@ -435,9 +435,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                     onChange={(e) =>
                       setMonthlyNthWeek(parseInt(e.target.value))
                     }
-                    className="w-16 bg-white"
+                    className="w-16 bg-white dark:bg-gray-800"
                   />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
                     {t("common.nth_unit", "번째")}
                   </span>
                   <Select
@@ -445,7 +445,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                     onChange={(e) =>
                       setMonthlyDayOfWeek(parseInt(e.target.value))
                     }
-                    className="w-24 bg-white"
+                    className="w-24 bg-white dark:bg-gray-800"
                   >
                     {DAYS_OF_WEEK.map((day) => (
                       <option key={day.value} value={day.value}>
@@ -460,7 +460,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
 
           {recurring === "YEARLY" && (
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-sm font-medium text-gray-700 mr-2 shrink-0">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2 shrink-0">
                 {t("task.repeat_yearly_label", "매년:")}
               </span>
               <Input
@@ -469,9 +469,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 max={12}
                 value={yearlyMonth}
                 onChange={(e) => setYearlyMonth(parseInt(e.target.value))}
-                className="w-20 bg-white"
+                className="w-20 bg-white dark:bg-gray-800"
               />
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 {t("common.month_unit", "월")}
               </span>
               <Input
@@ -480,19 +480,19 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 max={31}
                 value={yearlyDay}
                 onChange={(e) => setYearlyDay(parseInt(e.target.value))}
-                className="w-20 bg-white"
+                className="w-20 bg-white dark:bg-gray-800"
               />
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 {t("common.day_unit", "일")}
               </span>
             </div>
           )}
 
           {recurring !== "NONE" && (
-            <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 pt-4">
-              <div className="flex bg-gray-50 p-4 rounded-lg flex-col gap-4">
+            <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+              <div className="flex bg-gray-50 dark:bg-gray-800 p-4 rounded-lg flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <span className="text-sm font-medium text-gray-700 w-20 shrink-0">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-20 shrink-0">
                     {t("task.end_condition_label", "종료 조건:")}
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
@@ -501,7 +501,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                       onChange={(e) =>
                         setEndOption(e.target.value as RecurringEndOption)
                       }
-                      className="w-40 bg-white"
+                      className="w-40 bg-white dark:bg-gray-900"
                     >
                       <option value="NONE">
                         {t("task.end_condition_none")}
@@ -519,7 +519,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-40 bg-white"
+                        className="w-40 bg-white dark:bg-gray-900 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     )}
 
@@ -532,9 +532,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                           onChange={(e) =>
                             setEndOccurrences(parseInt(e.target.value))
                           }
-                          className="w-24 bg-white"
+                          className="w-24 bg-white dark:bg-gray-900"
                         />
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
                           {t("common.count_unit", "회")}
                         </span>
                       </div>
@@ -546,8 +546,13 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           )}
         </form>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+          >
             {t("common.cancel")}
           </Button>
           <Button

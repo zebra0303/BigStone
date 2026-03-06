@@ -4,8 +4,19 @@
 
 :root {
   --primary: #3b82f6;
+  --primary-foreground: #ffffff;
 }
 
 body {
   @apply bg-gray-50 text-gray-900 transition-colors duration-200 dark:bg-gray-900 dark:text-gray-100;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-gray-200 dark:border-gray-800;
+  }
 }
