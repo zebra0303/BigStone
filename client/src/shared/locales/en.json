@@ -34,7 +34,7 @@
     }
   },
   "home": {
-    "date_format": "M/d",
+    "date_format": "MMM d",
     "title": "Big Stone Task Manager",
     "subtitle": "Put the big stones in first.",
     "add_task": "Add New Task",
@@ -75,7 +75,9 @@
     "end_condition_count": "After occurrences",
     "end_occurrences_suffix": "occurrences",
     "attachments": "Attachments",
-    "attach_file": "Attach File"
+    "attach_file": "Attach File",
+    "date_format": "MMM d",
+    "date_format_year": "MMM d, yyyy"
   },
   "admin": {
     "title": "Admin",

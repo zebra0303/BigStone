@@ -367,9 +367,7 @@ export function HomePage() {
         />
       )}
 
-      <div
-        className={`grid gap-6 ${displayDates.length > 2 ? "grid-cols-1 md:grid-cols-3" : displayDates.length === 2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}
-      >
+      <div className="grid gap-6 grid-cols-1">
         {displayDates.map((date) => {
           const isToday =
             format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");

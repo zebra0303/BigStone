@@ -125,7 +125,9 @@ export function TodoItem({ todo, showYear = true }: TodoItemProps) {
                 >
                   {format(
                     new Date(todo.dueDate),
-                    showYear ? "M/d, yyyy" : "M/d",
+                    showYear
+                      ? t("task.date_format_year")
+                      : t("task.date_format"),
                     {
                       locale: getDateLocale(),
                     },
