@@ -113,12 +113,13 @@ export function HomePage() {
           if (!nextDate) break;
 
           const nextDateStr = format(nextDate, "yyyy-MM-dd");
-          if (
-            todo.groupId &&
-            existingDatesPerGroup.get(todo.groupId)?.has(nextDateStr)
-          ) {
-            // A real task for this date already exists in the group. Let that real task handle further projections.
-            break;
+          if (todo.groupId) {
+            if (existingDatesPerGroup.get(todo.groupId)?.has(nextDateStr)) {
+              // A real task for this date already exists in the group. Let that real task handle further projections.
+              break;
+            }
+            // Register this date so another overlapping task in the same group doesn't project it again
+            existingDatesPerGroup.get(todo.groupId)?.add(nextDateStr);
           }
 
           const nextDateMs = startOfDay(nextDate).getTime();

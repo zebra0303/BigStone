@@ -269,17 +269,24 @@ router.put("/:id", (req: Request, res: Response) => {
                 }
               }
 
-              const spawnSql = `
+              const { format } = await import("date-fns-tz");
+              const nextDateStr = format(nextDate, "yyyy-MM-dd");
+
+              db.get("SELECT id FROM todos WHERE groupId = ? AND dueDate = ?", [groupId, nextDateStr], (err, existing) => {
+                if (existing) {
+                  return res.json({ message: "Updated", changes: this.changes });
+                }
+                const spawnSql = `
                    INSERT INTO todos (id, groupId, dueDate, status, completedAt)
                    VALUES (?, ?, ?, 'TODO', NULL)
                  `;
-              const { format } = await import("date-fns-tz");
-              db.run(spawnSql, [uuidv4(), groupId, format(nextDate, "yyyy-MM-dd")], (spawnErr) => {
-                if (spawnErr) console.error("Could not spawn next task event:", spawnErr.message);
+                db.run(spawnSql, [uuidv4(), groupId, nextDateStr], (spawnErr) => {
+                  if (spawnErr) console.error("Could not spawn next task event:", spawnErr.message);
 
-                // Increment occurrence count
-                db.run("UPDATE todo_groups SET occurrenceCount = occurrenceCount + 1 WHERE id = ?", [groupId], () => {
-                  res.json({ message: "Updated", changes: this.changes });
+                  // Increment occurrence count
+                  db.run("UPDATE todo_groups SET occurrenceCount = occurrenceCount + 1 WHERE id = ?", [groupId], () => {
+                    res.json({ message: "Updated", changes: this.changes });
+                  });
                 });
               });
               return; // We return early because the increment callback will fire res.json
