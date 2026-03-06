@@ -77,9 +77,15 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
         e.preventDefault();
         if (!title.trim() || updateTodo.isPending) return;
 
+        // If it's a virtual projection, extract the original base ID to update the actual recurring series
+        // Format: "virtual-{uuid}-{projectionCount}"
+        const realId = todo.id.startsWith("virtual-")
+            ? todo.id.replace(/^virtual-/, "").replace(/-\d+$/, "")
+            : todo.id;
+
         updateTodo.mutate(
             {
-                id: todo.id,
+                id: realId,
                 updates: {
                     title: title.trim(),
                     description: description.trim(),

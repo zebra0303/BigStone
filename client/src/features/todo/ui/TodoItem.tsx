@@ -48,7 +48,7 @@ export function TodoItem({ todo }: TodoItemProps) {
 
   return (
     <div
-      className={`group flex flex-col gap-2 rounded-lg border p-4 transition-all hover:bg-gray-50 bg-white 
+      className={`relative group flex flex-col gap-2 rounded-lg border p-4 transition-all hover:bg-gray-50 bg-white 
       ${isDone ? "opacity-60" : ""} 
       ${todo.isVirtual ? "opacity-70 border-dashed bg-gray-50" : ""}`}
     >
@@ -102,28 +102,28 @@ export function TodoItem({ todo }: TodoItemProps) {
           </div>
         </div>
 
-        {!todo.isVirtual && (
-          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleEditClick}
-              className="text-gray-400 hover:text-blue-600 flex-shrink-0"
-              aria-label="Edit todo"
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
+        <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm p-1 rounded-md shadow-sm border border-gray-100">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleEditClick}
+            className="h-7 w-7 text-gray-400 hover:text-blue-600 flex-shrink-0 bg-transparent hover:bg-blue-50"
+            aria-label="Edit todo"
+          >
+            <Edit2 className="h-3.5 w-3.5" />
+          </Button>
+          {!todo.isVirtual && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => deleteTodo.mutate(todo.id)}
-              className="text-gray-400 hover:text-red-600 flex-shrink-0"
+              className="h-7 w-7 text-gray-400 hover:text-red-600 flex-shrink-0 bg-transparent hover:bg-red-50"
               aria-label="Delete todo"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {isExpanded && todo.description && (
