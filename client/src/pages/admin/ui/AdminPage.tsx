@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Select } from "@/shared/ui/Select";
-import { ChevronLeft, Lock, Globe, Save, Moon, Palette } from "lucide-react";
+import { ChevronLeft, Lock, Globe, Save, Moon, Palette, Type } from "lucide-react";
 
 export function AdminPage() {
   const { t, i18n } = useTranslation();
@@ -21,7 +21,23 @@ export function AdminPage() {
   const [primaryColor, setPrimaryColor] = useState(
     localStorage.getItem("primary_color") || "#3b82f6",
   );
+  const [fontFamily, setFontFamily] = useState(
+    localStorage.getItem("font_family") ||
+      'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+  );
   const [isSaving, setIsSaving] = useState(false);
+
+  const FONTS = [
+    {
+      label: t("admin.font_system", "System Default"),
+      value:
+        'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+    },
+    { label: "Pretendard", value: "'Pretendard', sans-serif" },
+    { label: "NanumSquare Neo", value: "'NanumSquareNeo', sans-serif" },
+    { label: "Noto Sans KR", value: "'Noto Sans KR', sans-serif" },
+    { label: "Nanum Myeongjo", value: "'Nanum Myeongjo', serif" },
+  ];
 
   useEffect(() => {
     checkStatus();
@@ -139,6 +155,10 @@ export function AdminPage() {
           foreground,
         );
 
+        // Save font family to localStorage and apply it
+        localStorage.setItem("font_family", fontFamily);
+        document.documentElement.style.setProperty("--font-family", fontFamily);
+
         alert(t("admin.save_success"));
       } else {
         const data = await res.json();
@@ -247,6 +267,30 @@ export function AdminPage() {
               >
                 <option value="ko">🇰🇷 한국어 (Korean)</option>
                 <option value="en">🇺🇸 영어 (English)</option>
+              </Select>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
+              <Type className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
+              {t("admin.font_title", "폰트 설정")}
+            </h3>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
+                {t("admin.font_label", "시스템 폰트")}
+              </label>
+              <Select
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                className="max-w-xs"
+              >
+                {FONTS.map((font) => (
+                  <option key={font.value} value={font.value}>
+                    {font.label}
+                  </option>
+                ))}
               </Select>
             </div>
           </div>

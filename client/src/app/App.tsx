@@ -38,6 +38,12 @@ function App() {
         foreground,
       );
     }
+
+    // Initialize font
+    const savedFont = localStorage.getItem("font_family");
+    if (savedFont) {
+      document.documentElement.style.setProperty("--font-family", savedFont);
+    }
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
