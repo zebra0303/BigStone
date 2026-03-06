@@ -6,14 +6,18 @@ import type {
   RecurringEndOption,
   TodoPriority,
 } from "@/entities/todo/model/types";
-import { useUpdateTodoStatus } from "@/features/todo/model/hooks";
+import { 
+  useUpdateTodoStatus, 
+  useUploadAttachment, 
+  useDeleteAttachment 
+} from "@/features/todo/model/hooks";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Select } from "@/shared/ui/Select";
 import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
-import { X } from "lucide-react";
+import { X, Paperclip, Loader2 } from "lucide-react";
 import { getNextValidDueDate, safeParseDate } from "@/shared/lib/recurringDate";
 
 interface TodoEditModalProps {
@@ -24,7 +28,10 @@ interface TodoEditModalProps {
 export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
   const { t } = useTranslation();
   const updateTodo = useUpdateTodoStatus();
+  const uploadAttachment = useUploadAttachment();
+  const deleteAttachment = useDeleteAttachment();
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const DAYS_OF_WEEK = [
     { value: 0, label: t("common.days.sun", "일") },
@@ -106,6 +113,38 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
     setWeeklyDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
     );
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    // For attachments, we need the true group ID. 
+    // Virtual tasks have 'groupId' field populated from DB fetch in backend.
+    // If not, we fallback to parsing the id.
+    const realGroupId = todo.groupId || (todo.id.startsWith("virtual-")
+      ? todo.id.replace(/^virtual-/, "").replace(/-\d+$/, "")
+      : todo.id);
+
+    const file = e.target.files[0];
+    
+    // Max size 10MB check
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size exceeds 10MB limit.");
+      return;
+    }
+
+    uploadAttachment.mutate({ groupId: realGroupId, file });
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileDelete = (attachmentId: string) => {
+    if (window.confirm("Are you sure you want to delete this attachment?")) {
+      deleteAttachment.mutate(attachmentId);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -218,12 +257,73 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
             />
           </div>
 
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t("task.desc_placeholder")}
-            className="resize-y min-h-[100px]"
-          />
+          <div className="flex flex-col gap-2">
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t("task.desc_placeholder")}
+              className="resize-y min-h-[100px]"
+            />
+            
+            {/* Attachment Section */}
+            <div className="flex items-center gap-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                className="text-gray-600 flex items-center gap-1.5"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadAttachment.isPending}
+              >
+                {uploadAttachment.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Paperclip className="h-4 w-4" />
+                )}
+                {t("task.attach_file", "파일 첨부")}
+              </Button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                onChange={handleFileUpload}
+              />
+            </div>
+            
+            {/* Attachment List */}
+            {todo.attachments && todo.attachments.length > 0 && (
+              <div className="mt-3 flex flex-col gap-2">
+                {todo.attachments.map(att => (
+                  <div key={att.id} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md p-2 text-sm">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
+                      <a 
+                        href={`/uploads/${att.filename}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline truncate"
+                      >
+                        {att.originalName}
+                      </a>
+                      <span className="text-gray-400 text-xs shrink-0">
+                        ({(att.size / 1024).toFixed(1)} KB)
+                      </span>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 text-gray-400 hover:text-red-500"
+                      onClick={() => handleFileDelete(att.id)}
+                      disabled={deleteAttachment.isPending}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center">
             <div className="w-full sm:w-auto flex-1 sm:flex-none">

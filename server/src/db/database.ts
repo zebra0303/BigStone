@@ -74,6 +74,20 @@ const db = new sqlite3.Database(dbPath, (err) => {
       `, (err) => {
         if (err) console.error("Could not create system_settings table", err.message);
       });
+
+      db.run(`
+        CREATE TABLE IF NOT EXISTS todo_attachments (
+          id TEXT PRIMARY KEY,
+          groupId TEXT NOT NULL,
+          originalName TEXT NOT NULL,
+          filename TEXT NOT NULL,
+          size INTEGER NOT NULL,
+          createdAt TEXT NOT NULL,
+          FOREIGN KEY (groupId) REFERENCES todo_groups(id) ON DELETE CASCADE
+        )
+      `, (err) => {
+        if (err) console.error("Could not create todo_attachments table", err.message);
+      });
     });
   }
 });

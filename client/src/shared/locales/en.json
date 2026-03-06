@@ -70,7 +70,9 @@
     "end_condition_none": "No end (Infinite)",
     "end_condition_date": "Until date",
     "end_condition_count": "After occurrences",
-    "end_occurrences_suffix": "occurrences"
+    "end_occurrences_suffix": "occurrences",
+    "attachments": "Attachments",
+    "attach_file": "Attach File"
   },
   "admin": {
     "title": "Admin Settings",

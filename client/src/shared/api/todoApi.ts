@@ -9,7 +9,9 @@ export const todoApi = {
     return res.json();
   },
 
-  create: async (todo: Omit<Todo, "id">): Promise<Todo> => {
+  create: async (
+    todo: Omit<Todo, "id" | "groupId">,
+  ): Promise<{ id: string; groupId: string }> => {
     const res = await fetch(API_BASE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -19,13 +21,17 @@ export const todoApi = {
     return res.json();
   },
 
-  update: async (id: string, todo: Partial<Todo>): Promise<void> => {
+  updateStatus: async (
+    id: string,
+    updates: Partial<Todo>,
+  ): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(todo),
+      body: JSON.stringify(updates),
     });
     if (!res.ok) throw new Error("Failed to update todo");
+    return res.json();
   },
 
   delete: async (id: string): Promise<void> => {
@@ -43,4 +49,23 @@ export const todoApi = {
     });
     if (!res.ok) throw new Error("Failed to complete virtual todo");
   },
+
+  uploadAttachment: async (groupId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE}/attachments/${groupId}`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Failed to upload attachment");
+    return res.json();
+  },
+
+  deleteAttachment: async (attachmentId: string) => {
+    const res = await fetch(`${API_BASE}/attachments/${attachmentId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Failed to delete attachment");
+    return res.json();
+  }
 };

@@ -13,7 +13,19 @@ router.get("/", (req: Request, res: Response) => {
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay, 
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek, 
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
-      g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount
+      g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount,
+      (
+        SELECT json_group_array(json_object(
+          'id', a.id,
+          'groupId', a.groupId,
+          'originalName', a.originalName,
+          'filename', a.filename,
+          'size', a.size,
+          'createdAt', a.createdAt
+        ))
+        FROM todo_attachments a
+        WHERE a.groupId = g.id
+      ) as attachments
     FROM todos t
     JOIN todo_groups g ON t.groupId = g.id
   `;
@@ -52,6 +64,7 @@ router.get("/", (req: Request, res: Response) => {
         ? { minutesBefore: r.notificationMinutesBefore }
         : undefined,
       completedAt: r.completedAt,
+      attachments: r.attachments ? JSON.parse(r.attachments) : [],
     }));
 
     res.json(formatted);

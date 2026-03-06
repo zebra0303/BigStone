@@ -70,7 +70,9 @@
     "end_condition_none": "조건 없음 (무한)",
     "end_condition_date": "특정 날짜까지",
     "end_condition_count": "특정 횟수만큼",
-    "end_occurrences_suffix": "회 반복 후 종료"
+    "end_occurrences_suffix": "회 반복 후 종료",
+    "attachments": "첨부파일",
+    "attach_file": "파일 첨부"
   },
   "admin": {
     "title": "관리자 설정",

@@ -38,7 +38,7 @@ export function useUpdateTodoStatus() {
 
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Todo> }) =>
-      todoApi.update(id, updates),
+      todoApi.updateStatus(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
     },
@@ -60,8 +60,31 @@ export function useCompleteVirtualTodo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, targetDate }: { id: string; targetDate: string }) =>
+    mutationFn: ({ id, targetDate }: { id: string; targetDate: string }) => 
       todoApi.completeVirtual(id, targetDate),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+    },
+  });
+}
+
+export function useUploadAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ groupId, file }: { groupId: string; file: File }) =>
+      todoApi.uploadAttachment(groupId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+    },
+  });
+}
+
+export function useDeleteAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (attachmentId: string) => todoApi.deleteAttachment(attachmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
     },

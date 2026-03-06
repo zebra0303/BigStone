@@ -25,6 +25,15 @@ export interface TodoNotification {
   minutesBefore: number; // e.g. 10, 30, 60
 }
 
+export interface Attachment {
+  id: string;
+  groupId: string;
+  originalName: string;
+  filename: string;
+  size: number;
+  createdAt: string;
+}
+
 export interface Todo {
   id: string;
   groupId?: string;
@@ -38,4 +47,5 @@ export interface Todo {
   notification?: TodoNotification;
   completedAt?: Date;
   isVirtual?: boolean;
+  attachments?: Attachment[];
 }
