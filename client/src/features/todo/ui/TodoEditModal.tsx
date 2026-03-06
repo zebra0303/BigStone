@@ -37,7 +37,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
   const [description, setDescription] = useState(todo.description || "");
   const [isImportant, setIsImportant] = useState(todo.isImportant);
   const [dueDate, setDueDate] = useState(
-    format(safeParseDate(todo.dueDate), "yyyy-MM-dd"),
+    format(safeParseDate(todo.recurring.startDate || todo.dueDate), "yyyy-MM-dd"),
   );
 
   const [recurring, setRecurring] = useState<RecurringType>(
