@@ -1,5 +1,9 @@
 import React, { useState, useRef } from "react";
-import type { RecurringType, TodoStatus, RecurringEndOption } from "@/entities/todo/model/types";
+import type {
+  RecurringType,
+  TodoStatus,
+  RecurringEndOption,
+} from "@/entities/todo/model/types";
 import { useCreateTodo } from "@/features/todo/model/hooks";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
@@ -106,7 +110,8 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           startDate: recurring !== "NONE" ? dueDate : undefined,
           endOption: recurring !== "NONE" ? endOption : "NONE",
           endDate: endOption === "DATE" ? endDate : undefined,
-          endOccurrences: endOption === "OCCURRENCES" ? endOccurrences : undefined,
+          endOccurrences:
+            endOption === "OCCURRENCES" ? endOccurrences : undefined,
         },
       },
       {
@@ -220,10 +225,11 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
               key={day.value}
               type="button"
               onClick={() => handleDayToggle(day.value)}
-              className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${weeklyDays.includes(day.value)
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+              className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
+                weeklyDays.includes(day.value)
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
             >
               {day.label}
             </button>
@@ -316,11 +322,15 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
         <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 pt-4">
           <div className="flex bg-gray-50 p-4 rounded-lg flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <span className="text-sm font-medium text-gray-700 w-20 shrink-0">종료 조건:</span>
+              <span className="text-sm font-medium text-gray-700 w-20 shrink-0">
+                종료 조건:
+              </span>
               <div className="flex flex-wrap items-center gap-2">
                 <Select
                   value={endOption}
-                  onChange={(e) => setEndOption(e.target.value as RecurringEndOption)}
+                  onChange={(e) =>
+                    setEndOption(e.target.value as RecurringEndOption)
+                  }
                   className="w-32 bg-white"
                 >
                   <option value="NONE">없음</option>
@@ -343,10 +353,14 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
                       type="number"
                       min={1}
                       value={endOccurrences}
-                      onChange={(e) => setEndOccurrences(Number(e.target.value))}
+                      onChange={(e) =>
+                        setEndOccurrences(Number(e.target.value))
+                      }
                       className="w-20 bg-white"
                     />
-                    <span className="text-sm text-gray-600">회 반복 후 종료</span>
+                    <span className="text-sm text-gray-600">
+                      회 반복 후 종료
+                    </span>
                   </div>
                 )}
               </div>

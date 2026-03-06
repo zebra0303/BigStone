@@ -45,6 +45,7 @@ router.get("/", (req: Request, res: Response) => {
         endOption: r.endOption,
         endDate: r.endDate,
         endOccurrences: r.endOccurrences,
+        occurrenceCount: r.occurrenceCount,
       },
       notification: r.notificationMinutesBefore
         ? { minutesBefore: r.notificationMinutesBefore }
@@ -145,7 +146,8 @@ router.put("/:id", (req: Request, res: Response) => {
       g.title, g.description, g.isImportant, 
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay, 
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek, 
-      g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore
+      g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
+      g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount
     FROM todos t
     JOIN todo_groups g ON t.groupId = g.id
     WHERE t.id = ?
@@ -285,11 +287,140 @@ router.put("/:id", (req: Request, res: Response) => {
           } catch (e) {
             console.error("Error spanning next date:", e);
           }
+        } else if (effectiveStatus === "TODO" && row.status === "DONE" && effRecType !== "NONE") {
+          // Rollback: Delete any auto-spawned future tasks for this group
+          const rollbackSql = `
+            DELETE FROM todos 
+            WHERE groupId = ? AND status = 'TODO' AND dueDate > ?
+          `;
+          db.run(rollbackSql, [groupId, row.dueDate], function(errRollback) {
+             if (errRollback) console.error("Rollback error:", errRollback.message);
+             if (this.changes > 0) {
+               db.run("UPDATE todo_groups SET occurrenceCount = occurrenceCount - ? WHERE id = ?", [this.changes, groupId], () => {
+                  res.json({ message: "Updated and rolled back", changes: this.changes });
+               });
+             } else {
+               res.json({ message: "Updated", changes: this.changes });
+             }
+          });
+          return;
         }
 
         res.json({ message: "Updated", changes: this.changes });
       });
     });
+  });
+});
+
+// Complete Virtual Task (Skip intermediate)
+router.post("/:id/complete-virtual", (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { targetDate } = req.body; // YYYY-MM-DD
+
+  const fetchSql = `
+    SELECT 
+      t.id, t.groupId, t.dueDate, t.status, t.completedAt,
+      g.title, g.description, g.isImportant, 
+      g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay, 
+      g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek, 
+      g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
+      g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount
+    FROM todos t
+    JOIN todo_groups g ON t.groupId = g.id
+    WHERE t.id = ?
+  `;
+
+  db.get(fetchSql, [id], async (err, row: any) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Base task not found" });
+
+    try {
+      const { getNextOccurrence } = await import("../utils/recurringDate");
+      const { format, startOfDay } = await import("date-fns");
+      const { format: formatTz } = await import("date-fns-tz");
+      
+      const recConfig = {
+        type: row.recurringType,
+        weeklyDays: row.recurringWeeklyDays ? JSON.parse(row.recurringWeeklyDays) : null,
+        monthlyDay: row.recurringMonthlyDay,
+        monthlyNthWeek: row.recurringMonthlyNthWeek,
+        monthlyDayOfWeek: row.recurringMonthlyDayOfWeek,
+        yearlyMonth: row.recurringYearlyMonth,
+        yearlyDay: row.recurringYearlyDay,
+      };
+
+      let currentDate = new Date(row.dueDate);
+      const targetDateObj = new Date(targetDate);
+      const datesToInsert = [];
+      let newInstances = 0;
+
+      while (true) {
+        const nextDate = getNextOccurrence(currentDate, recConfig, true);
+        if (!nextDate) break;
+
+        const nextDateMs = startOfDay(nextDate).getTime();
+        const targetDateMs = startOfDay(targetDateObj).getTime();
+
+        if (nextDateMs > targetDateMs) {
+          break; // past the target
+        }
+
+        datesToInsert.push(nextDate);
+        currentDate = nextDate;
+        newInstances++;
+
+        if (nextDateMs === targetDateMs) {
+          break;
+        }
+      }
+
+      if (datesToInsert.length === 0) {
+        return res.status(400).json({ error: "Target date is not a valid future occurrence." });
+      }
+
+      const allInserts = datesToInsert.map(d => ({
+        date: d,
+        status: (startOfDay(d).getTime() === startOfDay(targetDateObj).getTime()) ? "DONE" : "TODO",
+      }));
+
+      // Generate one more occurrence to act as the next pending task
+      let spawnNext = false;
+      const nextAfterTarget = getNextOccurrence(currentDate, recConfig, true);
+      if (nextAfterTarget) {
+        const nextMs = startOfDay(nextAfterTarget).getTime();
+        let canSpawn = true;
+        if (row.endOption === "DATE" && row.endDate) {
+           if (nextMs > startOfDay(new Date(row.endDate)).getTime()) canSpawn = false;
+        }
+        if (row.endOption === "OCCURRENCES" && row.endOccurrences) {
+           if (row.occurrenceCount + newInstances >= row.endOccurrences) canSpawn = false;
+        }
+
+        if (canSpawn) {
+          allInserts.push({ date: nextAfterTarget, status: "TODO" });
+          spawnNext = true;
+        }
+      }
+
+      const insertSql = `INSERT INTO todos (id, groupId, dueDate, status, completedAt) VALUES (?, ?, ?, ?, ?)`;
+      const stmt = db.prepare(insertSql);
+      
+      allInserts.forEach(item => {
+        const newId = uuidv4();
+        const isDone = item.status === "DONE";
+        const completedStr = isDone ? new Date().toISOString() : null;
+        stmt.run([newId, row.groupId, formatTz(item.date, "yyyy-MM-dd"), item.status, completedStr]);
+      });
+      stmt.finalize();
+
+      const totalInstances = allInserts.length;
+      db.run("UPDATE todo_groups SET occurrenceCount = occurrenceCount + ? WHERE id = ?", [totalInstances, row.groupId], () => {
+        res.json({ message: "Successfully skipped and completed virtual task." });
+      });
+
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 });
 

@@ -3,6 +3,7 @@ import type { Todo } from "@/entities/todo/model/types";
 import {
   useUpdateTodoStatus,
   useDeleteTodo,
+  useCompleteVirtualTodo,
 } from "@/features/todo/model/hooks";
 import { Checkbox } from "@/shared/ui/Checkbox";
 import { Badge } from "@/shared/ui/Badge";
@@ -20,6 +21,7 @@ interface TodoItemProps {
 export function TodoItem({ todo }: TodoItemProps) {
   const updateTodo = useUpdateTodoStatus();
   const deleteTodo = useDeleteTodo();
+  const completeVirtualTodo = useCompleteVirtualTodo();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -30,6 +32,14 @@ export function TodoItem({ todo }: TodoItemProps) {
     safeParseDate(todo.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
 
   const handleToggle = () => {
+    if (todo.isVirtual) {
+      // The real ID is the base ID before the "-index" suffix
+      const realId = todo.id.replace(/^virtual-/, "").replace(/-\d+$/, "");
+      const targetDate = format(todo.dueDate, "yyyy-MM-dd");
+      completeVirtualTodo.mutate({ id: realId, targetDate });
+      return;
+    }
+
     const newStatus = isDone ? "TODO" : "DONE";
 
     updateTodo.mutate({
@@ -67,13 +77,11 @@ export function TodoItem({ todo }: TodoItemProps) {
               checked={isDone}
               onChange={handleToggle}
               className="h-5 w-5 rounded-full"
-              disabled={todo.isVirtual}
             />
 
             <div
               className="flex flex-col gap-1 overflow-hidden cursor-pointer"
               onClick={() => setIsExpanded(!isExpanded)}
-              title={todo.isVirtual ? "이전 일정을 먼저 완료해주세요." : ""}
             >
               <div className="flex items-center gap-2">
                 {todo.isImportant && (
@@ -141,10 +149,7 @@ export function TodoItem({ todo }: TodoItemProps) {
       </div>
 
       {isEditModalOpen && (
-        <TodoEditModal
-          todo={todo}
-          onClose={() => setIsEditModalOpen(false)}
-        />
+        <TodoEditModal todo={todo} onClose={() => setIsEditModalOpen(false)} />
       )}
     </>
   );

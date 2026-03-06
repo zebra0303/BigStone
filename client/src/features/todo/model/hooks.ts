@@ -55,3 +55,15 @@ export function useDeleteTodo() {
     },
   });
 }
+
+export function useCompleteVirtualTodo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, targetDate }: { id: string; targetDate: string }) =>
+      todoApi.completeVirtual(id, targetDate),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+    },
+  });
+}

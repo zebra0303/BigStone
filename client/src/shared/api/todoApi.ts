@@ -34,4 +34,13 @@ export const todoApi = {
     });
     if (!res.ok) throw new Error("Failed to delete todo");
   },
+
+  completeVirtual: async (id: string, targetDate: string): Promise<void> => {
+    const res = await fetch(`${API_BASE}/${id}/complete-virtual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetDate }),
+    });
+    if (!res.ok) throw new Error("Failed to complete virtual todo");
+  },
 };
