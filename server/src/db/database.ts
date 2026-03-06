@@ -65,6 +65,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
       `, (err) => {
         if (err) console.error("Could not create todos table", err.message);
       });
+
+      db.run(`
+        CREATE TABLE IF NOT EXISTS system_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `, (err) => {
+        if (err) console.error("Could not create system_settings table", err.message);
+      });
     });
   }
 });

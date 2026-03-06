@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   Todo,
   RecurringType,
@@ -20,19 +21,20 @@ interface TodoEditModalProps {
   onClose: () => void;
 }
 
-const DAYS_OF_WEEK = [
-  { value: 0, label: "일" },
-  { value: 1, label: "월" },
-  { value: 2, label: "화" },
-  { value: 3, label: "수" },
-  { value: 4, label: "목" },
-  { value: 5, label: "금" },
-  { value: 6, label: "토" },
-];
-
 export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
+  const { t } = useTranslation();
   const updateTodo = useUpdateTodoStatus();
   const titleInputRef = useRef<HTMLInputElement>(null);
+
+  const DAYS_OF_WEEK = [
+    { value: 0, label: t("common.days.sun", "일") },
+    { value: 1, label: t("common.days.mon", "월") },
+    { value: 2, label: t("common.days.tue", "화") },
+    { value: 3, label: t("common.days.wed", "수") },
+    { value: 4, label: t("common.days.thu", "목") },
+    { value: 5, label: t("common.days.fri", "금") },
+    { value: 6, label: t("common.days.sat", "토") },
+  ];
 
   const [title, setTitle] = useState(todo.title);
   const [description, setDescription] = useState(todo.description || "");
@@ -189,7 +191,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-900">
-            일정 수정 (Edit Big Stone)
+            {t("common.edit")} Big Stone
           </h2>
           <Button type="button" variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5 text-gray-500 hover:text-gray-900" />
@@ -205,7 +207,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
               ref={titleInputRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="할일 제목 (필수)"
+              placeholder={t("task.title_placeholder")}
               required
               className="flex-1"
             />
@@ -219,14 +221,14 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="내용 (선택) - 상세한 할 일 내용을 적어보세요."
+            placeholder={t("task.desc_placeholder")}
             className="resize-y min-h-[100px]"
           />
 
           <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center">
             <div className="w-full sm:w-auto flex-1 sm:flex-none">
               <label className="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">
-                일자
+                {t("common.date", "일자")}
               </label>
               <Input
                 type="date"
@@ -237,18 +239,18 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
             </div>
             <div className="w-full sm:w-auto flex-1 sm:flex-none">
               <label className="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">
-                반복
+                {t("common.repeat", "반복")}
               </label>
               <Select
                 value={recurring}
                 onChange={(e) => setRecurring(e.target.value as RecurringType)}
                 className="w-full sm:w-40"
               >
-                <option value="NONE">반복 안함</option>
-                <option value="DAILY">매일</option>
-                <option value="WEEKLY">매주</option>
-                <option value="MONTHLY">매월</option>
-                <option value="YEARLY">매년</option>
+                <option value="NONE">{t("task.repeat_none")}</option>
+                <option value="DAILY">{t("task.repeat_daily")}</option>
+                <option value="WEEKLY">{t("task.repeat_weekly")}</option>
+                <option value="MONTHLY">{t("task.repeat_monthly")}</option>
+                <option value="YEARLY">{t("task.repeat_yearly")}</option>
               </Select>
             </div>
           </div>
@@ -256,7 +258,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           {recurring === "WEEKLY" && (
             <div className="flex items-center gap-2 mt-2">
               <span className="text-sm font-medium text-gray-700 mr-2 shrink-0">
-                반복 요일:
+                {t("task.repeat_days", "반복 요일:")}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {DAYS_OF_WEEK.map((day) => (
@@ -280,7 +282,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           {recurring === "MONTHLY" && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mt-2">
               <span className="text-sm font-medium text-gray-700 shrink-0">
-                매월:
+                {t("task.repeat_monthly_label", "매월:")}
               </span>
               <Select
                 value={monthlyType}
@@ -289,8 +291,12 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 }
                 className="w-full sm:w-32 bg-white"
               >
-                <option value="DATE">특정 일자</option>
-                <option value="NTH">특정 요일</option>
+                <option value="DATE">
+                  {t("task.monthly_type_date", "특정 일자")}
+                </option>
+                <option value="NTH">
+                  {t("task.monthly_type_nth", "특정 요일")}
+                </option>
               </Select>
 
               {monthlyType === "DATE" ? (
@@ -303,7 +309,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                     onChange={(e) => setMonthlyDay(parseInt(e.target.value))}
                     className="w-20 bg-white"
                   />
-                  <span className="text-sm text-gray-600">일</span>
+                  <span className="text-sm text-gray-600">
+                    {t("common.day_unit", "일")}
+                  </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -317,7 +325,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                     }
                     className="w-16 bg-white"
                   />
-                  <span className="text-sm text-gray-600">번째</span>
+                  <span className="text-sm text-gray-600">
+                    {t("common.nth_unit", "번째")}
+                  </span>
                   <Select
                     value={monthlyDayOfWeek}
                     onChange={(e) =>
@@ -339,7 +349,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           {recurring === "YEARLY" && (
             <div className="flex items-center gap-2 mt-2">
               <span className="text-sm font-medium text-gray-700 mr-2 shrink-0">
-                매년:
+                {t("task.repeat_yearly_label", "매년:")}
               </span>
               <Input
                 type="number"
@@ -349,7 +359,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 onChange={(e) => setYearlyMonth(parseInt(e.target.value))}
                 className="w-20 bg-white"
               />
-              <span className="text-sm text-gray-600">월</span>
+              <span className="text-sm text-gray-600">
+                {t("common.month_unit", "월")}
+              </span>
               <Input
                 type="number"
                 min={1}
@@ -358,7 +370,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 onChange={(e) => setYearlyDay(parseInt(e.target.value))}
                 className="w-20 bg-white"
               />
-              <span className="text-sm text-gray-600">일</span>
+              <span className="text-sm text-gray-600">
+                {t("common.day_unit", "일")}
+              </span>
             </div>
           )}
 
@@ -367,7 +381,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
               <div className="flex bg-gray-50 p-4 rounded-lg flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <span className="text-sm font-medium text-gray-700 w-20 shrink-0">
-                    종료 조건:
+                    {t("task.end_condition_label", "종료 조건:")}
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
                     <Select
@@ -377,9 +391,15 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                       }
                       className="w-40 bg-white"
                     >
-                      <option value="NONE">조건 없음 (무한)</option>
-                      <option value="DATE">특정 날짜까지</option>
-                      <option value="OCCURRENCES">특정 횟수만큼</option>
+                      <option value="NONE">
+                        {t("task.end_condition_none")}
+                      </option>
+                      <option value="DATE">
+                        {t("task.end_condition_date")}
+                      </option>
+                      <option value="OCCURRENCES">
+                        {t("task.end_condition_count")}
+                      </option>
                     </Select>
 
                     {endOption === "DATE" && (
@@ -402,7 +422,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                           }
                           className="w-24 bg-white"
                         />
-                        <span className="text-sm text-gray-600">회</span>
+                        <span className="text-sm text-gray-600">
+                          {t("common.count_unit", "회")}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -414,14 +436,14 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
 
         <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onClose}>
-            취소
+            {t("common.cancel")}
           </Button>
           <Button
             type="button"
             onClick={handleSubmit}
             disabled={updateTodo.isPending}
           >
-            {updateTodo.isPending ? "저장 중..." : "저장"}
+            {updateTodo.isPending ? t("common.saving") : t("common.save")}
           </Button>
         </div>
       </div>

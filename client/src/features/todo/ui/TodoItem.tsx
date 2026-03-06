@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Todo } from "@/entities/todo/model/types";
 import {
   useUpdateTodoStatus,
@@ -10,6 +11,7 @@ import { Badge } from "@/shared/ui/Badge";
 import { format } from "date-fns";
 import { Star, Trash2, Edit2, Repeat } from "lucide-react";
 import { safeParseDate } from "@/shared/lib/recurringDate";
+import { getDateLocale } from "@/shared/lib/localeUtils";
 
 import { Button } from "@/shared/ui/Button";
 import { TodoEditModal } from "./TodoEditModal";
@@ -19,6 +21,7 @@ interface TodoItemProps {
 }
 
 export function TodoItem({ todo }: TodoItemProps) {
+  const { t } = useTranslation();
   const updateTodo = useUpdateTodoStatus();
   const deleteTodo = useDeleteTodo();
   const completeVirtualTodo = useCompleteVirtualTodo();
@@ -111,7 +114,9 @@ export function TodoItem({ todo }: TodoItemProps) {
                 )}
                 {todo.description && !isExpanded && <span>•</span>}
                 <span className={isOverdue ? "text-red-600 font-semibold" : ""}>
-                  {format(new Date(todo.dueDate), "MMM d, yyyy")}
+                  {format(new Date(todo.dueDate), "MMM d, yyyy", {
+                    locale: getDateLocale(),
+                  })}
                 </span>
                 {todo.recurring.type !== "NONE" && (
                   <>
@@ -121,7 +126,7 @@ export function TodoItem({ todo }: TodoItemProps) {
                       className="px-1.5 py-0.5 text-[10px] flex items-center gap-1"
                     >
                       <Repeat className="h-3 w-3" />
-                      {todo.recurring.type}
+                      {t(`task.repeat_${todo.recurring.type.toLowerCase()}`)}
                     </Badge>
                   </>
                 )}
@@ -135,7 +140,7 @@ export function TodoItem({ todo }: TodoItemProps) {
               size="icon"
               onClick={handleEditClick}
               className="h-7 w-7 text-gray-400 hover:text-blue-600 flex-shrink-0 bg-transparent hover:bg-blue-50"
-              aria-label="Edit todo"
+              aria-label={t("common.edit")}
             >
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
@@ -144,7 +149,7 @@ export function TodoItem({ todo }: TodoItemProps) {
               size="icon"
               onClick={handleDeleteClick}
               className="h-7 w-7 text-gray-400 hover:text-red-600 flex-shrink-0 bg-transparent hover:bg-red-50"
-              aria-label="Delete todo"
+              aria-label={t("common.delete")}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>

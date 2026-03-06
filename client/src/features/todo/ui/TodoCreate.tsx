@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   RecurringType,
   TodoStatus,
@@ -21,6 +22,7 @@ interface TodoCreateProps {
 }
 
 export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
+  const { t } = useTranslation();
   const createTodo = useCreateTodo();
   const titleInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,13 +49,13 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
   const [yearlyDay, setYearlyDay] = useState<number>(new Date().getDate());
 
   const DAYS_OF_WEEK = [
-    { value: 0, label: "일" },
-    { value: 1, label: "월" },
-    { value: 2, label: "화" },
-    { value: 3, label: "수" },
-    { value: 4, label: "목" },
-    { value: 5, label: "금" },
-    { value: 6, label: "토" },
+    { value: 0, label: t("common.days.sun", "일") },
+    { value: 1, label: t("common.days.mon", "월") },
+    { value: 2, label: t("common.days.tue", "화") },
+    { value: 3, label: t("common.days.wed", "수") },
+    { value: 4, label: t("common.days.thu", "목") },
+    { value: 5, label: t("common.days.fri", "금") },
+    { value: 6, label: t("common.days.sat", "토") },
   ];
 
   const handleDayToggle = (day: number) => {
@@ -152,7 +154,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
       className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm relative"
     >
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg">새 할일 추가 (Add Big Stone)</h3>
+        <h3 className="font-semibold text-lg">{t("home.add_task")}</h3>
         {onCancel && (
           <Button type="button" variant="ghost" size="icon" onClick={onCancel}>
             <X className="h-5 w-5 text-gray-500" />
@@ -165,7 +167,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           ref={titleInputRef}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="할일 제목 (필수)"
+          placeholder={t("task.title_placeholder")}
           required
           autoFocus
           className="flex-1"
@@ -180,7 +182,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
       <Textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="내용 (선택) - 상세한 할 일 내용을 적어보세요."
+        placeholder={t("task.desc_placeholder")}
         className="resize-y"
       />
 
@@ -197,22 +199,22 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           onChange={(e) => setRecurring(e.target.value as RecurringType)}
           className="w-full sm:w-40"
         >
-          <option value="NONE">반복 안함</option>
-          <option value="DAILY">매일</option>
-          <option value="WEEKLY">매주</option>
-          <option value="MONTHLY">매월</option>
-          <option value="YEARLY">매년</option>
+          <option value="NONE">{t("task.repeat_none")}</option>
+          <option value="DAILY">{t("task.repeat_daily")}</option>
+          <option value="WEEKLY">{t("task.repeat_weekly")}</option>
+          <option value="MONTHLY">{t("task.repeat_monthly")}</option>
+          <option value="YEARLY">{t("task.repeat_yearly")}</option>
         </Select>
 
         <Button type="submit" className="ml-auto w-full sm:w-auto">
-          추가
+          {t("common.add", "추가")}
         </Button>
       </div>
 
       {recurring === "WEEKLY" && (
         <div className="flex items-center gap-2 mt-2">
           <span className="text-sm font-medium text-gray-700 mr-2">
-            반복 요일:
+            {t("task.repeat_days", "반복 요일:")}
           </span>
           {DAYS_OF_WEEK.map((day) => (
             <button
@@ -233,14 +235,16 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
 
       {recurring === "MONTHLY" && (
         <div className="flex items-center gap-2 mt-2">
-          <span className="text-sm font-medium text-gray-700 mr-2">매월:</span>
+          <span className="text-sm font-medium text-gray-700 mr-2">
+            {t("task.repeat_monthly_label", "매월:")}
+          </span>
           <Select
             value={monthlyType}
             onChange={(e) => setMonthlyType(e.target.value as "DATE" | "NTH")}
             className="w-32 bg-white"
           >
-            <option value="DATE">특정 일자</option>
-            <option value="NTH">특정 요일</option>
+            <option value="DATE">{t("task.monthly_type_date", "특정 일자")}</option>
+            <option value="NTH">{t("task.monthly_type_nth", "특정 요일")}</option>
           </Select>
 
           {monthlyType === "DATE" ? (
@@ -253,7 +257,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
                 onChange={(e) => setMonthlyDay(Number(e.target.value))}
                 className="w-20"
               />
-              <span className="text-sm">일</span>
+              <span className="text-sm">{t("common.day_unit", "일")}</span>
             </div>
           ) : (
             <div className="flex items-center gap-1">
@@ -262,11 +266,11 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
                 onChange={(e) => setMonthlyNthWeek(Number(e.target.value))}
                 className="w-24 bg-white"
               >
-                <option value={1}>첫째 주</option>
-                <option value={2}>둘째 주</option>
-                <option value={3}>셋째 주</option>
-                <option value={4}>넷째 주</option>
-                <option value={5}>마지막 주</option>
+                <option value={1}>{t("task.nth_1", "첫째 주")}</option>
+                <option value={2}>{t("task.nth_2", "둘째 주")}</option>
+                <option value={3}>{t("task.nth_3", "셋째 주")}</option>
+                <option value={4}>{t("task.nth_4", "넷째 주")}</option>
+                <option value={5}>{t("task.nth_5", "마지막 주")}</option>
               </Select>
               <Select
                 value={monthlyDayOfWeek}
@@ -275,7 +279,8 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
               >
                 {DAYS_OF_WEEK.map((day) => (
                   <option key={day.value} value={day.value}>
-                    {day.label}요일
+                    {day.label}
+                    {t("common.day_suffix", "요일")}
                   </option>
                 ))}
               </Select>
@@ -286,7 +291,9 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
 
       {recurring === "YEARLY" && (
         <div className="flex items-center gap-2 mt-2">
-          <span className="text-sm font-medium text-gray-700 mx-1">매년:</span>
+          <span className="text-sm font-medium text-gray-700 mx-1">
+            {t("task.repeat_yearly_label", "매년:")}
+          </span>
           <div className="flex items-center gap-1">
             <Input
               type="number"
@@ -296,7 +303,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
               onChange={(e) => setYearlyMonth(Number(e.target.value))}
               className="w-16"
             />
-            <span className="text-sm">월</span>
+            <span className="text-sm">{t("common.month_unit", "월")}</span>
           </div>
           <div className="flex items-center gap-1">
             <Input
@@ -307,7 +314,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
               onChange={(e) => setYearlyDay(Number(e.target.value))}
               className="w-16"
             />
-            <span className="text-sm">일</span>
+            <span className="text-sm">{t("common.day_unit", "일")}</span>
           </div>
         </div>
       )}
@@ -317,7 +324,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           <div className="flex bg-gray-50 p-4 rounded-lg flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <span className="text-sm font-medium text-gray-700 w-20 shrink-0">
-                종료 조건:
+                {t("task.end_condition_label", "종료 조건:")}
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 <Select
@@ -327,9 +334,11 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
                   }
                   className="w-32 bg-white"
                 >
-                  <option value="NONE">없음</option>
-                  <option value="DATE">날짜 지정</option>
-                  <option value="OCCURRENCES">횟수 지정</option>
+                  <option value="NONE">{t("task.end_condition_none")}</option>
+                  <option value="DATE">{t("task.end_condition_date")}</option>
+                  <option value="OCCURRENCES">
+                    {t("task.end_condition_count")}
+                  </option>
                 </Select>
 
                 {endOption === "DATE" && (
@@ -353,7 +362,7 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
                       className="w-20 bg-white"
                     />
                     <span className="text-sm text-gray-600">
-                      회 반복 후 종료
+                      {t("task.end_occurrences_suffix", "회 반복 후 종료")}
                     </span>
                   </div>
                 )}

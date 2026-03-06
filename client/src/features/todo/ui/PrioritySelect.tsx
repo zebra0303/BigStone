@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Star, ChevronDown } from "lucide-react";
 import type { TodoPriority } from "@/entities/todo/model/types";
 import { cn } from "@/shared/lib/utils";
@@ -14,6 +15,7 @@ export function PrioritySelect({
   onChange,
   className,
 }: PrioritySelectProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -31,9 +33,21 @@ export function PrioritySelect({
   }, []);
 
   const options: { val: TodoPriority; label: string; color: string }[] = [
-    { val: "HIGH", label: "높음", color: "text-red-500 fill-red-500" },
-    { val: "MEDIUM", label: "보통", color: "text-yellow-500 fill-yellow-400" },
-    { val: "LOW", label: "낮음", color: "text-green-500 fill-green-500" },
+    {
+      val: "HIGH",
+      label: t("task.priority_high"),
+      color: "text-red-500 fill-red-500",
+    },
+    {
+      val: "MEDIUM",
+      label: t("task.priority_medium"),
+      color: "text-yellow-500 fill-yellow-400",
+    },
+    {
+      val: "LOW",
+      label: t("task.priority_low"),
+      color: "text-green-500 fill-green-500",
+    },
   ];
 
   const selected = options.find((o) => o.val === value) || options[1];

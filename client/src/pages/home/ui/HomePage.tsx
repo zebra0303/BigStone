@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useTodos } from "@/features/todo/model/hooks";
 import { TodoCreate } from "@/features/todo/ui/TodoCreate";
 import { TodoList } from "@/features/todo/ui/TodoList";
@@ -16,15 +17,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Search as SearchIcon,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { safeParseDate, getNextOccurrence } from "@/shared/lib/recurringDate";
+import { getDateLocale } from "@/shared/lib/localeUtils";
 
 type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
-const DAYS_KO = ["일", "월", "화", "수", "목", "금", "토"];
-
 export function HomePage() {
+  const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("1DAY");
   const [baseDateStr, setBaseDateStr] = useState(
@@ -240,16 +242,23 @@ export function HomePage() {
           />
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Big Stone Task Manager
+              {t("home.title")}
             </h1>
             <div className="flex items-center gap-4 mt-1">
-              <p className="text-gray-500">중요한 돌부터 담으세요.</p>
+              <p className="text-gray-500">{t("home.subtitle")}</p>
               <span className="text-gray-300">|</span>
               <Link
                 to="/search"
                 className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
               >
-                <SearchIcon className="w-4 h-4" /> 일정 검색
+                <SearchIcon className="w-4 h-4" /> {t("common.search")}
+              </Link>
+              <span className="text-gray-300">|</span>
+              <Link
+                to="/admin"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                <SettingsIcon className="w-4 h-4" /> {t("admin.title")}
               </Link>
             </div>
           </div>
@@ -262,28 +271,28 @@ export function HomePage() {
               size="sm"
               onClick={() => setViewMode("1DAY")}
             >
-              1일
+              {t("home.view_1day")}
             </Button>
             <Button
               variant={viewMode === "3DAY" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("3DAY")}
             >
-              3일
+              {t("home.view_3day")}
             </Button>
             <Button
               variant={viewMode === "WEEK_WORK" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("WEEK_WORK")}
             >
-              주간(평일)
+              {t("home.view_week_work")}
             </Button>
             <Button
               variant={viewMode === "WEEK_ALL" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("WEEK_ALL")}
             >
-              주간(전체)
+              {t("home.view_week_all")}
             </Button>
           </div>
 
@@ -300,7 +309,7 @@ export function HomePage() {
                   if (e.target.value) setBaseDateStr(e.target.value);
                 }}
                 className="w-full bg-transparent border-none text-gray-700 font-medium text-sm focus:outline-none focus:ring-0 cursor-pointer"
-                aria-label="날짜 선택"
+                aria-label="Select Date"
               />
             </div>
 
@@ -308,7 +317,7 @@ export function HomePage() {
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button variant="secondary" onClick={handleToday}>
-              오늘
+              {t("common.today")}
             </Button>
           </div>
         </div>
@@ -325,7 +334,7 @@ export function HomePage() {
           className="w-full flex items-center justify-center gap-2 py-6 text-lg border-2 border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900"
           variant="outline"
         >
-          <Plus className="h-6 w-6" />할 일 추가하기
+          <Plus className="h-6 w-6" /> {t("home.add_task_btn")}
         </Button>
       )}
 
@@ -347,11 +356,12 @@ export function HomePage() {
                   <h2
                     className={`text-lg font-bold flex items-center gap-2 ${isToday ? "text-blue-700" : "text-gray-800"}`}
                   >
-                    {format(date, "M월 d일")} ({DAYS_KO[getDay(date)]})
+                    {format(date, "MMM d", { locale: getDateLocale() })} (
+                    {format(date, "EEE", { locale: getDateLocale() })})
                   </h2>
                   {isToday && (
                     <span className="text-xs font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full">
-                      오늘
+                      {t("common.today")}
                     </span>
                   )}
                 </div>
@@ -363,9 +373,7 @@ export function HomePage() {
                 <TodoList
                   todos={dayTodos}
                   emptyMessage={
-                    isToday
-                      ? "오늘 끝내야 할 일이 없습니다. 🎉"
-                      : "할 일이 없습니다."
+                    isToday ? t("home.no_tasks_today") : t("home.no_tasks")
                   }
                 />
               </div>
