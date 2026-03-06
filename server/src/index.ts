@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve uploaded files statically
-app.use("/uploads", express.static(path.resolve(__dirname, "../../data/uploads")));
+app.use("/uploads", express.static(path.resolve(__dirname, "../../server/data/uploads")));
 
 app.use("/api/todos", todosRouter);
 app.use("/api/todos/attachments", attachmentsRouter);
