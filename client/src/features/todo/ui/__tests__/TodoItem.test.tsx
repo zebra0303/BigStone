@@ -11,6 +11,16 @@ vi.mock("@/features/todo/model/hooks", () => ({
   useCompleteVirtualTodo: () => ({ mutate: vi.fn() }),
 }));
 
+// Mock react-i18next
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      if (key === "task.date_format") return "M/d";
+      return key;
+    },
+  }),
+}));
+
 const mockTodo = {
   id: "1",
   title: "Test Task",
