@@ -185,7 +185,7 @@ export function HomePage() {
       .sort((a, b) => {
         // Priority sorting mapping
         const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-        
+
         // Fallback for legacy data without priority
         const getPriorityScore = (todo: typeof a) => {
           if (todo.priority) return priorityOrder[todo.priority];
