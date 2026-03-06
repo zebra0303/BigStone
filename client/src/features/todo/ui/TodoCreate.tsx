@@ -174,9 +174,9 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           onChange={(e) => setPriority(e.target.value as TodoPriority)}
           className="w-full sm:w-32 bg-white"
         >
-          <option value="HIGH">🔴 높음</option>
-          <option value="MEDIUM">🟡 보통</option>
-          <option value="LOW">🟢 낮음</option>
+          <option value="HIGH">⭐⭐⭐ 높음</option>
+          <option value="MEDIUM">⭐⭐ 보통</option>
+          <option value="LOW">⭐ 낮음</option>
         </Select>
       </div>
 

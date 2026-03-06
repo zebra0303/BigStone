@@ -38,12 +38,13 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
   const [priority, setPriority] = useState<TodoPriority>(
     todo.priority || (todo.isImportant ? "HIGH" : "MEDIUM"),
   );
-  const [dueDate, setDueDate] = useState(
-    format(
-      safeParseDate(todo.recurring.startDate || todo.dueDate),
-      "yyyy-MM-dd",
-    ),
+  
+  const originalDateStr = format(
+    safeParseDate(todo.recurring.startDate || todo.dueDate),
+    "yyyy-MM-dd",
   );
+
+  const [dueDate, setDueDate] = useState(originalDateStr);
 
   const [recurring, setRecurring] = useState<RecurringType>(
     todo.recurring.type,
@@ -122,24 +123,28 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           description: description.trim(),
           isImportant: priority === "HIGH", // legacy fallback
           priority,
-          dueDate: getNextValidDueDate(dueDate, {
-            type: recurring,
-            weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
-            monthlyDay:
-              recurring === "MONTHLY" && monthlyType === "DATE"
-                ? monthlyDay
-                : undefined,
-            monthlyNthWeek:
-              recurring === "MONTHLY" && monthlyType === "NTH"
-                ? monthlyNthWeek
-                : undefined,
-            monthlyDayOfWeek:
-              recurring === "MONTHLY" && monthlyType === "NTH"
-                ? monthlyDayOfWeek
-                : undefined,
-            yearlyMonth: recurring === "YEARLY" ? yearlyMonth : undefined,
-            yearlyDay: recurring === "YEARLY" ? yearlyDay : undefined,
-          }),
+          // Only update the instance's dueDate if the user actually modified the date input.
+          // Otherwise, it might erroneously pull the recurring series' startDate and move the current instance backwards.
+          ...(dueDate !== originalDateStr ? {
+            dueDate: getNextValidDueDate(dueDate, {
+              type: recurring,
+              weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
+              monthlyDay:
+                recurring === "MONTHLY" && monthlyType === "DATE"
+                  ? monthlyDay
+                  : undefined,
+              monthlyNthWeek:
+                recurring === "MONTHLY" && monthlyType === "NTH"
+                  ? monthlyNthWeek
+                  : undefined,
+              monthlyDayOfWeek:
+                recurring === "MONTHLY" && monthlyType === "NTH"
+                  ? monthlyDayOfWeek
+                  : undefined,
+              yearlyMonth: recurring === "YEARLY" ? yearlyMonth : undefined,
+              yearlyDay: recurring === "YEARLY" ? yearlyDay : undefined,
+            })
+          } : {}),
           recurring: {
             type: recurring,
             weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
@@ -206,9 +211,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
               onChange={(e) => setPriority(e.target.value as TodoPriority)}
               className="w-full sm:w-32 bg-white shrink-0"
             >
-              <option value="HIGH">🔴 높음</option>
-              <option value="MEDIUM">🟡 보통</option>
-              <option value="LOW">🟢 낮음</option>
+              <option value="HIGH">⭐⭐⭐ 높음</option>
+              <option value="MEDIUM">⭐⭐ 보통</option>
+              <option value="LOW">⭐ 낮음</option>
             </Select>
           </div>
 
