@@ -156,232 +156,257 @@ export function TodoCreate({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm relative"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6 shadow-2xl backdrop-blur-sm"
+      onClick={onCancel}
     >
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg">{t("home.add_task")}</h3>
-        {onCancel && (
-          <Button type="button" variant="ghost" size="icon" onClick={onCancel}>
-            <X className="h-5 w-5 text-gray-500" />
-          </Button>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-4 sm:flex-row">
-        <Input
-          ref={titleInputRef}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t("task.title_placeholder")}
-          required
-          autoFocus
-          className="flex-1"
-        />
-        <PrioritySelect
-          value={priority}
-          onChange={(val) => setPriority(val)}
-          className="w-full sm:w-32 shrink-0"
-        />
-      </div>
-
-      <Textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder={t("task.desc_placeholder")}
-        className="resize-y"
-      />
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="w-full sm:w-40"
-        />
-
-        <Select
-          value={recurring}
-          onChange={(e) => setRecurring(e.target.value as RecurringType)}
-          className="w-full sm:w-40"
-        >
-          <option value="NONE">{t("task.repeat_none")}</option>
-          <option value="DAILY">{t("task.repeat_daily")}</option>
-          <option value="WEEKLY">{t("task.repeat_weekly")}</option>
-          <option value="MONTHLY">{t("task.repeat_monthly")}</option>
-          <option value="YEARLY">{t("task.repeat_yearly")}</option>
-        </Select>
-
-        <Button type="submit" className="ml-auto w-full sm:w-auto">
-          {t("common.add", "추가")}
-        </Button>
-      </div>
-
-      {recurring === "WEEKLY" && (
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-sm font-medium text-gray-700 mr-2">
-            {t("task.repeat_days", "반복 요일:")}
-          </span>
-          {DAYS_OF_WEEK.map((day) => (
-            <button
-              key={day.value}
+      <div
+        className="w-full max-w-2xl bg-white rounded-xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {t("home.add_task")}
+          </h2>
+          {onCancel && (
+            <Button
               type="button"
-              onClick={() => handleDayToggle(day.value)}
-              className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
-                weeklyDays.includes(day.value)
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+              variant="ghost"
+              size="icon"
+              onClick={onCancel}
             >
-              {day.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {recurring === "MONTHLY" && (
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-sm font-medium text-gray-700 mr-2">
-            {t("task.repeat_monthly_label", "매월:")}
-          </span>
-          <Select
-            value={monthlyType}
-            onChange={(e) => setMonthlyType(e.target.value as "DATE" | "NTH")}
-            className="w-32 bg-white"
-          >
-            <option value="DATE">
-              {t("task.monthly_type_date", "특정 일자")}
-            </option>
-            <option value="NTH">
-              {t("task.monthly_type_nth", "특정 요일")}
-            </option>
-          </Select>
-
-          {monthlyType === "DATE" ? (
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min={1}
-                max={31}
-                value={monthlyDay}
-                onChange={(e) => setMonthlyDay(Number(e.target.value))}
-                className="w-20"
-              />
-              <span className="text-sm">{t("common.day_unit", "일")}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1">
-              <Select
-                value={monthlyNthWeek}
-                onChange={(e) => setMonthlyNthWeek(Number(e.target.value))}
-                className="w-24 bg-white"
-              >
-                <option value={1}>{t("task.nth_1", "첫째 주")}</option>
-                <option value={2}>{t("task.nth_2", "둘째 주")}</option>
-                <option value={3}>{t("task.nth_3", "셋째 주")}</option>
-                <option value={4}>{t("task.nth_4", "넷째 주")}</option>
-                <option value={5}>{t("task.nth_5", "마지막 주")}</option>
-              </Select>
-              <Select
-                value={monthlyDayOfWeek}
-                onChange={(e) => setMonthlyDayOfWeek(Number(e.target.value))}
-                className="w-24 bg-white"
-              >
-                {DAYS_OF_WEEK.map((day) => (
-                  <option key={day.value} value={day.value}>
-                    {day.label}
-                    {t("common.day_suffix", "요일")}
-                  </option>
-                ))}
-              </Select>
-            </div>
+              <X className="h-5 w-5 text-gray-500 hover:text-gray-900" />
+            </Button>
           )}
         </div>
-      )}
 
-      {recurring === "YEARLY" && (
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-sm font-medium text-gray-700 mx-1">
-            {t("task.repeat_yearly_label", "매년:")}
-          </span>
-          <div className="flex items-center gap-1">
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 bg-white"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row">
             <Input
-              type="number"
-              min={1}
-              max={12}
-              value={yearlyMonth}
-              onChange={(e) => setYearlyMonth(Number(e.target.value))}
-              className="w-16"
+              ref={titleInputRef}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("task.title_placeholder")}
+              required
+              autoFocus
+              className="flex-1"
             />
-            <span className="text-sm">{t("common.month_unit", "월")}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min={1}
-              max={31}
-              value={yearlyDay}
-              onChange={(e) => setYearlyDay(Number(e.target.value))}
-              className="w-16"
+            <PrioritySelect
+              value={priority}
+              onChange={(val) => setPriority(val)}
+              className="w-full sm:w-32 shrink-0"
             />
-            <span className="text-sm">{t("common.day_unit", "일")}</span>
           </div>
-        </div>
-      )}
 
-      {recurring !== "NONE" && (
-        <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 pt-4">
-          <div className="flex bg-gray-50 p-4 rounded-lg flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <span className="text-sm font-medium text-gray-700 w-20 shrink-0">
-                {t("task.end_condition_label", "종료 조건:")}
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t("task.desc_placeholder")}
+            className="resize-y"
+          />
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full sm:w-40"
+            />
+
+            <Select
+              value={recurring}
+              onChange={(e) => setRecurring(e.target.value as RecurringType)}
+              className="w-full sm:w-40"
+            >
+              <option value="NONE">{t("task.repeat_none")}</option>
+              <option value="DAILY">{t("task.repeat_daily")}</option>
+              <option value="WEEKLY">{t("task.repeat_weekly")}</option>
+              <option value="MONTHLY">{t("task.repeat_monthly")}</option>
+              <option value="YEARLY">{t("task.repeat_yearly")}</option>
+            </Select>
+
+            <Button type="submit" className="ml-auto w-full sm:w-auto">
+              {t("common.add", "추가")}
+            </Button>
+          </div>
+
+          {recurring === "WEEKLY" && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm font-medium text-gray-700 mr-2">
+                {t("task.repeat_days", "반복 요일:")}
               </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <Select
-                  value={endOption}
-                  onChange={(e) =>
-                    setEndOption(e.target.value as RecurringEndOption)
-                  }
-                  className="w-32 bg-white"
+              {DAYS_OF_WEEK.map((day) => (
+                <button
+                  key={day.value}
+                  type="button"
+                  onClick={() => handleDayToggle(day.value)}
+                  className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
+                    weeklyDays.includes(day.value)
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
                 >
-                  <option value="NONE">{t("task.end_condition_none")}</option>
-                  <option value="DATE">{t("task.end_condition_date")}</option>
-                  <option value="OCCURRENCES">
-                    {t("task.end_condition_count")}
-                  </option>
-                </Select>
+                  {day.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-                {endOption === "DATE" && (
+          {recurring === "MONTHLY" && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm font-medium text-gray-700 mr-2">
+                {t("task.repeat_monthly_label", "매월:")}
+              </span>
+              <Select
+                value={monthlyType}
+                onChange={(e) =>
+                  setMonthlyType(e.target.value as "DATE" | "NTH")
+                }
+                className="w-32 bg-white"
+              >
+                <option value="DATE">
+                  {t("task.monthly_type_date", "특정 일자")}
+                </option>
+                <option value="NTH">
+                  {t("task.monthly_type_nth", "특정 요일")}
+                </option>
+              </Select>
+
+              {monthlyType === "DATE" ? (
+                <div className="flex items-center gap-1">
                   <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-40 bg-white"
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={monthlyDay}
+                    onChange={(e) => setMonthlyDay(Number(e.target.value))}
+                    className="w-20"
                   />
-                )}
+                  <span className="text-sm">{t("common.day_unit", "일")}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Select
+                    value={monthlyNthWeek}
+                    onChange={(e) => setMonthlyNthWeek(Number(e.target.value))}
+                    className="w-24 bg-white"
+                  >
+                    <option value={1}>{t("task.nth_1", "첫째 주")}</option>
+                    <option value={2}>{t("task.nth_2", "둘째 주")}</option>
+                    <option value={3}>{t("task.nth_3", "셋째 주")}</option>
+                    <option value={4}>{t("task.nth_4", "넷째 주")}</option>
+                    <option value={5}>{t("task.nth_5", "마지막 주")}</option>
+                  </Select>
+                  <Select
+                    value={monthlyDayOfWeek}
+                    onChange={(e) =>
+                      setMonthlyDayOfWeek(Number(e.target.value))
+                    }
+                    className="w-24 bg-white"
+                  >
+                    {DAYS_OF_WEEK.map((day) => (
+                      <option key={day.value} value={day.value}>
+                        {day.label}
+                        {t("common.day_suffix", "요일")}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
 
-                {endOption === "OCCURRENCES" && (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={endOccurrences}
-                      onChange={(e) =>
-                        setEndOccurrences(Number(e.target.value))
-                      }
-                      className="w-20 bg-white"
-                    />
-                    <span className="text-sm text-gray-600">
-                      {t("task.end_occurrences_suffix", "회 반복 후 종료")}
-                    </span>
-                  </div>
-                )}
+          {recurring === "YEARLY" && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm font-medium text-gray-700 mx-1">
+                {t("task.repeat_yearly_label", "매년:")}
+              </span>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={yearlyMonth}
+                  onChange={(e) => setYearlyMonth(Number(e.target.value))}
+                  className="w-16"
+                />
+                <span className="text-sm">{t("common.month_unit", "월")}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={yearlyDay}
+                  onChange={(e) => setYearlyDay(Number(e.target.value))}
+                  className="w-16"
+                />
+                <span className="text-sm">{t("common.day_unit", "일")}</span>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-    </form>
+          )}
+
+          {recurring !== "NONE" && (
+            <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 pt-4">
+              <div className="flex bg-gray-50 p-4 rounded-lg flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <span className="text-sm font-medium text-gray-700 w-20 shrink-0">
+                    {t("task.end_condition_label", "종료 조건:")}
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Select
+                      value={endOption}
+                      onChange={(e) =>
+                        setEndOption(e.target.value as RecurringEndOption)
+                      }
+                      className="w-32 bg-white"
+                    >
+                      <option value="NONE">
+                        {t("task.end_condition_none")}
+                      </option>
+                      <option value="DATE">
+                        {t("task.end_condition_date")}
+                      </option>
+                      <option value="OCCURRENCES">
+                        {t("task.end_condition_count")}
+                      </option>
+                    </Select>
+
+                    {endOption === "DATE" && (
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-40 bg-white"
+                      />
+                    )}
+
+                    {endOption === "OCCURRENCES" && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          value={endOccurrences}
+                          onChange={(e) =>
+                            setEndOccurrences(Number(e.target.value))
+                          }
+                          className="w-20 bg-white"
+                        />
+                        <span className="text-sm text-gray-600">
+                          {t("task.end_occurrences_suffix", "회 반복 후 종료")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
   );
 }
