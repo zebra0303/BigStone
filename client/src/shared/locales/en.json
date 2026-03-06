@@ -88,6 +88,10 @@
     "login_btn": "Login",
     "lang_title": "Language Settings",
     "lang_label": "System Language",
+    "theme_title": "Theme Settings",
+    "theme_label": "Display Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
     "save_success": "Settings saved. Please refresh the page to apply.",
     "setup_complete_msg": "Password set successfully. Please login again.",
     "back_to_home": "Back to Home"

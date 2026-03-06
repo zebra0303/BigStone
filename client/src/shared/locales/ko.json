@@ -88,6 +88,10 @@
     "login_btn": "로그인",
     "lang_title": "기본 언어 설정 (다국어)",
     "lang_label": "시스템 기본 언어",
+    "theme_title": "테마 설정",
+    "theme_label": "화면 테마",
+    "theme_light": "라이트 (Light)",
+    "theme_dark": "다크 (Dark)",
     "save_success": "설정이 저장되었습니다. 페이지를 새로고침하면 적용됩니다.",
     "setup_complete_msg": "비밀번호 설정이 완료되었습니다. 다시 로그인해주세요.",
     "back_to_home": "홈으로 돌아가기"

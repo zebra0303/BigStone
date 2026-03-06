@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Select } from "@/shared/ui/Select";
-import { ChevronLeft, Lock, Globe, Save } from "lucide-react";
+import { ChevronLeft, Lock, Globe, Save, Moon } from "lucide-react";
 
 export function AdminPage() {
   const { t, i18n } = useTranslation();
@@ -17,6 +17,7 @@ export function AdminPage() {
 
   // Settings State
   const [language, setLanguage] = useState("ko");
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -110,6 +111,15 @@ export function AdminPage() {
       if (res.ok) {
         // Update local i18n instance immediately
         i18n.changeLanguage(language);
+
+        // Save theme to localStorage and apply it
+        localStorage.setItem("theme", theme);
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+
         alert(t("admin.save_success"));
       } else {
         const data = await res.json();
@@ -213,6 +223,29 @@ export function AdminPage() {
               >
                 <option value="ko">🇰🇷 한국어 (Korean)</option>
                 <option value="en">🇺🇸 영어 (English)</option>
+              </Select>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-6">
+              <Moon className="h-5 w-5 text-gray-400" />{" "}
+              {t("admin.theme_title", "테마 설정")}
+            </h3>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <label className="text-sm font-medium text-gray-700 w-32 shrink-0">
+                {t("admin.theme_label", "화면 테마")}
+              </label>
+              <Select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className="max-w-xs"
+              >
+                <option value="light">
+                  ☀️ {t("admin.theme_light", "라이트")}
+                </option>
+                <option value="dark">🌙 {t("admin.theme_dark", "다크")}</option>
               </Select>
             </div>
 
