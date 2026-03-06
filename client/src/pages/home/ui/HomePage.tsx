@@ -349,8 +349,10 @@ export function HomePage() {
                   <h2
                     className={`text-lg font-bold flex items-center gap-2 ${isToday ? "text-blue-700" : "text-gray-800"}`}
                   >
-                    {format(date, "MMM d'일'", { locale: getDateLocale() })} (
-                    {format(date, "EEE", { locale: getDateLocale() })})
+                    {format(date, t("home.date_format", "MMM d'일'"), {
+                      locale: getDateLocale(),
+                    })}{" "}
+                    ({format(date, "EEE", { locale: getDateLocale() })})
                   </h2>
                   <span className="bg-gray-100 text-gray-600 text-xs font-bold py-0.5 px-2 rounded-full">
                     {dayTodos.length}

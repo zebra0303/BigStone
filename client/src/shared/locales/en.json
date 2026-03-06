@@ -33,6 +33,7 @@
     }
   },
   "home": {
+    "date_format": "MMM d",
     "title": "Big Stone Task Manager",
     "subtitle": "Put the big stones in first.",
     "add_task": "Add New Task",
