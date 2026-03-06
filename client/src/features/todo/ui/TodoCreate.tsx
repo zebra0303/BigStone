@@ -208,9 +208,16 @@ export function TodoCreate({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {t("home.add_task")}
-          </h2>
+          <div className="flex items-center gap-2">
+            <img
+              src="/stone.png"
+              alt="Big Stone"
+              className="h-6 w-6 object-contain"
+            />
+            <h2 className="text-lg font-semibold text-gray-900">
+              {t("home.add_task")}
+            </h2>
+          </div>
           {onCancel && (
             <Button
               type="button"
