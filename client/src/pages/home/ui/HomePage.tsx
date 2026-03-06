@@ -11,7 +11,12 @@ import {
   getDay,
   startOfDay,
 } from "date-fns";
-import { Plus, ChevronLeft, ChevronRight, Archive } from "lucide-react";
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Search as SearchIcon,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { safeParseDate, getNextOccurrence } from "@/shared/lib/recurringDate";
 
@@ -226,10 +231,10 @@ export function HomePage() {
               <p className="text-gray-500">중요한 돌부터 담으세요.</p>
               <span className="text-gray-300">|</span>
               <Link
-                to="/archive"
+                to="/search"
                 className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
               >
-                <Archive className="w-4 h-4" /> 보관함 보기
+                <SearchIcon className="w-4 h-4" /> 일정 검색
               </Link>
             </div>
           </div>
