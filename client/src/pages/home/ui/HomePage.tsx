@@ -268,56 +268,88 @@ export function HomePage() {
         </div>
 
         <div className="flex flex-col items-end gap-3 shrink-0">
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg border dark:border-gray-700 flex-nowrap overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg border dark:border-gray-700">
             <Button
-              variant={viewMode === "1DAY" ? "primary" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode("1DAY")}
               className={cn(
-                "whitespace-nowrap",
+                "whitespace-nowrap px-4 font-medium transition-all duration-200",
                 viewMode === "1DAY"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-gray-500 dark:text-gray-400",
+                  ? "shadow-sm font-bold"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
               )}
+              style={
+                viewMode === "1DAY"
+                  ? {
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                    }
+                  : {}
+              }
             >
               {t("home.view_1day")}
             </Button>
             <Button
-              variant={viewMode === "3DAY" ? "primary" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode("3DAY")}
               className={cn(
-                "whitespace-nowrap",
+                "whitespace-nowrap px-4 font-medium transition-all duration-200",
                 viewMode === "3DAY"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-gray-500 dark:text-gray-400",
+                  ? "shadow-sm font-bold"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
               )}
+              style={
+                viewMode === "3DAY"
+                  ? {
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                    }
+                  : {}
+              }
             >
               {t("home.view_3day")}
             </Button>
             <Button
-              variant={viewMode === "WEEK_WORK" ? "primary" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode("WEEK_WORK")}
               className={cn(
-                "whitespace-nowrap",
+                "whitespace-nowrap px-4 font-medium transition-all duration-200",
                 viewMode === "WEEK_WORK"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-gray-500 dark:text-gray-400",
+                  ? "shadow-sm font-bold"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
               )}
+              style={
+                viewMode === "WEEK_WORK"
+                  ? {
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                    }
+                  : {}
+              }
             >
               {t("home.view_week_work")}
             </Button>
             <Button
-              variant={viewMode === "WEEK_ALL" ? "primary" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode("WEEK_ALL")}
               className={cn(
-                "whitespace-nowrap",
+                "whitespace-nowrap px-4 font-medium transition-all duration-200",
                 viewMode === "WEEK_ALL"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-gray-500 dark:text-gray-400",
+                  ? "shadow-sm font-bold"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
               )}
+              style={
+                viewMode === "WEEK_ALL"
+                  ? {
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                    }
+                  : {}
+              }
             >
               {t("home.view_week_all")}
             </Button>
@@ -397,7 +429,13 @@ export function HomePage() {
                     {dayTodos.length}
                   </span>
                   {isToday && viewMode === "1DAY" && (
-                    <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full shadow-sm"
+                      style={{
+                        backgroundColor: "var(--primary)",
+                        color: "var(--primary-foreground)",
+                      }}
+                    >
                       {t("common.today")}
                     </span>
                   )}
