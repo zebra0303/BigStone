@@ -266,12 +266,17 @@ export function HomePage() {
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+        <div className="flex flex-col items-end gap-3 shrink-0">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg border dark:border-gray-700">
             <Button
               variant={viewMode === "1DAY" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("1DAY")}
+              className={
+                viewMode === "1DAY"
+                  ? "shadow-sm"
+                  : "text-gray-500 dark:text-gray-400"
+              }
             >
               {t("home.view_1day")}
             </Button>
@@ -279,6 +284,11 @@ export function HomePage() {
               variant={viewMode === "3DAY" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("3DAY")}
+              className={
+                viewMode === "3DAY"
+                  ? "shadow-sm"
+                  : "text-gray-500 dark:text-gray-400"
+              }
             >
               {t("home.view_3day")}
             </Button>
@@ -286,6 +296,11 @@ export function HomePage() {
               variant={viewMode === "WEEK_WORK" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("WEEK_WORK")}
+              className={
+                viewMode === "WEEK_WORK"
+                  ? "shadow-sm"
+                  : "text-gray-500 dark:text-gray-400"
+              }
             >
               {t("home.view_week_work")}
             </Button>
@@ -293,29 +308,34 @@ export function HomePage() {
               variant={viewMode === "WEEK_ALL" ? "primary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("WEEK_ALL")}
+              className={
+                viewMode === "WEEK_ALL"
+                  ? "shadow-sm"
+                  : "text-gray-500 dark:text-gray-400"
+              }
             >
               {t("home.view_week_all")}
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-nowrap">
             <Button
               variant="outline"
               size="icon"
               onClick={handlePrev}
-              className="dark:bg-gray-800 dark:border-gray-700"
+              className="dark:bg-gray-800 dark:border-gray-700 shrink-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-2 py-1 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus-within:ring-2 focus-within:ring-primary transition-colors">
+            <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-2 py-1 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus-within:ring-2 focus-within:ring-primary transition-colors shrink-0">
               <input
                 type="date"
                 value={baseDateStr}
                 onChange={(e) => {
                   if (e.target.value) setBaseDateStr(e.target.value);
                 }}
-                className="w-full bg-transparent border-none text-gray-700 dark:text-gray-200 font-medium text-sm focus:outline-none focus:ring-0 cursor-pointer [color-scheme:light] dark:[color-scheme:dark]"
+                className="bg-transparent border-none text-gray-700 dark:text-gray-200 font-medium text-sm focus:outline-none focus:ring-0 cursor-pointer [color-scheme:light] dark:[color-scheme:dark] w-[110px]"
                 aria-label="Select Date"
               />
             </div>
@@ -324,14 +344,14 @@ export function HomePage() {
               variant="outline"
               size="icon"
               onClick={handleNext}
-              className="dark:bg-gray-800 dark:border-gray-700"
+              className="dark:bg-gray-800 dark:border-gray-700 shrink-0"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button
               variant="secondary"
               onClick={handleToday}
-              className="dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+              className="dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 shrink-0"
             >
               {t("common.today")}
             </Button>

@@ -122,7 +122,7 @@ export function TodoItem({ todo }: TodoItemProps) {
                       : ""
                   }
                 >
-                  {format(new Date(todo.dueDate), "MMM d, yyyy", {
+                  {format(new Date(todo.dueDate), "M/d, yyyy", {
                     locale: getDateLocale(),
                   })}
                 </span>

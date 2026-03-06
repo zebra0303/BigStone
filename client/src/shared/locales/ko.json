@@ -34,7 +34,7 @@
     }
   },
   "home": {
-    "date_format": "M월 d일",
+    "date_format": "M/d",
     "title": "Big Stone Task Manager",
     "subtitle": "중요한 돌부터 담으세요.",
     "add_task": "새 할일 추가",
