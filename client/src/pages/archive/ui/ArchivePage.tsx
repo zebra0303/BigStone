@@ -32,20 +32,8 @@ export function ArchivePage() {
   const { data: todos = [] } = useTodos();
 
   const archiveTodos = useMemo(() => {
-    const todayStr = format(new Date(), "yyyy-MM-dd");
-
     return todos
-      .filter((todo) => {
-        if (todo.status !== "DONE") return false;
-
-        // Exclude tasks completed today so they stay on the home screen
-        if (todo.completedAt) {
-          const compDateStr = format(new Date(todo.completedAt), "yyyy-MM-dd");
-          if (compDateStr === todayStr) return false;
-        }
-
-        return true;
-      })
+      .filter((todo) => todo.status === "DONE")
       .sort((a, b) => {
         const dateA = a.completedAt
           ? new Date(a.completedAt).getTime()
