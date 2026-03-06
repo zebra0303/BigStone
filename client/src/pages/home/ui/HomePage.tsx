@@ -393,7 +393,7 @@ export function HomePage() {
                   <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold py-0.5 px-2 rounded-full">
                     {dayTodos.length}
                   </span>
-                  {isToday && (
+                  {isToday && viewMode === "1DAY" && (
                     <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                       {t("common.today")}
                     </span>
@@ -414,6 +414,7 @@ export function HomePage() {
               <div className="flex-1">
                 <TodoList
                   todos={dayTodos}
+                  showYear={viewMode === "1DAY"}
                   emptyMessage={
                     isToday ? t("home.no_tasks_today") : t("home.no_tasks")
                   }

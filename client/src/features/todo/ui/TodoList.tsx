@@ -5,9 +5,10 @@ import { TodoItem } from "./TodoItem";
 interface TodoListProps {
   todos: Todo[];
   emptyMessage?: string;
+  showYear?: boolean;
 }
 
-export function TodoList({ todos, emptyMessage }: TodoListProps) {
+export function TodoList({ todos, emptyMessage, showYear }: TodoListProps) {
   const { t } = useTranslation();
   const displayMessage = emptyMessage || t("home.no_tasks");
 
@@ -22,7 +23,7 @@ export function TodoList({ todos, emptyMessage }: TodoListProps) {
   return (
     <div className="flex flex-col gap-3">
       {todos.map((todo) => (
-        <TodoItem key={todo.id} todo={todo} />
+        <TodoItem key={todo.id} todo={todo} showYear={showYear} />
       ))}
     </div>
   );
