@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Select } from "@/shared/ui/Select";
+import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
 import { X } from "lucide-react";
 import { getNextValidDueDate } from "@/shared/lib/recurringDate";
@@ -169,15 +170,11 @@ export function TodoCreate({ onSuccess, onCancel }: TodoCreateProps) {
           autoFocus
           className="flex-1"
         />
-        <Select
+        <PrioritySelect
           value={priority}
-          onChange={(e) => setPriority(e.target.value as TodoPriority)}
-          className="w-full sm:w-32 bg-white"
-        >
-          <option value="HIGH" className="text-red-600 font-bold">★★★ 높음</option>
-          <option value="MEDIUM" className="text-yellow-500 font-bold">★★ 보통</option>
-          <option value="LOW" className="text-green-600 font-bold">★ 낮음</option>
-        </Select>
+          onChange={(val) => setPriority(val)}
+          className="w-full sm:w-32 shrink-0"
+        />
       </div>
 
       <Textarea
