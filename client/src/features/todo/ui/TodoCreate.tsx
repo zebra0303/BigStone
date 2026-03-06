@@ -7,13 +7,16 @@ import type {
   TodoPriority,
 } from "@/entities/todo/model/types";
 import { useCreateTodo } from "@/features/todo/model/hooks";
+import { todoApi } from "@/shared/api/todoApi";
+import { useQueryClient } from "@tanstack/react-query";
+import { TODO_QUERY_KEY } from "@/features/todo/model/hooks";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Select } from "@/shared/ui/Select";
 import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
-import { X } from "lucide-react";
+import { X, Paperclip, Loader2 } from "lucide-react";
 import { getNextValidDueDate } from "@/shared/lib/recurringDate";
 
 interface TodoCreateProps {
@@ -28,8 +31,10 @@ export function TodoCreate({
   onCancel,
 }: TodoCreateProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const createTodo = useCreateTodo();
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -55,6 +60,9 @@ export function TodoCreate({
   );
   const [yearlyDay, setYearlyDay] = useState<number>(new Date().getDate());
 
+  const [files, setFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
   const DAYS_OF_WEEK = [
     { value: 0, label: t("common.days.sun", "일") },
     { value: 1, label: t("common.days.mon", "월") },
@@ -71,9 +79,27 @@ export function TodoCreate({
     );
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const newFiles = Array.from(e.target.files);
+    const validFiles = newFiles.filter((f) => {
+      if (f.size > 10 * 1024 * 1024) {
+        alert("File size exceeds 10MB limit.");
+        return false;
+      }
+      return true;
+    });
+    setFiles((prev) => [...prev, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFileRemove = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || createTodo.isPending) return;
+    if (!title.trim() || createTodo.isPending || isUploading) return;
 
     createTodo.mutate(
       {
@@ -126,7 +152,23 @@ export function TodoCreate({
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: async (data) => {
+          if (files.length > 0 && data?.groupId) {
+            setIsUploading(true);
+            try {
+              for (const file of files) {
+                await todoApi.uploadAttachment(data.groupId, file);
+              }
+              // Invalidate queries again to fetch the new attachments
+              queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+            } catch (err) {
+              console.error("Failed to upload attachments", err);
+              alert("Some attachments failed to upload.");
+            } finally {
+              setIsUploading(false);
+            }
+          }
+
           // Reset form and focus title for UX (Continuous entry)
           setTitle("");
           setDescription("");
@@ -143,6 +185,7 @@ export function TodoCreate({
           setEndOption("NONE");
           setEndDate(format(new Date(), "yyyy-MM-dd"));
           setEndOccurrences(10);
+          setFiles([]);
 
           if (onSuccess) {
             onSuccess();
@@ -201,12 +244,72 @@ export function TodoCreate({
             />
           </div>
 
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t("task.desc_placeholder")}
-            className="resize-y"
-          />
+          <div className="flex flex-col gap-2">
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t("task.desc_placeholder")}
+              className="resize-y min-h-[100px]"
+            />
+
+            {/* Attachment Section */}
+            <div className="flex items-center gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-gray-600 flex items-center gap-1.5"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading || createTodo.isPending}
+              >
+                {isUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Paperclip className="h-4 w-4" />
+                )}
+                {t("task.attach_file", "파일 첨부")}
+              </Button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                multiple
+                onChange={handleFileUpload}
+              />
+            </div>
+
+            {/* Attachment List */}
+            {files.length > 0 && (
+              <div className="mt-3 flex flex-col gap-2">
+                {files.map((file, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md p-2 text-sm"
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
+                      <span className="text-gray-700 truncate">
+                        {file.name}
+                      </span>
+                      <span className="text-gray-400 text-xs shrink-0">
+                        ({(file.size / 1024).toFixed(1)} KB)
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-gray-400 hover:text-red-500"
+                      onClick={() => handleFileRemove(idx)}
+                      disabled={isUploading || createTodo.isPending}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
@@ -227,10 +330,6 @@ export function TodoCreate({
               <option value="MONTHLY">{t("task.repeat_monthly")}</option>
               <option value="YEARLY">{t("task.repeat_yearly")}</option>
             </Select>
-
-            <Button type="submit" className="ml-auto w-full sm:w-auto">
-              {t("common.add", "추가")}
-            </Button>
           </div>
 
           {recurring === "WEEKLY" && (
@@ -406,6 +505,21 @@ export function TodoCreate({
             </div>
           )}
         </form>
+
+        <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={createTodo.isPending || isUploading}
+          >
+            {createTodo.isPending || isUploading
+              ? t("common.saving", "저장 중...")
+              : t("common.save", "저장")}
+          </Button>
+        </div>
       </div>
     </div>
   );
