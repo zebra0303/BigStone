@@ -72,6 +72,9 @@ export function HomePage() {
     const maxDateMs = displayDates.length > 0
       ? Math.max(...displayDates.map(d => startOfDay(d).getTime()))
       : 0;
+    const minDateMs = displayDates.length > 0
+      ? Math.min(...displayDates.map(d => startOfDay(d).getTime()))
+      : 0;
 
     validTodos.forEach((todo) => {
       if (todo.status !== "DONE" && todo.recurring.type !== "NONE") {
@@ -80,13 +83,12 @@ export function HomePage() {
         // This ensures the visual calendar paints intermediate missed days correctly.
         let currentRefDate = safeParseDate(todo.dueDate);
 
-        // We use a safe maximum iterator (e.g. 30) instead of 7. 
-        // 7 is too small because skipping 2 weekend days means 7 iterations only spans 5 working days, 
-        // causing next week's tasks to disappear from view in WEEK_ALL mode.
+        // We increase the safeguard iterator to 1000 (roughly 3 years for daily tasks)
+        // so users can scroll far ahead. Memory is saved by only pushing visible dates.
         let projectionCount = 0;
         let runningOccurences = todo.recurring.occurrenceCount || 1; // 1 is default for the DB instance itself
 
-        while (projectionCount < 30) {
+        while (projectionCount < 1000) {
           // Pass `true` for ignoreToday so virtual projections strictly sequence forward 
           // from the last computed date, rather than clustering repeatedly on `today`.
           const nextDate = getNextOccurrence(currentRefDate, todo.recurring, true);
@@ -109,13 +111,15 @@ export function HomePage() {
             if (runningOccurences >= todo.recurring.endOccurrences) break;
           }
 
-          // Generate Virtual item
-          projected.push({
-            ...todo,
-            id: `virtual-${todo.id}-${projectionCount}`,
-            dueDate: nextDate,
-            isVirtual: true,
-          });
+          // Generate Virtual item ONLY if it's visible in the current timeline view (>= minDateMs)
+          if (nextDateMs >= minDateMs) {
+            projected.push({
+              ...todo,
+              id: `virtual-${todo.id}-${projectionCount}`,
+              dueDate: nextDate,
+              isVirtual: true,
+            });
+          }
 
           // Step forward
           currentRefDate = nextDate;
