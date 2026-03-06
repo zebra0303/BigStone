@@ -8,7 +8,7 @@
     "delete": "Delete",
     "today": "Today",
     "loading": "Loading...",
-    "search": "Search Tasks",
+    "search": "Search",
     "add": "Add",
     "date": "Date",
     "repeat": "Repeat",
@@ -77,7 +77,7 @@
     "attach_file": "Attach File"
   },
   "admin": {
-    "title": "Admin Settings",
+    "title": "Admin",
     "logout": "Logout",
     "setup_title": "Admin Initial Setup",
     "setup_desc": "Please set up an admin password.",
