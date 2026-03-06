@@ -35,7 +35,7 @@
   "home": {
     "title": "Big Stone Task Manager",
     "subtitle": "Put the big stones in first.",
-    "add_task": "Add New Task (Add Big Stone)",
+    "add_task": "Add New Task",
     "add_task_btn": "Add Task",
     "view_1day": "1 Day",
     "view_3day": "3 Days",
@@ -45,6 +45,7 @@
     "no_tasks": "No tasks."
   },
   "task": {
+    "edit_task": "Edit Task",
     "title_placeholder": "Task Title (Required)",
     "desc_placeholder": "Description (Optional) - Write detailed notes.",
     "search_placeholder": "Search titles or descriptions...",

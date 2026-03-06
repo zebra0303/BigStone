@@ -35,7 +35,7 @@
   "home": {
     "title": "Big Stone Task Manager",
     "subtitle": "중요한 돌부터 담으세요.",
-    "add_task": "새 할일 추가 (Add Big Stone)",
+    "add_task": "새 할일 추가",
     "add_task_btn": "할 일 추가하기",
     "view_1day": "1일",
     "view_3day": "3일",
@@ -45,6 +45,7 @@
     "no_tasks": "할 일이 없습니다."
   },
   "task": {
+    "edit_task": "할일 수정",
     "title_placeholder": "할일 제목 (필수)",
     "desc_placeholder": "내용 (선택) - 상세한 할 일 내용을 적어보세요.",
     "search_placeholder": "일정 제목이나 내용을 검색하세요...",

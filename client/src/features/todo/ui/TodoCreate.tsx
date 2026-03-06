@@ -311,25 +311,34 @@ export function TodoCreate({
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full sm:w-40"
-            />
-
-            <Select
-              value={recurring}
-              onChange={(e) => setRecurring(e.target.value as RecurringType)}
-              className="w-full sm:w-40"
-            >
-              <option value="NONE">{t("task.repeat_none")}</option>
-              <option value="DAILY">{t("task.repeat_daily")}</option>
-              <option value="WEEKLY">{t("task.repeat_weekly")}</option>
-              <option value="MONTHLY">{t("task.repeat_monthly")}</option>
-              <option value="YEARLY">{t("task.repeat_yearly")}</option>
-            </Select>
+          <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center">
+            <div className="w-full sm:w-auto flex-1 sm:flex-none">
+              <label className="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">
+                {t("common.date", "일자")}
+              </label>
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="w-full sm:w-40"
+              />
+            </div>
+            <div className="w-full sm:w-auto flex-1 sm:flex-none">
+              <label className="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">
+                {t("common.repeat", "반복")}
+              </label>
+              <Select
+                value={recurring}
+                onChange={(e) => setRecurring(e.target.value as RecurringType)}
+                className="w-full sm:w-40"
+              >
+                <option value="NONE">{t("task.repeat_none")}</option>
+                <option value="DAILY">{t("task.repeat_daily")}</option>
+                <option value="WEEKLY">{t("task.repeat_weekly")}</option>
+                <option value="MONTHLY">{t("task.repeat_monthly")}</option>
+                <option value="YEARLY">{t("task.repeat_yearly")}</option>
+              </Select>
+            </div>
           </div>
 
           {recurring === "WEEKLY" && (
