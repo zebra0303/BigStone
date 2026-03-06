@@ -14,7 +14,7 @@ export function TodoList({ todos, emptyMessage, showYear }: TodoListProps) {
 
   if (todos.length === 0) {
     return (
-      <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-gray-500">
+      <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400">
         <p>{displayMessage}</p>
       </div>
     );
