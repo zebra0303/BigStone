@@ -298,7 +298,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                     <div className="flex items-center gap-2 overflow-hidden">
                       <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
                       <a 
-                        href={`/uploads/${att.filename}`} 
+                        href={`/api/todos/attachments/${att.id}/download`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline truncate"

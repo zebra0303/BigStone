@@ -63,6 +63,31 @@ router.post("/:groupId", upload.single("file"), (req: Request, res: Response) =>
   });
 });
 
+// Download attachment with original filename
+router.get("/:id/download", (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  db.get("SELECT filename, originalName FROM todo_attachments WHERE id = ?", [id], (err, row: any) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Attachment not found" });
+
+    const filePath = path.join(uploadDir, row.filename);
+
+    if (fs.existsSync(filePath)) {
+      res.download(filePath, row.originalName, (downloadErr) => {
+        if (downloadErr) {
+          console.error("Error downloading file:", downloadErr);
+          if (!res.headersSent) {
+            res.status(500).json({ error: "Error downloading file" });
+          }
+        }
+      });
+    } else {
+      res.status(404).json({ error: "File not found on disk" });
+    }
+  });
+});
+
 // Delete attachment
 router.delete("/:id", (req: Request, res: Response) => {
   const { id } = req.params;

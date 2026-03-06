@@ -175,7 +175,7 @@ export function TodoItem({ todo }: TodoItemProps) {
                   {todo.attachments.map(att => (
                     <a 
                       key={att.id}
-                      href={`/uploads/${att.filename}`} 
+                      href={`/api/todos/attachments/${att.id}/download`} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-xs font-medium text-gray-700 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
