@@ -13,14 +13,67 @@ if (!process.env.JWT_SECRET) {
   console.warn("WARNING: JWT_SECRET is not set. Using fallback secret.");
 }
 
-// Strict rate limit for auth endpoints to prevent brute-force
+// Strict rate limit for auth endpoints to prevent brute-force (per-IP)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 attempts per 15 min
+  max: 10, // 10 attempts per 15 min per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many login attempts, please try again later." },
 });
+
+// Account-level lockout after consecutive failed attempts (IP-independent)
+const LOGIN_MAX_FAILURES = 5;
+const LOGIN_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+function getLoginFailureState(): { count: number; lockedUntil: number } {
+  try {
+    const row = db
+      .prepare("SELECT value FROM system_settings WHERE key = 'login_failure_state'")
+      .get() as any;
+    if (row) return JSON.parse(row.value);
+  } catch { /* ignore parse errors */ }
+  return { count: 0, lockedUntil: 0 };
+}
+
+function setLoginFailureState(count: number, lockedUntil: number): void {
+  const value = JSON.stringify({ count, lockedUntil });
+  db.prepare(
+    `INSERT INTO system_settings (key, value) VALUES ('login_failure_state', ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+  ).run(value);
+}
+
+function resetLoginFailureState(): void {
+  setLoginFailureState(0, 0);
+}
+
+function recordLoginFailure(): { locked: boolean; remainingMs: number } {
+  const state = getLoginFailureState();
+  const newCount = state.count + 1;
+
+  if (newCount >= LOGIN_MAX_FAILURES) {
+    const lockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
+    setLoginFailureState(newCount, lockedUntil);
+    return { locked: true, remainingMs: LOGIN_LOCKOUT_MS };
+  }
+
+  setLoginFailureState(newCount, 0);
+  return { locked: false, remainingMs: 0 };
+}
+
+function checkAccountLocked(): { locked: boolean; remainingMs: number } {
+  const state = getLoginFailureState();
+  if (state.lockedUntil > 0) {
+    const remaining = state.lockedUntil - Date.now();
+    if (remaining > 0) {
+      return { locked: true, remainingMs: remaining };
+    }
+    // Lockout expired, reset state
+    resetLoginFailureState();
+  }
+  return { locked: false, remainingMs: 0 };
+}
 
 // 1. Check if admin is set up
 router.get("/status", (req: Request, res: Response) => {
@@ -66,14 +119,38 @@ router.post("/login", authLimiter, async (req: Request, res: Response) => {
   const { password } = req.body;
 
   try {
+    // Check account-level lockout before processing
+    const lockStatus = checkAccountLocked();
+    if (lockStatus.locked) {
+      const remainingMin = Math.ceil(lockStatus.remainingMs / 60000);
+      return res.status(429).json({
+        error: `Account locked due to too many failed attempts. Try again in ${remainingMin} minute(s).`,
+      });
+    }
+
     const row = db
       .prepare("SELECT value FROM system_settings WHERE key = 'admin_password'")
       .get() as any;
     if (!row) return res.status(400).json({ error: "Admin not set up yet" });
 
     const match = await bcrypt.compare(password, row.value);
-    if (!match) return res.status(401).json({ error: "Incorrect password" });
+    if (!match) {
+      const failState = getLoginFailureState();
+      const result = recordLoginFailure();
+      if (result.locked) {
+        const remainingMin = Math.ceil(result.remainingMs / 60000);
+        return res.status(429).json({
+          error: `Account locked after ${LOGIN_MAX_FAILURES} failed attempts. Try again in ${remainingMin} minute(s).`,
+        });
+      }
+      const attemptsLeft = LOGIN_MAX_FAILURES - (failState.count + 1);
+      return res.status(401).json({
+        error: `Incorrect password. ${attemptsLeft} attempt(s) remaining before lockout.`,
+      });
+    }
 
+    // Successful login: reset failure counter
+    resetLoginFailureState();
     const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "24h" });
     res.json({ token });
   } catch (e: any) {
