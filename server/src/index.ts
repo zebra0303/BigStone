@@ -85,8 +85,8 @@ app.get("/health", (req, res) => {
 const clientDistPath = path.resolve(__dirname, "../../client/dist");
 app.use(express.static(clientDistPath));
 
-// SPA fallback: serve index.html for any non-API route
-app.get("*", (req, res) => {
+// SPA fallback: serve index.html for any non-API route (Express 5 syntax)
+app.get("*splat", (req, res) => {
   res.sendFile(path.join(clientDistPath, "index.html"));
 });
 
