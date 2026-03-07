@@ -168,6 +168,12 @@ export function AdminPage() {
           document.documentElement.classList.remove("dark");
         }
 
+        // Update meta theme-color to match selected theme
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+          metaThemeColor.setAttribute("content", theme === "dark" ? "#111827" : "#ffffff");
+        }
+
         // Save primary color to localStorage and apply it
         localStorage.setItem("primary_color", primaryColor);
         document.documentElement.style.setProperty("--primary", primaryColor);

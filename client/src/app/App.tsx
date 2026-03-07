@@ -35,13 +35,19 @@ function App() {
 
     // Initialize theme
     const savedTheme = localStorage.getItem("theme");
-    if (
+    const isDark =
       savedTheme === "dark" ||
-      (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
+      (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    if (isDark) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
+    }
+
+    // Update meta theme-color to match current theme
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute("content", isDark ? "#111827" : "#ffffff");
     }
 
     // Initialize custom colors
