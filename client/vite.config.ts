@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
         devOptions: {
           enabled: true,
         },
-        includeAssets: ["favicon.ico", "apple-touch-icon.png", "bigxi.png"],
+        includeAssets: ["favicon.ico", "bigxi.png"],
         manifest: {
           name: "BigStone Task Manager",
           short_name: "BigStone",
@@ -33,20 +33,20 @@ export default defineConfig(({ mode }) => {
           background_color: "#ffffff",
           icons: [
             {
-              src: "bigxi.png",
+              src: "pwa-icon-192x192.png",
               sizes: "192x192",
               type: "image/png",
             },
             {
-              src: "bigxi.png",
+              src: "pwa-icon-512x512.png",
               sizes: "512x512",
               type: "image/png",
             },
             {
-              src: "bigxi.png",
+              src: "pwa-icon-512x512.png",
               sizes: "512x512",
               type: "image/png",
-              purpose: "any maskable",
+              purpose: "maskable",
             },
           ],
         },
