@@ -4,6 +4,9 @@
 
 > "Put the big stones in first" — A task manager that prioritizes what matters most
 
+<img width="3904" height="1088" alt="Gemini_Generated_Image_pspl93pspl93pspl" src="https://github.com/user-attachments/assets/a3827494-8990-43ce-a8cd-f4a8e6fef26a" />
+
+
 ## Features
 
 - **Priority Management** — 3-level priority (HIGH / MEDIUM / LOW) to tackle important tasks first
