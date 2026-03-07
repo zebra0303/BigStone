@@ -86,4 +86,17 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS retrospectives (
+    id TEXT PRIMARY KEY,
+    periodStart TEXT NOT NULL,
+    periodEnd TEXT NOT NULL,
+    keepText TEXT DEFAULT '',
+    problemText TEXT DEFAULT '',
+    tryText TEXT DEFAULT '',
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  )
+`);
+
 export default db;

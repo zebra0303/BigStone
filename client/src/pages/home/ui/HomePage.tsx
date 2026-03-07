@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Search as SearchIcon,
   Settings as SettingsIcon,
+  BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { safeParseDate, getNextOccurrence } from "@/shared/lib/recurringDate";
@@ -264,6 +265,14 @@ export function HomePage() {
               >
                 <SearchIcon className="w-4 h-4" />{" "}
                 <span className="hidden sm:inline">{t("common.search")}</span>
+              </Link>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
+              <Link
+                to="/retrospective"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                <BookOpen className="w-4 h-4" />{" "}
+                <span className="hidden sm:inline">{t("retro.title", "톺아보기")}</span>
               </Link>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <Link

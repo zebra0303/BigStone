@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { HomePage } from "@/pages/home";
 import { SearchPage } from "@/pages/search";
 import { AdminPage } from "@/pages/admin";
+import { RetrospectivePage } from "@/pages/retrospective";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 export const appRouter = createBrowserRouter([
@@ -18,6 +19,14 @@ export const appRouter = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <SearchPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/retrospective",
+    element: (
+      <ProtectedRoute>
+        <RetrospectivePage />
       </ProtectedRoute>
     ),
   },

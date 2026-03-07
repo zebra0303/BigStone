@@ -10,6 +10,7 @@ import rateLimit from "express-rate-limit";
 import todosRouter from "./routes/todos";
 import settingsRouter from "./routes/settings";
 import attachmentsRouter from "./routes/attachments";
+import retrospectivesRouter from "./routes/retrospectives";
 import { startNotificationService } from "./services/notificationService";
 
 const app = express();
@@ -76,6 +77,7 @@ app.use(
 app.use("/api/todos", todosRouter);
 app.use("/api/todos/attachments", attachmentsRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/retrospectives", retrospectivesRouter);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

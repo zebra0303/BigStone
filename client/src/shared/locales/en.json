@@ -111,5 +111,27 @@
     "save_success": "Settings saved successfully. Please refresh the page to apply.",
     "setup_complete_msg": "Password set successfully. Please login again.",
     "back_to_home": "Back to Home"
+  },
+  "retro": {
+    "title": "Retrospective",
+    "subtitle": "Reflect on your past tasks and grow",
+    "new": "New",
+    "period": "Period",
+    "summary": "Summary",
+    "total": "Total",
+    "completed": "Done",
+    "incomplete": "Missed",
+    "completion_rate": "Completion Rate",
+    "task_list": "Task List",
+    "keep_label": "What went well, keep doing",
+    "keep_placeholder": "Write about what went well and what you want to keep doing...",
+    "problem_label": "What was difficult, problems faced",
+    "problem_placeholder": "Write about what was challenging or needs improvement...",
+    "try_label": "What to try next, improvements",
+    "try_placeholder": "Write about what you want to try or improve next time...",
+    "history": "Past Retrospectives",
+    "created_at": "Created",
+    "saved": "Retrospective saved",
+    "deleted": "Retrospective deleted"
   }
 }
