@@ -1,53 +1,181 @@
-# Big Stone Task Manager 프로젝트 분석 요약
+# BigStone Project - Research Summary
 
-## 1. 프로젝트 개요
+## 1. Overview
 
-Big Stone Task Manager는 "중요한 일(큰 돌)을 먼저 처리해야 한다"는 철학을 바탕으로 만들어진 할 일 관리 웹 애플리케이션입니다. 중요한 업무를 우선적으로 관리하고, 기한이 있는 일정과 오늘 처리해야 할 일들을 분리하여 사용자에게 직관적으로 보여줍니다.
+BigStone is a full-stack todo/task management application based on the philosophy of
+"handle the big stones (important tasks) first." Built as an npm workspace monorepo
+with React frontend and Express backend, it supports recurring tasks, file attachments,
+multi-language (ko/en), theming, and admin authentication.
 
-## 2. 기술 스택 및 아키텍처
+## 2. Architecture
 
-### 프론트엔드 (Client)
+### Monorepo Structure
 
-- **핵심 기술:** React 19, TypeScript, Vite, Tailwind CSS
-- **상태 관리 및 데이터 패칭:** Zustand, TanStack React Query (@tanstack/react-query)
-- **아키텍처:** FSD (Feature-Sliced Design) 패턴을 엄격히 적용
-  - `app/`: 전역 스타일(`global.css`), 라우팅 등
-  - `pages/`: 라우팅 대상 페이지 (예: `HomePage.tsx`)
-  - `features/`: 핵심 비즈니스 로직 및 사용자 인터랙션 (예: `todo` 관련 생성/리스트 UI 및 Hooks)
-  - `entities/`: 비즈니스 엔티티 모델 (예: `Todo` 인터페이스, 타입 등)
-  - `shared/`: 재사용 가능한 UI 컴포넌트(Button, Input 등) 및 API 클라이언트(`todoApi.ts`), 유틸리티 등
-- **API 통신:** 외부 라이브러리 없이 기본 `fetch` API 활용.
+```
+BigStone/
+├── client/          # React 19 + TypeScript + Vite 7 + Tailwind CSS 3
+├── server/          # Express 5 + TypeScript + better-sqlite3
+├── .env             # Shared environment (PORT, VITE_PORT, VITE_API_URL)
+├── package.json     # Workspace root (npm workspaces)
+└── CLAUDE.md        # AI development guidelines
+```
 
-### 백엔드 (Server)
+### Client - FSD (Feature-Sliced Design)
 
-- **핵심 기술:** Node.js, Express, TypeScript
-- **데이터베이스:** SQLite3 (`WAL` 모드 적용으로 동시성 개선)
-- **구조:**
-  - `src/index.ts`: Express 앱 초기화 및 서버 실행, CORS 설정
-  - `src/db/database.ts`: SQLite DB 연결 및 `todos` 테이블 스키마 정의
-  - `src/routes/todos.ts`: 할 일 목록에 대한 CRUD REST API 구현 (GET, POST, PUT, DELETE)
+```
+client/src/
+├── app/             # App.tsx (QueryClient, Router, theme init), routing, global CSS
+├── pages/           # HomePage (calendar view), SearchPage, AdminPage
+├── features/        # todo/ (hooks, TodoCreate, TodoEditModal, TodoItem, TodoList, PrioritySelect)
+├── entities/        # todo/model/ (types.ts, store.ts - Zustand persist)
+├── shared/          # api/todoApi.ts, config/i18n.ts, lib/, locales/, ui/ components
+└── widgets/         # (reserved for future)
+```
 
-## 3. 핵심 기능 구현 상태 및 세부사항
+### Server
 
-- **데이터 모델링 (Todo):**
-  - 필수 항목: `id`, `title`, `dueDate`, `status` (TODO, IN_PROGRESS, DONE)
-  - 선택 항목: `description`, `isImportant` (중요도 표시), `notification` (알림 시간)
-  - 반복 일정(`recurring`): `NONE`, `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY` 지원. 세부 조건(요일, 주차, 일 등)을 데이터베이스 컬럼 혹은 JSON 형태로 저장.
-- **UI/UX 구조 (`HomePage.tsx` 기준):**
-  - **오늘의 목표 (Today):** 마감일이 오늘 이전이거나 오늘인 할 일 목록. 중요한 항목(`isImportant`)이 상단에 배치됨. 완료(`DONE`)된 항목 중 당일 완료된 것만 표시됨.
-  - **예정된 할 일 (Scheduled):** 마감일이 내일 이후인 할 일 목록.
-- **백엔드 스키마:** SQLite `todos` 테이블은 단일 테이블에서 반복 일정의 복잡한 조건들(`recurringWeeklyDays`, `recurringMonthlyDay` 등)을 컬럼으로 분리하여 관리.
+```
+server/src/
+├── index.ts         # Express entry, CORS, static serving, route mounting
+├── db/database.ts   # better-sqlite3 init, schema, WAL mode, foreign keys
+├── routes/
+│   ├── todos.ts     # CRUD + recurring spawning + virtual completion
+│   ├── settings.ts  # Auth (bcrypt+JWT), language, config CRUD
+│   └── attachments.ts  # File upload/download/delete (multer, 10MB limit)
+└── utils/
+    └── recurringDate.ts  # getNextValidDueDate(), getNextOccurrence(), safeParseDate()
+```
 
-## 4. 추가 요구사항 및 향후 구현 과제 (요구사항.md 기준)
+## 3. Database Schema (SQLite - WAL mode)
 
-- **관리자 옵션:** 주요 색상 커스터마이징, 알림 기본 시간 설정, 슬랙 웹훅 연동 등 (추가 구현 필요 예상).
-- **보관함 기능:** 오늘 이전에 완료된 항목들을 검색하고 조회할 수 있는 별도의 보관/검색 뷰가 필요함.
-- **알림 스케줄링 로직:** 알림 설정(`notificationMinutesBefore`)에 따른 실제 푸시 또는 슬랙 알림 트리거 백엔드 로직.
+### todo_groups
+- id (TEXT PK, UUID v7), title, description, isImportant (legacy), priority (HIGH/MEDIUM/LOW)
+- Recurring fields: recurringType, recurringWeeklyDays (JSON), recurringMonthlyDay,
+  recurringMonthlyNthWeek, recurringMonthlyDayOfWeek, recurringYearlyMonth, recurringYearlyDay
+- End conditions: startDate, endOption (NONE/DATE/OCCURRENCES), endDate, endOccurrences, occurrenceCount
+- notificationMinutesBefore
 
-## 5. 개발 컨벤션 및 규칙
+### todos
+- id (TEXT PK, UUID v7), groupId (FK CASCADE), dueDate (YYYY-MM-DD), status (TODO/DONE), completedAt
 
-- `.claude/research` 내 프로젝트 숙지 후 작업 진행.
-- 구조 변경 및 패키지 설치 시 사전 확인 필수.
-- 코드 수정 전 계획 수립 및 동의 구하기, 수정 내용에 대해 영문 주석 달기.
-- 빌드/테스트/린트 과정(`npm run lint`, `npx prettier --write .`, `npm test`, `npm run build`) 확인 및 성공 시 커밋 진행.
-- 커밋 메시지 및 주석은 영문(Conventional Commits)으로 작성.
+### system_settings
+- key (TEXT PK), value (TEXT) - stores admin_password (bcrypt), language, theme settings
+
+### todo_attachments
+- id (TEXT PK, UUID v7), groupId (FK CASCADE), originalName, filename (UUID-based), size, createdAt
+
+## 4. API Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /api/todos | No | Get all todos with groups & attachments (JSON aggregate) |
+| POST | /api/todos | No | Create todo + group (occurrenceCount=1) |
+| PUT | /api/todos/:id | No | Update todo (triggers recurring spawn on DONE / rollback on revert) |
+| DELETE | /api/todos/:id | No | Delete group (cascades to todos + attachments) |
+| POST | /api/todos/:id/complete-virtual | No | Skip intermediate & complete virtual recurring instance (transaction) |
+| POST | /api/todos/attachments/:groupId | No | Upload file (multer, 10MB limit) |
+| GET | /api/todos/attachments/:id/download | No | Download with original filename |
+| DELETE | /api/todos/attachments/:id | No | Delete attachment + file from disk |
+| GET | /api/settings/status | No | Check if admin is setup |
+| POST | /api/settings/setup | No | Initial password setup (bcrypt 10 rounds) |
+| POST | /api/settings/login | No | Login, returns JWT (24h expiry) |
+| GET | /api/settings/config | No | Get public settings (language, etc.) |
+| PUT | /api/settings/config | JWT | Update settings (admin only, upsert transaction) |
+| GET | /health | No | Health check |
+
+## 5. Key Business Logic
+
+### Recurring Task System
+1. **Creation**: POST creates one todo instance with `occurrenceCount = 1`
+2. **Spawning** (PUT, status -> DONE): calculates next via `getNextOccurrence()`,
+   checks end conditions, inserts new TODO, increments occurrenceCount
+3. **Rollback** (PUT, DONE -> TODO): deletes future TODOs in group, decrements count
+4. **Virtual Projection** (client-side): HomePage generates virtual instances for calendar,
+   IDs formatted as `virtual-{realId}-{index}`, displayed with dashed border
+5. **Virtual Completion** (POST complete-virtual): batch-inserts all intermediate instances
+   in a transaction, marks target date as DONE
+
+### Authentication
+- bcrypt password hashing (10 rounds) -> JWT tokens (24h, `{role: "admin"}`)
+- Client stores token in localStorage ("admin_token")
+- ProtectedRoute redirects to /admin if no token
+- Only PUT /api/settings/config requires JWT
+
+### Theming System
+- CSS variables: --primary, --primary-foreground, --font-family
+- localStorage keys: theme, primary_color, font_family
+- Dark mode: Tailwind "class" strategy on documentElement
+- Brightness detection: `(r*299 + g*587 + b*114) / 1000 > 155` for foreground color
+- Admin page: color picker, font selector (5 fonts), theme toggle
+- Components use inline style `var(--primary)` for dynamic color
+
+## 6. State Management
+
+### Tanstack Query (Primary - server state)
+- Query key: ["todos"], all mutations invalidate on success
+- Hooks: useTodos, useCreateTodo, useUpdateTodoStatus, useDeleteTodo,
+  useCompleteVirtualTodo, useUploadAttachment, useDeleteAttachment
+
+### Zustand (Hybrid/Fallback - client state)
+- Persisted to localStorage as "bigstone-todo-storage"
+- Synced from Query data via useEffect in useTodos()
+- Methods: addTodo, updateTodo, deleteTodo, toggleStatus
+
+## 7. i18n
+- Languages: Korean (ko, fallback), English (en)
+- Detection: localStorage > navigator > server config sync
+- 107 translation keys each (common, home, task, admin sections)
+- Date formatting uses date-fns locale objects (ko, enUS)
+
+## 8. Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, TypeScript 5.9, Vite 7.3 |
+| Styling | Tailwind CSS 3.4, lucide-react icons |
+| State | Zustand 5 (persist), Tanstack Query 5 |
+| Routing | react-router-dom 7 |
+| i18n | i18next 25, react-i18next 16 |
+| Backend | Express 5, TypeScript 5.9 |
+| Database | better-sqlite3 12 (WAL mode, foreign keys) |
+| Auth | bcrypt 6, jsonwebtoken 9 |
+| Upload | multer 2 (diskStorage, UUID filenames) |
+| ID | UUID v7 (time-sortable) |
+| Dates | date-fns 4, date-fns-tz 3 |
+| Testing | Vitest 4, Testing Library |
+| Linting | ESLint 10, Prettier |
+
+## 9. Development Commands
+
+```bash
+npm install            # Install all workspaces
+npm run dev            # Start client + server concurrently
+npm run build          # Build client (Vite) + server (tsc)
+npm test               # Run client tests (Vitest)
+npm run lint -w client # ESLint check
+npx prettier --write . # Format all files
+```
+
+## 10. Environment (.env)
+
+```
+PORT=3300              # Server port
+VITE_PORT=5050         # Client dev server port
+VITE_API_URL=/api      # API base URL
+```
+
+## 11. Key File Paths
+
+- DB init: `server/src/db/database.ts`
+- API routes: `server/src/routes/{todos,settings,attachments}.ts`
+- Recurring logic: `server/src/utils/recurringDate.ts` + `client/src/shared/lib/recurringDate.ts`
+- Todo hooks: `client/src/features/todo/model/hooks.ts`
+- API client: `client/src/shared/api/todoApi.ts`
+- Types: `client/src/entities/todo/model/types.ts`
+- Zustand store: `client/src/entities/todo/model/store.ts`
+- Pages: `client/src/pages/{home,search,admin}/ui/*.tsx`
+- i18n config: `client/src/shared/config/i18n.ts`
+- Locale files: `client/src/shared/locales/{ko,en}.json`
+- Theme init: `client/src/app/App.tsx`
+- Tailwind config: `client/tailwind.config.js`
+- Vite config: `client/vite.config.ts`

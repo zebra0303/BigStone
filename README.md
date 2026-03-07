@@ -1,73 +1,97 @@
-# React + TypeScript + Vite
+# BigStone - Task Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[English](./README.en.md) | **한국어**
 
-Currently, two official plugins are available:
+> "큰 돌(중요한 일)을 먼저 넣어라" — 중요한 일부터 처리하는 할 일 관리 앱
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 주요 기능
 
-## React Compiler
+- **우선순위 관리** — HIGH / MEDIUM / LOW 3단계 우선순위로 중요한 일을 먼저 처리
+- **반복 일정** — 일간 / 주간 / 월간 / 연간 반복 + 종료 조건 (날짜, 횟수) 지원
+- **다중 뷰 모드** — 1일 / 3일 / 주간(평일) / 주간(전체) 캘린더 뷰
+- **파일 첨부** — 할 일에 파일 첨부 및 다운로드 (10MB 제한)
+- **다국어** — 한국어 / 영어 지원
+- **테마 커스터마이징** — 다크 모드, 주요 색상, 웹 폰트 선택
+- **관리자 인증** — bcrypt + JWT 기반 관리자 설정 보호
+- **검색** — 키워드 및 상태별 할 일 검색
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 기술 스택
 
-## Expanding the ESLint configuration
+| 영역 | 기술 |
+|------|------|
+| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
+| State | Zustand 5, TanStack Query 5 |
+| Backend | Express 5, TypeScript, better-sqlite3 |
+| Auth | bcrypt, JSON Web Token |
+| Architecture | FSD (Feature-Sliced Design), npm workspaces |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 시작하기
 
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
+### 사전 요구사항
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Node.js 18+
+- npm 9+
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+### 설치 및 실행
+
+```bash
+# 저장소 클론
+git clone https://github.com/zebra0303/BigStone.git
+cd BigStone
+
+# 의존성 설치
+npm install
+
+# 환경 변수 설정
+cp .env.example .env
+
+# 개발 서버 실행 (클라이언트 + 서버 동시 실행)
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+개발 서버 실행 후:
+- 클라이언트: `http://localhost:5050` (또는 `.env`의 `VITE_PORT`)
+- 서버 API: `http://localhost:3300` (또는 `.env`의 `PORT`)
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
+### 환경 변수
 
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```env
+PORT=3300              # 서버 포트
+VITE_PORT=5050         # 클라이언트 개발 서버 포트
+VITE_API_URL=/api      # API 기본 경로
 ```
+
+## 주요 명령어
+
+```bash
+npm run dev            # 개발 서버 실행 (client + server)
+npm run build          # 프로덕션 빌드
+npm run start          # 프로덕션 실행
+npm test               # 테스트 실행
+npm run lint -w client # ESLint 검사
+```
+
+## 프로젝트 구조
+
+```
+BigStone/
+├── client/                    # React 프론트엔드
+│   └── src/
+│       ├── app/               # 전역 설정, 라우팅, 테마 초기화
+│       ├── pages/             # HomePage, SearchPage, AdminPage
+│       ├── features/          # Todo CRUD 훅 및 UI 컴포넌트
+│       ├── entities/          # Todo 타입 정의 및 Zustand 스토어
+│       └── shared/            # API 클라이언트, UI 컴포넌트, 유틸리티, i18n
+├── server/                    # Express 백엔드
+│   └── src/
+│       ├── db/                # SQLite 초기화 및 스키마
+│       ├── routes/            # REST API (todos, settings, attachments)
+│       └── utils/             # 반복 일정 계산 로직
+├── .env.example               # 환경 변수 템플릿
+├── CLAUDE.md                  # AI 개발 지침
+└── package.json               # 워크스페이스 루트
+```
+
+## 라이선스
+
+ISC
