@@ -11,7 +11,7 @@ router.get("/", (req: Request, res: Response) => {
     SELECT
       t.id, t.groupId, t.dueDate, t.status, t.completedAt,
       g.title, g.description, g.isImportant, g.priority,
-      g.recurringWeeklyDays, g.recurringMonthlyDay,
+      g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay,
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek,
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
       g.slackEnabled, g.slackNotificationTime,
