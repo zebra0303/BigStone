@@ -26,12 +26,19 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (server-to-server, curl, mobile apps)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+      
+      const isAllowed = allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+      
+      if (isAllowed) {
         callback(null, true);
       } else {
+        // Log the rejected origin for debugging instead of throwing an unhandled exception
+        console.warn(`CORS blocked request from origin: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
     },
+    credentials: true,
   }),
 );
 

@@ -38,6 +38,18 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: clientPort,
       allowedHosts: true,
+      proxy: {
+        "/api": {
+          target: `http://localhost:${serverPort}`,
+          changeOrigin: true,
+          secure: false,
+        },
+        "/uploads": {
+          target: `http://localhost:${serverPort}`,
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
   };
 });
