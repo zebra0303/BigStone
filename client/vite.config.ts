@@ -19,12 +19,18 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: "autoUpdate",
+        devOptions: {
+          enabled: true,
+        },
         includeAssets: ["favicon.ico", "apple-touch-icon.png", "bigxi.png"],
         manifest: {
           name: "BigStone Task Manager",
           short_name: "BigStone",
           description: "Focus on what matters - BigStone Task Manager",
           theme_color: "#3b82f6",
+          start_url: "/",
+          display: "standalone",
+          background_color: "#ffffff",
           icons: [
             {
               src: "bigxi.png",
@@ -46,15 +52,16 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+          navigateFallback: "/index.html",
           runtimeCaching: [
             {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
               handler: "CacheFirst",
               options: {
                 cacheName: "google-fonts-cache",
                 expiration: {
                   maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+                  maxAgeSeconds: 60 * 60 * 24 * 365,
                 },
                 cacheableResponse: {
                   statuses: [0, 200],
@@ -68,7 +75,7 @@ export default defineConfig(({ mode }) => {
                 cacheName: "api-cache",
                 expiration: {
                   maxEntries: 50,
-                  maxAgeSeconds: 60 * 60 * 24, // <== 24 hours
+                  maxAgeSeconds: 60 * 60 * 24,
                 },
                 networkTimeoutSeconds: 5,
               },
