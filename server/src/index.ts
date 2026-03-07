@@ -18,25 +18,13 @@ const PORT = process.env.PORT || 3001;
 // Start background services
 startNotificationService();
 
-// Security headers (relaxed CSP for SPA static file serving)
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-  }),
-);
+// Security headers
+app.use(helmet());
 
-// CORS: allow same-origin (single-port mode) + configured origins
-const serverPort = process.env.PORT || 3001;
+// CORS: restrict to known origins
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
-  : [];
-
-// Always allow the server's own origin for single-port SPA deployment
-const selfOrigins = [
-  `http://localhost:${serverPort}`,
-  `http://localhost:${process.env.VITE_PORT || 5173}`,
-];
+  : [`http://localhost:${process.env.VITE_PORT || 5173}`];
 
 app.use(
   cors({
@@ -45,13 +33,12 @@ app.use(
       if (!origin) return callback(null, true);
 
       const isAllowed =
-        allowedOrigins.includes("*") ||
-        allowedOrigins.includes(origin) ||
-        selfOrigins.includes(origin);
+        allowedOrigins.includes("*") || allowedOrigins.includes(origin);
 
       if (isAllowed) {
         callback(null, true);
       } else {
+        // Log the rejected origin for debugging instead of throwing an unhandled exception
         console.warn(`CORS blocked request from origin: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
@@ -92,15 +79,6 @@ app.use("/api/settings", settingsRouter);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
-});
-
-// Serve client static files in production (single-port deployment)
-const clientDistPath = path.resolve(__dirname, "../../client/dist");
-app.use(express.static(clientDistPath));
-
-// SPA fallback: serve index.html for any non-API route (Express 5 syntax)
-app.get("*splat", (req, res) => {
-  res.sendFile(path.join(clientDistPath, "index.html"));
 });
 
 app.listen(PORT, () => {
