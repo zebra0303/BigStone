@@ -10,12 +10,14 @@
 - **Priority Management** — 3-level priority (HIGH / MEDIUM / LOW) with color-coded left border indicators
 - **Recurring Tasks** — Daily / Weekly / Monthly / Yearly recurrence with end conditions (date, count)
 - **Multiple View Modes** — 1-day / 3-day / Workweek / Full week calendar views (persisted per user)
+- **Copy to Today** — Copy missed tasks to today as one-time tasks with a single click
+- **Retrospective (KPT)** — Review past tasks with Keep/Problem/Try framework (7/14/30-day periods)
 - **File Attachments** — Attach and download files per task (10MB limit)
 - **Slack Notifications** — Scheduled Slack alerts for today's incomplete tasks via Incoming Webhook
-- **PWA Support** — Installable app with offline caching (Service Worker + Workbox)
+- **PWA Support** — Installable app with offline caching, instant SW updates (skipWaiting + clientsClaim)
 - **Multi-language** — Korean / English support with auto-detection
-- **Theme Customization** — Dark mode, primary color picker, web font selection
-- **Admin Authentication** — bcrypt + JWT with account lockout (5 failures = 15 min lock)
+- **Theme Customization** — Dark mode, primary color picker, web font selection (DB-persisted)
+- **Admin Authentication** — bcrypt + JWT (7-day expiry, auto-refresh) with account lockout (5 failures = 15 min lock)
 - **Search** — Filter tasks by keyword and status
 
 ## Tech Stack
@@ -70,6 +72,14 @@ JWT_SECRET=...         # JWT signing secret (required in production)
 CORS_ORIGIN=...        # Allowed CORS origins
 ```
 
+### HTTPS via Cloudflare Tunnel (Optional)
+
+For PWA installation and HTTPS access, set up a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/):
+
+```bash
+cloudflared tunnel --url http://localhost:<VITE_PORT>
+```
+
 ## Commands
 
 ```bash
@@ -88,14 +98,14 @@ BigStone/
 ├── client/                    # React frontend
 │   └── src/
 │       ├── app/               # Global config, routing, theme initialization
-│       ├── pages/             # HomePage, SearchPage, AdminPage
+│       ├── pages/             # HomePage, SearchPage, AdminPage, RetrospectivePage
 │       ├── features/          # Todo CRUD hooks and UI components
 │       ├── entities/          # Todo type definitions and Zustand store
 │       └── shared/            # API client, UI components, utilities, i18n
 ├── server/                    # Express backend
 │   └── src/
 │       ├── db/                # SQLite initialization and schema
-│       ├── routes/            # REST API (todos, settings, attachments)
+│       ├── routes/            # REST API (todos, settings, attachments, retrospectives)
 │       ├── middleware/        # JWT authentication guard
 │       ├── services/          # Slack notification scheduler (node-cron)
 │       └── utils/             # Recurring date logic, Slack webhook
@@ -107,12 +117,13 @@ BigStone/
 ## Security
 
 - **Password**: bcrypt (10 rounds) hashing
-- **Token**: JWT with 24-hour expiry
+- **Token**: JWT with 7-day expiry, auto-refresh on activity (1-day throttle)
 - **Rate Limiting**: 10 login attempts per 15 minutes per IP
 - **Account Lockout**: 5 consecutive failures locks the account for 15 minutes (DB-persisted, IP-independent)
 - **Headers**: helmet for security headers (XSS, clickjacking protection)
 - **CORS**: Origin whitelist validation
 - **File Upload**: 10MB limit, UUID-based filenames, forced download headers
+- **PWA Cache**: Auth endpoints excluded, GET-only caching, success-only responses
 
 ## License
 

@@ -10,12 +10,14 @@
 - **우선순위 관리** — HIGH / MEDIUM / LOW 3단계 우선순위, 좌측 컬러 테두리로 시각적 구분
 - **반복 일정** — 일간 / 주간 / 월간 / 연간 반복 + 종료 조건 (날짜, 횟수) 지원
 - **다중 뷰 모드** — 1일 / 3일 / 주간(평일) / 주간(전체) 캘린더 뷰 (선택 유지)
+- **오늘로 복사** — 못한 일정을 클릭 한 번으로 오늘 일회성 일정으로 복사
+- **톺아보기 (KPT 회고)** — Keep/Problem/Try 프레임워크로 지난 일정 돌아보기 (7/14/30일)
 - **파일 첨부** — 할 일에 파일 첨부 및 다운로드 (10MB 제한)
 - **Slack 알림** — 오늘의 미완성 일정을 Slack Incoming Webhook으로 자동 알림
-- **PWA 지원** — 앱 설치 및 오프라인 캐싱 (Service Worker + Workbox)
+- **PWA 지원** — 앱 설치 및 오프라인 캐싱, 즉시 SW 업데이트 (skipWaiting + clientsClaim)
 - **다국어** — 한국어 / 영어 자동 감지 지원
-- **테마 커스터마이징** — 다크 모드, 주요 색상, 웹 폰트 선택
-- **관리자 인증** — bcrypt + JWT 기반 보호 + 계정 잠금 (5회 실패 시 15분 잠금)
+- **테마 커스터마이징** — 다크 모드, 주요 색상, 웹 폰트 선택 (DB 저장)
+- **관리자 인증** — bcrypt + JWT (7일 만료, 활동 시 자동 갱신) + 계정 잠금 (5회 실패 시 15분 잠금)
 - **검색** — 키워드 및 상태별 할 일 검색
 
 ## 기술 스택
@@ -70,6 +72,14 @@ JWT_SECRET=...         # JWT 서명 시크릿 (프로덕션 필수)
 CORS_ORIGIN=...        # 허용할 CORS 출처
 ```
 
+### HTTPS (Cloudflare Tunnel, 선택)
+
+PWA 설치 및 HTTPS 접속을 위해 [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) 설정:
+
+```bash
+cloudflared tunnel --url http://localhost:<VITE_PORT>
+```
+
 ## 주요 명령어
 
 ```bash
@@ -88,14 +98,14 @@ BigStone/
 ├── client/                    # React 프론트엔드
 │   └── src/
 │       ├── app/               # 전역 설정, 라우팅, 테마 초기화
-│       ├── pages/             # HomePage, SearchPage, AdminPage
+│       ├── pages/             # HomePage, SearchPage, AdminPage, RetrospectivePage
 │       ├── features/          # Todo CRUD 훅 및 UI 컴포넌트
 │       ├── entities/          # Todo 타입 정의 및 Zustand 스토어
 │       └── shared/            # API 클라이언트, UI 컴포넌트, 유틸리티, i18n
 ├── server/                    # Express 백엔드
 │   └── src/
 │       ├── db/                # SQLite 초기화 및 스키마
-│       ├── routes/            # REST API (todos, settings, attachments)
+│       ├── routes/            # REST API (todos, settings, attachments, retrospectives)
 │       ├── middleware/        # JWT 인증 미들웨어
 │       ├── services/          # Slack 알림 스케줄러 (node-cron)
 │       └── utils/             # 반복 일정 계산 로직, Slack 웹훅
@@ -107,12 +117,13 @@ BigStone/
 ## 보안
 
 - **비밀번호**: bcrypt (10 라운드) 해싱
-- **토큰**: JWT 24시간 만료
+- **토큰**: JWT 7일 만료, 활동 시 자동 갱신 (1일 간격 스로틀)
 - **Rate Limit**: IP당 15분 내 로그인 10회 제한
 - **계정 잠금**: 연속 5회 실패 시 15분 잠금 (DB 저장, IP 변경 우회 불가)
 - **보안 헤더**: helmet (XSS, 클릭재킹 방지)
 - **CORS**: 출처 화이트리스트 검증
 - **파일 업로드**: 10MB 제한, UUID 파일명, 강제 다운로드 헤더
+- **PWA 캐시**: 인증 엔드포인트 제외, GET만 캐시, 성공 응답만 저장
 
 ## 라이선스
 
