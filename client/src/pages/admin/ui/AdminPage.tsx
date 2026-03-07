@@ -108,6 +108,7 @@ export function AdminPage() {
       if (refreshRes.ok) {
         const { token: newToken } = await refreshRes.json();
         localStorage.setItem("admin_token", newToken);
+        localStorage.setItem("admin_token_refreshed_at", String(Date.now()));
         setToken(newToken);
       }
     } catch (e) {

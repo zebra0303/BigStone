@@ -6,6 +6,36 @@ import { useEffect } from "react";
 
 export const TODO_QUERY_KEY = ["todos"];
 
+const TOKEN_REFRESH_INTERVAL = 24 * 60 * 60 * 1000; // 1 day
+
+// Refresh admin token if last refresh was more than 1 day ago
+function tryRefreshToken() {
+  const token = localStorage.getItem("admin_token");
+  if (!token) return;
+
+  const lastRefresh = parseInt(
+    localStorage.getItem("admin_token_refreshed_at") || "0",
+    10,
+  );
+  if (Date.now() - lastRefresh < TOKEN_REFRESH_INTERVAL) return;
+
+  fetch("/api/settings/refresh", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      if (data?.token) {
+        localStorage.setItem("admin_token", data.token);
+        localStorage.setItem(
+          "admin_token_refreshed_at",
+          String(Date.now()),
+        );
+      }
+    })
+    .catch(() => {});
+}
+
 export function useTodos() {
   const query = useQuery({
     queryKey: TODO_QUERY_KEY,
@@ -41,6 +71,7 @@ export function useUpdateTodoStatus() {
       todoApi.updateStatus(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+      tryRefreshToken();
     },
   });
 }
@@ -64,6 +95,7 @@ export function useCompleteVirtualTodo() {
       todoApi.completeVirtual(id, targetDate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+      tryRefreshToken();
     },
   });
 }
