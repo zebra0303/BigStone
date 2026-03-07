@@ -3,6 +3,7 @@
 [English](./README.md) | **한국어**
 
 > "큰 돌(중요한 일)을 먼저 넣어라" — 중요한 일부터 처리하는 할 일 관리 앱
+<img width="1080" height="301" alt="cover_1080" src="https://github.com/user-attachments/assets/b25c225e-002c-46c5-a2bc-ac7c200efba6" />
 
 ## 주요 기능
 
