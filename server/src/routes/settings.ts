@@ -10,9 +10,7 @@ const router = Router();
 // Use the same secret logic as the middleware
 const JWT_SECRET = process.env.JWT_SECRET || "dev_only_secret";
 if (!process.env.JWT_SECRET) {
-  console.warn(
-    "WARNING: JWT_SECRET is not set. Using fallback secret.",
-  );
+  console.warn("WARNING: JWT_SECRET is not set. Using fallback secret.");
 }
 
 // Strict rate limit for auth endpoints to prevent brute-force

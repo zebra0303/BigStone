@@ -29,19 +29,20 @@ export function ConfirmModal({
 
   const variantStyles = {
     danger: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20",
-    warning: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20",
+    warning:
+      "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20",
     info: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20",
   };
 
   const buttonVariants = {
-    danger: "destructive" as const,
-    warning: "default" as const,
-    info: "default" as const,
+    danger: "danger" as const,
+    warning: "primary" as const,
+    info: "primary" as const,
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
+      <div
         className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full overflow-hidden border border-gray-200 dark:border-gray-700 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >

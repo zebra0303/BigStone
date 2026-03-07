@@ -27,9 +27,10 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (server-to-server, curl, mobile apps)
       if (!origin) return callback(null, true);
-      
-      const isAllowed = allowedOrigins.includes("*") || allowedOrigins.includes(origin);
-      
+
+      const isAllowed =
+        allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+
       if (isAllowed) {
         callback(null, true);
       } else {

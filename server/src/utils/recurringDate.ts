@@ -41,7 +41,7 @@ export function getNextValidDueDate(
   const baseDate = startOfDay(safeParseDate(baseDateInput));
   const today = startOfDay(new Date());
 
-  // Strictly respect the baseDate, even if it is in the past. This allows users 
+  // Strictly respect the baseDate, even if it is in the past. This allows users
   // to create recurring schedules that retroactively start from a past date.
   const referenceDate = baseDate;
 
@@ -95,16 +95,16 @@ export function getNextValidDueDate(
 export function getNextOccurrence(
   baseDateInput: Date | string,
   recurring: RecurringConfig,
-  ignoreToday: boolean = false
+  ignoreToday: boolean = false,
 ): Date | null {
   if (recurring.type === "NONE") return null;
 
   const baseDate = startOfDay(safeParseDate(baseDateInput));
   const today = startOfDay(new Date());
 
-  // We want the next occurrence strictly AFTER the current due date, 
+  // We want the next occurrence strictly AFTER the current due date,
   // or strictly AFTER today if the task is overdue, UNLESS ignoreToday is true.
-  const referenceDate = (!ignoreToday && baseDate < today) ? today : baseDate;
+  const referenceDate = !ignoreToday && baseDate < today ? today : baseDate;
   let nextDate = addDays(referenceDate, 1);
 
   if (recurring.type === "DAILY") {

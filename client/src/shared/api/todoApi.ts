@@ -23,9 +23,9 @@ export const todoApi = {
   ): Promise<{ id: string; groupId: string }> => {
     const res = await fetch(API_BASE, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        ...getAuthHeaders()
+        ...getAuthHeaders(),
       },
       body: JSON.stringify(todo),
     });
@@ -39,9 +39,9 @@ export const todoApi = {
   ): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "PUT",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        ...getAuthHeaders()
+        ...getAuthHeaders(),
       },
       body: JSON.stringify(updates),
     });
@@ -60,9 +60,9 @@ export const todoApi = {
   completeVirtual: async (id: string, targetDate: string): Promise<void> => {
     const res = await fetch(`${API_BASE}/${id}/complete-virtual`, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        ...getAuthHeaders()
+        ...getAuthHeaders(),
       },
       body: JSON.stringify({ targetDate }),
     });

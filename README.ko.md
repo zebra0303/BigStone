@@ -3,7 +3,7 @@
 [English](./README.md) | **한국어**
 
 > "큰 돌(중요한 일)을 먼저 넣어라" — 중요한 일부터 처리하는 할 일 관리 앱
-<img width="1080" height="301" alt="cover_1080" src="https://github.com/user-attachments/assets/b25c225e-002c-46c5-a2bc-ac7c200efba6" />
+> <img width="1080" height="301" alt="cover_1080" src="https://github.com/user-attachments/assets/b25c225e-002c-46c5-a2bc-ac7c200efba6" />
 
 ## 주요 기능
 
@@ -18,13 +18,13 @@
 
 ## 기술 스택
 
-| 영역 | 기술 |
-|------|------|
-| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
-| State | Zustand 5, TanStack Query 5 |
-| Backend | Express 5, TypeScript, better-sqlite3 |
-| Auth | bcrypt, JSON Web Token |
-| Architecture | FSD (Feature-Sliced Design), npm workspaces |
+| 영역         | 기술                                         |
+| ------------ | -------------------------------------------- |
+| Frontend     | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
+| State        | Zustand 5, TanStack Query 5                  |
+| Backend      | Express 5, TypeScript, better-sqlite3        |
+| Auth         | bcrypt, JSON Web Token                       |
+| Architecture | FSD (Feature-Sliced Design), npm workspaces  |
 
 ## 시작하기
 
@@ -51,6 +51,7 @@ npm run dev
 ```
 
 개발 서버 실행 후:
+
 - 클라이언트: `http://localhost:5050` (또는 `.env`의 `VITE_PORT`)
 - 서버 API: `http://localhost:3300` (또는 `.env`의 `PORT`)
 

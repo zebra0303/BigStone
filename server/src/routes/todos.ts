@@ -370,11 +370,14 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
 });
 
 // Complete Virtual Task (Skip intermediate)
-router.post("/:id/complete-virtual", requireAdmin, async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { targetDate } = req.body; // YYYY-MM-DD
+router.post(
+  "/:id/complete-virtual",
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { targetDate } = req.body; // YYYY-MM-DD
 
-  const fetchSql = `
+    const fetchSql = `
     SELECT
       t.id, t.groupId, t.dueDate, t.status, t.completedAt,
       g.title, g.description, g.isImportant,
@@ -387,113 +390,114 @@ router.post("/:id/complete-virtual", requireAdmin, async (req: Request, res: Res
     WHERE t.id = ?
   `;
 
-  try {
-    const row = db.prepare(fetchSql).get(id) as any;
-    if (!row) return res.status(404).json({ error: "Base task not found" });
+    try {
+      const row = db.prepare(fetchSql).get(id) as any;
+      if (!row) return res.status(404).json({ error: "Base task not found" });
 
-    const { getNextOccurrence } = await import("../utils/recurringDate");
-    const { startOfDay } = await import("date-fns");
-    const { format: formatTz } = await import("date-fns-tz");
+      const { getNextOccurrence } = await import("../utils/recurringDate");
+      const { startOfDay } = await import("date-fns");
+      const { format: formatTz } = await import("date-fns-tz");
 
-    const recConfig = {
-      type: row.recurringType,
-      weeklyDays: row.recurringWeeklyDays
-        ? JSON.parse(row.recurringWeeklyDays)
-        : null,
-      monthlyDay: row.recurringMonthlyDay,
-      monthlyNthWeek: row.recurringMonthlyNthWeek,
-      monthlyDayOfWeek: row.recurringMonthlyDayOfWeek,
-      yearlyMonth: row.recurringYearlyMonth,
-      yearlyDay: row.recurringYearlyDay,
-    };
+      const recConfig = {
+        type: row.recurringType,
+        weeklyDays: row.recurringWeeklyDays
+          ? JSON.parse(row.recurringWeeklyDays)
+          : null,
+        monthlyDay: row.recurringMonthlyDay,
+        monthlyNthWeek: row.recurringMonthlyNthWeek,
+        monthlyDayOfWeek: row.recurringMonthlyDayOfWeek,
+        yearlyMonth: row.recurringYearlyMonth,
+        yearlyDay: row.recurringYearlyDay,
+      };
 
-    let currentDate = new Date(row.dueDate);
-    const targetDateObj = new Date(targetDate);
-    const datesToInsert = [];
-    let newInstances = 0;
+      let currentDate = new Date(row.dueDate);
+      const targetDateObj = new Date(targetDate);
+      const datesToInsert = [];
+      let newInstances = 0;
 
-    while (true) {
-      const nextDate = getNextOccurrence(currentDate, recConfig, true);
-      if (!nextDate) break;
+      while (true) {
+        const nextDate = getNextOccurrence(currentDate, recConfig, true);
+        if (!nextDate) break;
 
-      const nextDateMs = startOfDay(nextDate).getTime();
-      const targetDateMs = startOfDay(targetDateObj).getTime();
+        const nextDateMs = startOfDay(nextDate).getTime();
+        const targetDateMs = startOfDay(targetDateObj).getTime();
 
-      if (nextDateMs > targetDateMs) {
-        break; // past the target
+        if (nextDateMs > targetDateMs) {
+          break; // past the target
+        }
+
+        datesToInsert.push(nextDate);
+        currentDate = nextDate;
+        newInstances++;
+
+        if (nextDateMs === targetDateMs) {
+          break;
+        }
       }
 
-      datesToInsert.push(nextDate);
-      currentDate = nextDate;
-      newInstances++;
-
-      if (nextDateMs === targetDateMs) {
-        break;
+      if (datesToInsert.length === 0) {
+        return res
+          .status(400)
+          .json({ error: "Target date is not a valid future occurrence." });
       }
+
+      const allInserts = datesToInsert.map((d) => ({
+        date: d,
+        status:
+          startOfDay(d).getTime() === startOfDay(targetDateObj).getTime()
+            ? "DONE"
+            : "TODO",
+      }));
+
+      // Generate one more occurrence to act as the next pending task
+      const nextAfterTarget = getNextOccurrence(currentDate, recConfig, true);
+      if (nextAfterTarget) {
+        const nextMs = startOfDay(nextAfterTarget).getTime();
+        let canSpawn = true;
+        if (row.endOption === "DATE" && row.endDate) {
+          if (nextMs > startOfDay(new Date(row.endDate)).getTime())
+            canSpawn = false;
+        }
+        if (row.endOption === "OCCURRENCES" && row.endOccurrences) {
+          if (row.occurrenceCount + newInstances >= row.endOccurrences)
+            canSpawn = false;
+        }
+
+        if (canSpawn) {
+          allInserts.push({ date: nextAfterTarget, status: "TODO" });
+        }
+      }
+
+      // Use a transaction for batch insert
+      const insertStmt = db.prepare(
+        `INSERT INTO todos (id, groupId, dueDate, status, completedAt) VALUES (?, ?, ?, ?, ?)`,
+      );
+      const insertMany = db.transaction((items: typeof allInserts) => {
+        for (const item of items) {
+          const isDone = item.status === "DONE";
+          const completedStr = isDone ? new Date().toISOString() : null;
+          insertStmt.run(
+            uuidv7(),
+            row.groupId,
+            formatTz(item.date, "yyyy-MM-dd"),
+            item.status,
+            completedStr,
+          );
+        }
+      });
+      insertMany(allInserts);
+
+      const totalInstances = allInserts.length;
+      db.prepare(
+        "UPDATE todo_groups SET occurrenceCount = occurrenceCount + ? WHERE id = ?",
+      ).run(totalInstances, row.groupId);
+
+      res.json({ message: "Successfully skipped and completed virtual task." });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
-
-    if (datesToInsert.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Target date is not a valid future occurrence." });
-    }
-
-    const allInserts = datesToInsert.map((d) => ({
-      date: d,
-      status:
-        startOfDay(d).getTime() === startOfDay(targetDateObj).getTime()
-          ? "DONE"
-          : "TODO",
-    }));
-
-    // Generate one more occurrence to act as the next pending task
-    const nextAfterTarget = getNextOccurrence(currentDate, recConfig, true);
-    if (nextAfterTarget) {
-      const nextMs = startOfDay(nextAfterTarget).getTime();
-      let canSpawn = true;
-      if (row.endOption === "DATE" && row.endDate) {
-        if (nextMs > startOfDay(new Date(row.endDate)).getTime())
-          canSpawn = false;
-      }
-      if (row.endOption === "OCCURRENCES" && row.endOccurrences) {
-        if (row.occurrenceCount + newInstances >= row.endOccurrences)
-          canSpawn = false;
-      }
-
-      if (canSpawn) {
-        allInserts.push({ date: nextAfterTarget, status: "TODO" });
-      }
-    }
-
-    // Use a transaction for batch insert
-    const insertStmt = db.prepare(
-      `INSERT INTO todos (id, groupId, dueDate, status, completedAt) VALUES (?, ?, ?, ?, ?)`,
-    );
-    const insertMany = db.transaction((items: typeof allInserts) => {
-      for (const item of items) {
-        const isDone = item.status === "DONE";
-        const completedStr = isDone ? new Date().toISOString() : null;
-        insertStmt.run(
-          uuidv7(),
-          row.groupId,
-          formatTz(item.date, "yyyy-MM-dd"),
-          item.status,
-          completedStr,
-        );
-      }
-    });
-    insertMany(allInserts);
-
-    const totalInstances = allInserts.length;
-    db.prepare(
-      "UPDATE todo_groups SET occurrenceCount = occurrenceCount + ? WHERE id = ?",
-    ).run(totalInstances, row.groupId);
-
-    res.json({ message: "Successfully skipped and completed virtual task." });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
-});
+  },
+);
 
 // Delete
 router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
