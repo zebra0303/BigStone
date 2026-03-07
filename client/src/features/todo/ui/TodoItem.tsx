@@ -106,12 +106,12 @@ export function TodoItem({ todo }: TodoItemProps) {
                   {todo.title}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 flex-wrap sm:flex-nowrap">
                 {todo.description && !isExpanded && (
                   <span className="truncate max-w-[200px]">{todo.description}</span>
                 )}
                 {todo.description && !isExpanded && <span>•</span>}
-                <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>
+                <span className={`whitespace-nowrap ${isOverdue ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
                   {format(new Date(todo.dueDate), t('task.date_format'), {
                     locale: getDateLocale(),
                   })}
@@ -121,7 +121,7 @@ export function TodoItem({ todo }: TodoItemProps) {
                     <span>•</span>
                     <Badge
                       variant="secondary"
-                      className="px-1.5 py-0.5 text-[10px] flex items-center gap-1 dark:bg-gray-700 dark:text-gray-300"
+                      className="px-1.5 py-0.5 text-[10px] flex items-center gap-1 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap shrink-0"
                     >
                       <Repeat className="h-3 w-3" />
                       {t(`task.repeat_${todo.recurring?.type?.toLowerCase() || 'none'}`)}
