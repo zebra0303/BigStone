@@ -40,9 +40,9 @@ export function TodoItem({ todo }: TodoItemProps) {
   const effectivePriority = todo.priority || (todo.isImportant ? 'HIGH' : undefined);
   const priorityBorderClass = effectivePriority
     ? {
-        HIGH: 'border-l-[3px] !border-l-red-500 !border-l-solid',
-        MEDIUM: 'border-l-[3px] !border-l-amber-400 !border-l-solid',
-        LOW: 'border-l-[3px] !border-l-emerald-500 !border-l-solid',
+        HIGH: 'border-l-[3px] !border-l-red-500',
+        MEDIUM: 'border-l-[3px] !border-l-amber-400',
+        LOW: 'border-l-[3px] !border-l-emerald-500',
       }[effectivePriority]
     : '';
 
@@ -88,7 +88,7 @@ export function TodoItem({ todo }: TodoItemProps) {
       <div
         className={`relative group flex flex-col gap-2 rounded-lg border p-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50 bg-white dark:bg-gray-800 dark:border-gray-700
         ${isDone ? 'opacity-60' : ''}
-        ${todo.isVirtual ? 'opacity-70 border-dashed bg-gray-50 dark:bg-gray-800/50' : ''}
+        ${todo.isVirtual ? 'opacity-70 bg-gray-50 dark:bg-gray-800/50' : ''}
         ${priorityBorderClass}`}
       >
         <div className="flex items-center justify-between gap-4">
