@@ -12,6 +12,7 @@ import {
   Moon,
   Palette,
   Type,
+  Bell,
 } from "lucide-react";
 import { Footer } from "@/widgets/footer";
 
@@ -34,7 +35,20 @@ export function AdminPage() {
     localStorage.getItem("font_family") ||
       'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
   );
+  const [timezone, setTimezone] = useState("Asia/Seoul");
+  const [slackWebhookUrl, setSlackWebhookUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const TIMEZONES = [
+    { label: "Seoul (GMT+9)", value: "Asia/Seoul" },
+    { label: "Tokyo (GMT+9)", value: "Asia/Tokyo" },
+    { label: "UTC", value: "UTC" },
+    { label: "London (GMT+0)", value: "Europe/London" },
+    { label: "New York (GMT-5)", value: "America/New_York" },
+    { label: "Los Angeles (GMT-8)", value: "America/Los_Angeles" },
+    { label: "Beijing (GMT+8)", value: "Asia/Shanghai" },
+    { label: "Sydney (GMT+11)", value: "Australia/Sydney" },
+  ];
 
   const FONTS = [
     {
@@ -74,6 +88,8 @@ export function AdminPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.language) setLanguage(data.language);
+        if (data.timezone) setTimezone(data.timezone);
+        if (data.slack_webhook_url) setSlackWebhookUrl(data.slack_webhook_url);
       } else {
         // If token is invalid, clear it
         setIsAuthenticated(false);
@@ -134,7 +150,11 @@ export function AdminPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ language }),
+        body: JSON.stringify({
+          language,
+          timezone,
+          slack_webhook_url: slackWebhookUrl,
+        }),
       });
       if (res.ok) {
         // Update local i18n instance immediately
@@ -278,6 +298,23 @@ export function AdminPage() {
                 <option value="en">🇺🇸 영어 (English)</option>
               </Select>
             </div>
+            
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-6">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
+                {t("admin.timezone_label", "시스템 타임존")}
+              </label>
+              <Select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="max-w-xs"
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
@@ -324,6 +361,32 @@ export function AdminPage() {
                 </option>
                 <option value="dark">🌙 {t("admin.theme_dark", "다크")}</option>
               </Select>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
+              <Bell className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
+              {t("admin.slack_title", "슬랙 알림 설정")}
+            </h3>
+
+            <div className="flex flex-col gap-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t("admin.slack_webhook_label", "슬랙 웹훅 URL")}
+              </label>
+              <Input
+                type="text"
+                value={slackWebhookUrl}
+                onChange={(e) => setSlackWebhookUrl(e.target.value)}
+                placeholder="https://hooks.slack.com/services/..."
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t(
+                  "admin.slack_help",
+                  "슬랙 워크스페이스의 Incoming Webhook URL을 입력하세요.",
+                )}
+              </p>
             </div>
           </div>
 

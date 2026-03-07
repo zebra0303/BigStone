@@ -11,9 +11,10 @@ router.get("/", (req: Request, res: Response) => {
     SELECT
       t.id, t.groupId, t.dueDate, t.status, t.completedAt,
       g.title, g.description, g.isImportant, g.priority,
-      g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay,
+      g.recurringWeeklyDays, g.recurringMonthlyDay,
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek,
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
+      g.slackEnabled, g.slackNotificationTime,
       g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount,
       (
         SELECT json_group_array(json_object(
@@ -63,6 +64,10 @@ router.get("/", (req: Request, res: Response) => {
       notification: r.notificationMinutesBefore
         ? { minutesBefore: r.notificationMinutesBefore }
         : undefined,
+      slackNotification: {
+        enabled: Boolean(r.slackEnabled),
+        time: r.slackNotificationTime || "09:00",
+      },
       completedAt: r.completedAt,
       attachments: r.attachments ? JSON.parse(r.attachments) : [],
     }));
@@ -84,6 +89,7 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
     status,
     recurring,
     notification,
+    slackNotification,
   } = req.body;
   const groupId = uuidv7();
   const todoId = uuidv7();
@@ -94,8 +100,8 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
     INSERT INTO todo_groups (
       id, title, description, isImportant, priority,
       recurringType, recurringWeeklyDays, recurringMonthlyDay, recurringMonthlyNthWeek, recurringMonthlyDayOfWeek, recurringYearlyMonth, recurringYearlyDay,
-      notificationMinutesBefore, startDate, endOption, endDate, endOccurrences, occurrenceCount
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+      notificationMinutesBefore, slackEnabled, slackNotificationTime, startDate, endOption, endDate, endOccurrences, occurrenceCount
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `;
 
   const groupParams = [
@@ -124,6 +130,8 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
       ? recurring.yearlyDay
       : null,
     notification?.minutesBefore || null,
+    slackNotification?.enabled ? 1 : 0,
+    slackNotification?.time || null,
     recurring?.startDate || dueDate,
     recurring?.endOption || "NONE",
     recurring?.endDate || null,
@@ -158,6 +166,7 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay,
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek,
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
+      g.slackEnabled, g.slackNotificationTime,
       g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount
     FROM todos t
     JOIN todo_groups g ON t.groupId = g.id
@@ -169,6 +178,17 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
     if (!row) return res.status(404).json({ error: "Todo not found" });
 
     // Identify effective values
+    const effectiveSlackEnabled =
+      updates.slackNotification?.enabled !== undefined
+        ? updates.slackNotification.enabled
+          ? 1
+          : 0
+        : row.slackEnabled;
+    const effectiveSlackTime =
+      updates.slackNotification?.time !== undefined
+        ? updates.slackNotification.time
+        : row.slackNotificationTime;
+
     const effectiveTitle =
       updates.title !== undefined ? updates.title : row.title;
     const effectiveDesc =
@@ -244,6 +264,7 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
         recurringType = ?, recurringWeeklyDays = ?, recurringMonthlyDay = ?,
         recurringMonthlyNthWeek = ?, recurringMonthlyDayOfWeek = ?,
         recurringYearlyMonth = ?, recurringYearlyDay = ?,
+        slackEnabled = ?, slackNotificationTime = ?,
         startDate = ?, endOption = ?, endDate = ?, endOccurrences = ?
       WHERE id = ?
     `;
@@ -260,6 +281,8 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
       effRecMonthDOW,
       effRecYearMonth,
       effRecYearDay,
+      effectiveSlackEnabled,
+      effectiveSlackTime,
       effStartDate,
       effEndOption,
       effEndDate,

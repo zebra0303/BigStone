@@ -10,9 +10,13 @@ import rateLimit from "express-rate-limit";
 import todosRouter from "./routes/todos";
 import settingsRouter from "./routes/settings";
 import attachmentsRouter from "./routes/attachments";
+import { startNotificationService } from "./services/notificationService";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Start background services
+startNotificationService();
 
 // Security headers
 app.use(helmet());

@@ -48,6 +48,14 @@ try {
   // Ignore error if column already exists
 }
 
+// Add Slack notification columns
+try {
+  db.exec("ALTER TABLE todo_groups ADD COLUMN slackEnabled BOOLEAN DEFAULT 0");
+  db.exec("ALTER TABLE todo_groups ADD COLUMN slackNotificationTime TEXT");
+} catch {
+  // Ignore error if columns already exist
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS todos (
     id TEXT PRIMARY KEY,

@@ -19,6 +19,7 @@ import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
 import { X, Paperclip, Loader2 } from "lucide-react";
 import { getNextValidDueDate, safeParseDate } from "@/shared/lib/recurringDate";
+import { cn } from "@/shared/lib/utils";
 
 interface TodoEditModalProps {
   todo: Todo;
@@ -47,6 +48,14 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
   const [description, setDescription] = useState(todo.description || "");
   const [priority, setPriority] = useState<TodoPriority>(
     todo.priority || (todo.isImportant ? "HIGH" : "MEDIUM"),
+  );
+  const [errors, setErrors] = useState<{ title?: string }>({});
+
+  const [slackEnabled, setSlackEnabled] = useState(
+    todo.slackNotification?.enabled || false,
+  );
+  const [slackTime, setSlackTime] = useState(
+    todo.slackNotification?.time || "09:00",
   );
 
   const originalDateStr = format(
@@ -151,7 +160,14 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || updateTodo.isPending) return;
+
+    if (!title.trim()) {
+      setErrors({ title: t("task.title_required", "제목을 입력해주세요.") });
+      titleInputRef.current?.focus();
+      return;
+    }
+
+    if (updateTodo.isPending) return;
 
     // If it's a virtual projection, extract the original base ID to update the actual recurring series
     // Format: "virtual-{uuid}-{projectionCount}"
@@ -167,6 +183,10 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           description: description.trim(),
           isImportant: priority === "HIGH", // legacy fallback
           priority,
+          slackNotification: {
+            enabled: slackEnabled,
+            time: slackTime,
+          },
           // Only update the instance's dueDate if the user actually modified the date input.
           // Otherwise, it might erroneously pull the recurring series' startDate and move the current instance backwards.
           ...(dueDate !== originalDateStr
@@ -251,15 +271,29 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 bg-white dark:bg-gray-900"
         >
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Input
-              ref={titleInputRef}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("task.title_placeholder")}
-              required
-              className="flex-1"
-            />
+          <div className="flex flex-col gap-4 sm:flex-row items-start">
+            <div className="flex-1 w-full flex flex-col gap-1.5">
+              <Input
+                ref={titleInputRef}
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (e.target.value.trim())
+                    setErrors((prev) => ({ ...prev, title: undefined }));
+                }}
+                placeholder={t("task.title_placeholder")}
+                className={cn(
+                  "w-full",
+                  errors.title &&
+                    "border-red-500 focus:ring-red-500 dark:border-red-500"
+                )}
+              />
+              {errors.title && (
+                <span className="text-xs text-red-500 font-medium px-1 animate-in fade-in slide-in-from-top-1">
+                  {errors.title}
+                </span>
+              )}
+            </div>
             <PrioritySelect
               value={priority}
               onChange={(val) => setPriority(val)}
@@ -545,6 +579,45 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
               </div>
             </div>
           )}
+
+          {/* Slack Notification Section */}
+          <div className="flex flex-col gap-3 mt-2 border-t border-gray-100 dark:border-gray-800 pt-4">
+            <div className="flex bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-lg flex-col gap-4 border border-blue-100 dark:border-blue-900/20">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-3 w-40 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="slackEnabledEdit"
+                      checked={slackEnabled}
+                      onChange={(e) => setSlackEnabled(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-700 dark:bg-gray-800"
+                    />
+                    <label
+                      htmlFor="slackEnabledEdit"
+                      className="text-sm font-semibold text-gray-700 dark:text-gray-200 cursor-pointer"
+                    >
+                      {t("task.slack_notification", "슬랙 알림 받기")}
+                    </label>
+                  </div>
+                </div>
+
+                {slackEnabled && (
+                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      {t("task.notification_time", "알림 시간:")}
+                    </span>
+                    <Input
+                      type="time"
+                      value={slackTime}
+                      onChange={(e) => setSlackTime(e.target.value)}
+                      className="w-32 bg-white dark:bg-gray-900 [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </form>
 
         <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex justify-end gap-3">

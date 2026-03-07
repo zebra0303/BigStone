@@ -18,6 +18,7 @@ import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
 import { X, Paperclip, Loader2 } from "lucide-react";
 import { getNextValidDueDate } from "@/shared/lib/recurringDate";
+import { cn } from "@/shared/lib/utils";
 
 interface TodoCreateProps {
   initialDate?: string;
@@ -39,6 +40,7 @@ export function TodoCreate({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TodoPriority>("MEDIUM");
+  const [errors, setErrors] = useState<{ title?: string }>({});
   const [dueDate, setDueDate] = useState(
     initialDate || format(new Date(), "yyyy-MM-dd"),
   );
@@ -62,6 +64,9 @@ export function TodoCreate({
 
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [slackEnabled, setSlackEnabled] = useState(false);
+  const [slackTime, setSlackTime] = useState("09:00");
 
   const DAYS_OF_WEEK = [
     { value: 0, label: t("common.days.sun", "일") },
@@ -99,7 +104,14 @@ export function TodoCreate({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || createTodo.isPending || isUploading) return;
+
+    if (!title.trim()) {
+      setErrors({ title: t("task.title_required", "제목을 입력해주세요.") });
+      titleInputRef.current?.focus();
+      return;
+    }
+
+    if (createTodo.isPending || isUploading) return;
 
     createTodo.mutate(
       {
@@ -127,6 +139,10 @@ export function TodoCreate({
           yearlyDay: recurring === "YEARLY" ? yearlyDay : undefined,
         }),
         status: "TODO" as TodoStatus,
+        slackNotification: {
+          enabled: slackEnabled,
+          time: slackTime,
+        },
         recurring: {
           type: recurring,
           weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
@@ -186,6 +202,8 @@ export function TodoCreate({
           setEndDate(format(new Date(), "yyyy-MM-dd"));
           setEndOccurrences(10);
           setFiles([]);
+          setSlackEnabled(false);
+          setSlackTime("09:00");
 
           if (onSuccess) {
             onSuccess();
@@ -235,16 +253,30 @@ export function TodoCreate({
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 bg-white dark:bg-gray-900"
         >
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Input
-              ref={titleInputRef}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("task.title_placeholder")}
-              required
-              autoFocus
-              className="flex-1"
-            />
+          <div className="flex flex-col gap-4 sm:flex-row items-start">
+            <div className="flex-1 w-full flex flex-col gap-1.5">
+              <Input
+                ref={titleInputRef}
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (e.target.value.trim())
+                    setErrors((prev) => ({ ...prev, title: undefined }));
+                }}
+                placeholder={t("task.title_placeholder")}
+                autoFocus
+                className={cn(
+                  "w-full",
+                  errors.title &&
+                    "border-red-500 focus:ring-red-500 dark:border-red-500"
+                )}
+              />
+              {errors.title && (
+                <span className="text-xs text-red-500 font-medium px-1 animate-in fade-in slide-in-from-top-1">
+                  {errors.title}
+                </span>
+              )}
+            </div>
             <PrioritySelect
               value={priority}
               onChange={(val) => setPriority(val)}
@@ -527,6 +559,45 @@ export function TodoCreate({
               </div>
             </div>
           )}
+
+          {/* Slack Notification Section */}
+          <div className="flex flex-col gap-3 mt-2 border-t border-gray-100 dark:border-gray-800 pt-4">
+            <div className="flex bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-lg flex-col gap-4 border border-blue-100 dark:border-blue-900/20">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-3 w-40 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="slackEnabled"
+                      checked={slackEnabled}
+                      onChange={(e) => setSlackEnabled(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-700 dark:bg-gray-800"
+                    />
+                    <label
+                      htmlFor="slackEnabled"
+                      className="text-sm font-semibold text-gray-700 dark:text-gray-200 cursor-pointer"
+                    >
+                      {t("task.slack_notification", "슬랙 알림 받기")}
+                    </label>
+                  </div>
+                </div>
+
+                {slackEnabled && (
+                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      {t("task.notification_time", "알림 시간:")}
+                    </span>
+                    <Input
+                      type="time"
+                      value={slackTime}
+                      onChange={(e) => setSlackTime(e.target.value)}
+                      className="w-32 bg-white dark:bg-gray-900 [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </form>
 
         <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex justify-end gap-3">

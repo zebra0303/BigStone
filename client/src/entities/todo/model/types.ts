@@ -25,6 +25,11 @@ export interface TodoNotification {
   minutesBefore: number; // e.g. 10, 30, 60
 }
 
+export interface TodoSlackNotification {
+  enabled: boolean;
+  time: string; // HH:mm format
+}
+
 export interface Attachment {
   id: string;
   groupId: string;
@@ -45,6 +50,7 @@ export interface Todo {
   status: TodoStatus;
   recurring: RecurringConfig;
   notification?: TodoNotification;
+  slackNotification?: TodoSlackNotification;
   completedAt?: Date;
   isVirtual?: boolean;
   attachments?: Attachment[];
