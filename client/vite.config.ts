@@ -69,7 +69,17 @@ export default defineConfig(({ mode }) => {
               },
             },
             {
-              urlPattern: ({ url }) => url.pathname.startsWith("/api"),
+              // Exclude auth endpoints from caching entirely
+              urlPattern: ({ url }) =>
+                url.pathname.startsWith("/api/settings/login") ||
+                url.pathname.startsWith("/api/settings/setup") ||
+                url.pathname.startsWith("/api/settings/refresh"),
+              handler: "NetworkOnly",
+            },
+            {
+              // Cache GET API requests only, with network-first strategy
+              urlPattern: ({ url, request }) =>
+                url.pathname.startsWith("/api") && request.method === "GET",
               handler: "NetworkFirst",
               options: {
                 cacheName: "api-cache",
@@ -78,6 +88,9 @@ export default defineConfig(({ mode }) => {
                   maxAgeSeconds: 60 * 60 * 24,
                 },
                 networkTimeoutSeconds: 5,
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
               },
             },
           ],
