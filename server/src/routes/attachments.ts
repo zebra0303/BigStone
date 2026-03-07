@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { v4 as uuidv4 } from "uuid";
+import { v7 as uuidv7 } from "uuid";
 import db from "../db/database";
 
 const router = Router();
@@ -18,57 +18,72 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = uuidv4();
+    const uniqueSuffix = uuidv7();
     cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+  },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
 // Upload attachment
-router.post("/:groupId", upload.single("file"), (req: Request, res: Response) => {
-  const { groupId } = req.params;
-  const file = req.file;
+router.post(
+  "/:groupId",
+  upload.single("file"),
+  (req: Request, res: Response) => {
+    const { groupId } = req.params;
+    const file = req.file;
 
-  if (!file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
+    if (!file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-  const attachmentId = uuidv4();
-  const createdAt = new Date().toISOString();
+    const attachmentId = uuidv7();
+    const createdAt = new Date().toISOString();
 
-  const sql = `
+    const sql = `
     INSERT INTO todo_attachments (id, groupId, originalName, filename, size, createdAt)
     VALUES (?, ?, ?, ?, ?, ?)
   `;
 
-  db.run(sql, [attachmentId, groupId, file.originalname, file.filename, file.size, createdAt], function(err) {
-    if (err) {
+    try {
+      db.prepare(sql).run(
+        attachmentId,
+        groupId,
+        file.originalname,
+        file.filename,
+        file.size,
+        createdAt,
+      );
+
+      res.status(201).json({
+        id: attachmentId,
+        groupId,
+        originalName: file.originalname,
+        filename: file.filename,
+        size: file.size,
+        createdAt,
+      });
+    } catch (err: any) {
       // Clean up file if DB insert fails
       fs.unlinkSync(file.path);
-      return res.status(500).json({ error: err.message });
+      res.status(500).json({ error: err.message });
     }
-
-    res.status(201).json({
-      id: attachmentId,
-      groupId,
-      originalName: file.originalname,
-      filename: file.filename,
-      size: file.size,
-      createdAt
-    });
-  });
-});
+  },
+);
 
 // Download attachment with original filename
 router.get("/:id/download", (req: Request, res: Response) => {
   const { id } = req.params;
 
-  db.get("SELECT filename, originalName FROM todo_attachments WHERE id = ?", [id], (err, row: any) => {
-    if (err) return res.status(500).json({ error: err.message });
+  try {
+    const row = db
+      .prepare(
+        "SELECT filename, originalName FROM todo_attachments WHERE id = ?",
+      )
+      .get(id) as any;
     if (!row) return res.status(404).json({ error: "Attachment not found" });
 
     const filePath = path.join(uploadDir, row.filename);
@@ -85,30 +100,34 @@ router.get("/:id/download", (req: Request, res: Response) => {
     } else {
       res.status(404).json({ error: "File not found on disk" });
     }
-  });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Delete attachment
 router.delete("/:id", (req: Request, res: Response) => {
   const { id } = req.params;
 
-  db.get("SELECT filename FROM todo_attachments WHERE id = ?", [id], (err, row: any) => {
-    if (err) return res.status(500).json({ error: err.message });
+  try {
+    const row = db
+      .prepare("SELECT filename FROM todo_attachments WHERE id = ?")
+      .get(id) as any;
     if (!row) return res.status(404).json({ error: "Attachment not found" });
 
     const filePath = path.join(uploadDir, row.filename);
 
-    db.run("DELETE FROM todo_attachments WHERE id = ?", [id], function(err2) {
-      if (err2) return res.status(500).json({ error: err2.message });
+    db.prepare("DELETE FROM todo_attachments WHERE id = ?").run(id);
 
-      // Remove file from disk
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+    // Remove file from disk
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
 
-      res.json({ message: "Attachment deleted successfully" });
-    });
-  });
+    res.json({ message: "Attachment deleted successfully" });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;

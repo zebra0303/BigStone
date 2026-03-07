@@ -1,4 +1,4 @@
-import sqlite3 from "sqlite3";
+import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 
@@ -10,86 +10,72 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error("Error opening database", err.message);
-  } else {
-    // Set WAL mode to improve concurrency with external tools like DBeaver
-    db.run("PRAGMA journal_mode = WAL");
-    db.run("PRAGMA busy_timeout = 5000");
-    // Enable foreign key constraints for ON DELETE CASCADE to work
-    db.run("PRAGMA foreign_keys = ON");
+const db = new Database(dbPath);
 
-    db.serialize(() => {
-      db.run(`
-        CREATE TABLE IF NOT EXISTS todo_groups (
-          id TEXT PRIMARY KEY,
-          title TEXT NOT NULL,
-          description TEXT,
-          isImportant BOOLEAN DEFAULT 0,
-          priority TEXT DEFAULT 'MEDIUM',
-          recurringType TEXT DEFAULT 'NONE',
-          recurringWeeklyDays TEXT,
-          recurringMonthlyDay INTEGER,
-          recurringMonthlyNthWeek INTEGER,
-          recurringMonthlyDayOfWeek INTEGER,
-          recurringYearlyMonth INTEGER,
-          recurringYearlyDay INTEGER,
-          notificationMinutesBefore INTEGER,
-          startDate TEXT,
-          endOption TEXT DEFAULT 'NONE',
-          endDate TEXT,
-          endOccurrences INTEGER,
-          occurrenceCount INTEGER DEFAULT 0
-        )
-      `, (err) => {
-        if (err) {
-          console.error("Could not create todo_groups table", err.message);
-        } else {
-          // Attempt to add priority column if it doesn't exist (for existing DBs)
-          db.run("ALTER TABLE todo_groups ADD COLUMN priority TEXT DEFAULT 'MEDIUM'", (err2) => {
-            // Ignore error if column already exists
-          });
-        }
-      });
+// Set WAL mode to improve concurrency with external tools like DBeaver
+db.pragma("journal_mode = WAL");
+db.pragma("busy_timeout = 5000");
+// Enable foreign key constraints for ON DELETE CASCADE to work
+db.pragma("foreign_keys = ON");
 
-      db.run(`
-        CREATE TABLE IF NOT EXISTS todos (
-          id TEXT PRIMARY KEY,
-          groupId TEXT NOT NULL,
-          dueDate TEXT NOT NULL,
-          status TEXT DEFAULT 'TODO',
-          completedAt TEXT,
-          FOREIGN KEY (groupId) REFERENCES todo_groups(id) ON DELETE CASCADE
-        )
-      `, (err) => {
-        if (err) console.error("Could not create todos table", err.message);
-      });
+db.exec(`
+  CREATE TABLE IF NOT EXISTS todo_groups (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    isImportant BOOLEAN DEFAULT 0,
+    priority TEXT DEFAULT 'MEDIUM',
+    recurringType TEXT DEFAULT 'NONE',
+    recurringWeeklyDays TEXT,
+    recurringMonthlyDay INTEGER,
+    recurringMonthlyNthWeek INTEGER,
+    recurringMonthlyDayOfWeek INTEGER,
+    recurringYearlyMonth INTEGER,
+    recurringYearlyDay INTEGER,
+    notificationMinutesBefore INTEGER,
+    startDate TEXT,
+    endOption TEXT DEFAULT 'NONE',
+    endDate TEXT,
+    endOccurrences INTEGER,
+    occurrenceCount INTEGER DEFAULT 0
+  )
+`);
 
-      db.run(`
-        CREATE TABLE IF NOT EXISTS system_settings (
-          key TEXT PRIMARY KEY,
-          value TEXT NOT NULL
-        )
-      `, (err) => {
-        if (err) console.error("Could not create system_settings table", err.message);
-      });
+// Attempt to add priority column if it doesn't exist (for existing DBs)
+try {
+  db.exec("ALTER TABLE todo_groups ADD COLUMN priority TEXT DEFAULT 'MEDIUM'");
+} catch {
+  // Ignore error if column already exists
+}
 
-      db.run(`
-        CREATE TABLE IF NOT EXISTS todo_attachments (
-          id TEXT PRIMARY KEY,
-          groupId TEXT NOT NULL,
-          originalName TEXT NOT NULL,
-          filename TEXT NOT NULL,
-          size INTEGER NOT NULL,
-          createdAt TEXT NOT NULL,
-          FOREIGN KEY (groupId) REFERENCES todo_groups(id) ON DELETE CASCADE
-        )
-      `, (err) => {
-        if (err) console.error("Could not create todo_attachments table", err.message);
-      });
-    });
-  }
-});
+db.exec(`
+  CREATE TABLE IF NOT EXISTS todos (
+    id TEXT PRIMARY KEY,
+    groupId TEXT NOT NULL,
+    dueDate TEXT NOT NULL,
+    status TEXT DEFAULT 'TODO',
+    completedAt TEXT,
+    FOREIGN KEY (groupId) REFERENCES todo_groups(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS system_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS todo_attachments (
+    id TEXT PRIMARY KEY,
+    groupId TEXT NOT NULL,
+    originalName TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY (groupId) REFERENCES todo_groups(id) ON DELETE CASCADE
+  )
+`);
 
 export default db;
