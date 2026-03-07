@@ -81,6 +81,15 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Serve client static files in production (single-port deployment)
+const clientDistPath = path.resolve(__dirname, "../../client/dist");
+app.use(express.static(clientDistPath));
+
+// SPA fallback: serve index.html for any non-API route
+app.get("*", (req, res) => {
+  res.sendFile(path.join(clientDistPath, "index.html"));
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
