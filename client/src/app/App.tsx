@@ -31,48 +31,80 @@ function App() {
   );
 
   useEffect(() => {
-    syncLanguageWithServer();
-
-    // Initialize theme
-    const savedTheme = localStorage.getItem("theme");
-    const isDark =
-      savedTheme === "dark" ||
-      (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-
-    // Update meta theme-color to match current theme
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute("content", isDark ? "#111827" : "#ffffff");
-    }
-
-    // Initialize custom colors
-    const primaryColor = localStorage.getItem("primary_color");
-    if (primaryColor) {
-      document.documentElement.style.setProperty("--primary", primaryColor);
-
-      // Basic brightness check to set foreground color
-      const hex = primaryColor.replace("#", "");
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-      const foreground = brightness > 155 ? "#000000" : "#ffffff";
-      document.documentElement.style.setProperty(
-        "--primary-foreground",
-        foreground,
+    // Apply theme/color/font from a settings object
+    const applySettings = (settings: {
+      theme?: string;
+      primary_color?: string;
+      font_family?: string;
+    }) => {
+      // Theme
+      const isDark =
+        settings.theme === "dark" ||
+        (!settings.theme &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches);
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      const metaThemeColor = document.querySelector(
+        'meta[name="theme-color"]',
       );
-    }
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute(
+          "content",
+          isDark ? "#111827" : "#ffffff",
+        );
+      }
 
-    // Initialize font
-    const savedFont = localStorage.getItem("font_family");
-    if (savedFont) {
-      document.documentElement.style.setProperty("--font-family", savedFont);
-    }
+      // Primary color
+      if (settings.primary_color) {
+        document.documentElement.style.setProperty(
+          "--primary",
+          settings.primary_color,
+        );
+        const hex = settings.primary_color.replace("#", "");
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        document.documentElement.style.setProperty(
+          "--primary-foreground",
+          brightness > 155 ? "#000000" : "#ffffff",
+        );
+      }
+
+      // Font
+      if (settings.font_family) {
+        document.documentElement.style.setProperty(
+          "--font-family",
+          settings.font_family,
+        );
+      }
+
+      // Sync to localStorage for fast init on next load
+      if (settings.theme) localStorage.setItem("theme", settings.theme);
+      if (settings.primary_color)
+        localStorage.setItem("primary_color", settings.primary_color);
+      if (settings.font_family)
+        localStorage.setItem("font_family", settings.font_family);
+    };
+
+    // 1. Quick init from localStorage (prevents flash)
+    applySettings({
+      theme: localStorage.getItem("theme") || undefined,
+      primary_color: localStorage.getItem("primary_color") || undefined,
+      font_family: localStorage.getItem("font_family") || undefined,
+    });
+
+    // 2. Fetch from DB and override (handles cache-cleared scenario)
+    syncLanguageWithServer();
+    fetch("/api/settings/config")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) applySettings(data);
+      })
+      .catch(() => {});
   }, []);
 
   return (

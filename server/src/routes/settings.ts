@@ -158,14 +158,24 @@ router.post("/login", authLimiter, async (req: Request, res: Response) => {
   }
 });
 
-// 4. Get general settings (publicly accessible for UI rendering like language)
+// 4. Refresh token (extends session for active users)
+router.post("/refresh", requireAdmin, (req: Request, res: Response) => {
+  const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
+  res.json({ token });
+});
+
+// Internal keys that should not be exposed to the client
+const INTERNAL_KEYS = ["admin_password", "login_failure_state"];
+
+// 5. Get general settings (publicly accessible for UI rendering like language)
 router.get("/config", (req: Request, res: Response) => {
   try {
+    const placeholders = INTERNAL_KEYS.map(() => "?").join(",");
     const rows = db
       .prepare(
-        "SELECT key, value FROM system_settings WHERE key != 'admin_password'",
+        `SELECT key, value FROM system_settings WHERE key NOT IN (${placeholders})`,
       )
-      .all() as any[];
+      .all(...INTERNAL_KEYS) as any[];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = rows.reduce((acc: any, row: any) => {

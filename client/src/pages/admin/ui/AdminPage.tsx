@@ -89,12 +89,26 @@ export function AdminPage() {
         const data = await res.json();
         if (data.language) setLanguage(data.language);
         if (data.timezone) setTimezone(data.timezone);
+        if (data.theme) setTheme(data.theme);
+        if (data.primary_color) setPrimaryColor(data.primary_color);
+        if (data.font_family) setFontFamily(data.font_family);
         if (data.slack_webhook_url) setSlackWebhookUrl(data.slack_webhook_url);
       } else if (res.status === 401) {
         // Only clear token on explicit auth rejection, not on server errors
         setIsAuthenticated(false);
         localStorage.removeItem("admin_token");
         setToken("");
+      }
+
+      // Refresh token to extend session
+      const refreshRes = await fetch("/api/settings/refresh", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+      if (refreshRes.ok) {
+        const { token: newToken } = await refreshRes.json();
+        localStorage.setItem("admin_token", newToken);
+        setToken(newToken);
       }
     } catch (e) {
       console.error("Failed to fetch settings", e);
@@ -153,6 +167,9 @@ export function AdminPage() {
         body: JSON.stringify({
           language,
           timezone,
+          theme,
+          primary_color: primaryColor,
+          font_family: fontFamily,
           slack_webhook_url: slackWebhookUrl,
         }),
       });
