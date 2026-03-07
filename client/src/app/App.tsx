@@ -1,12 +1,35 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { RouterProvider } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { appRouter } from "./routers/appRouter";
 import { syncLanguageWithServer } from "@/shared/config/i18n";
 
-const queryClient = new QueryClient();
-
 function App() {
+  const queryClient = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            gcTime: 1000 * 60 * 60 * 24, // 24 hours
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+        },
+      }),
+    [],
+  );
+
+  const persister = useMemo(
+    () =>
+      createSyncStoragePersister({
+        storage: window.localStorage,
+      }),
+    [],
+  );
+
   useEffect(() => {
     syncLanguageWithServer();
 
@@ -45,10 +68,14 @@ function App() {
       document.documentElement.style.setProperty("--font-family", savedFont);
     }
   }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister }}
+    >
       <RouterProvider router={appRouter} />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 
