@@ -16,8 +16,6 @@ import { getDateLocale } from '@/shared/lib/localeUtils';
 import { Button } from '@/shared/ui/Button';
 import { TodoEditModal } from './TodoEditModal';
 import { ConfirmModal } from '@/shared/ui/ConfirmModal';
-import { PriorityXi } from '@/shared/ui/PriorityXi';
-
 import { LinkifiedText } from '@/shared/lib/linkify';
 
 interface TodoItemProps {
@@ -37,6 +35,16 @@ export function TodoItem({ todo }: TodoItemProps) {
   const isDone = todo.status === 'DONE';
   const isOverdue =
     !isDone && safeParseDate(todo.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
+
+  // Left border color by priority
+  const effectivePriority = todo.priority || (todo.isImportant ? 'HIGH' : undefined);
+  const priorityBorderClass = effectivePriority
+    ? {
+        HIGH: 'border-l-[3px] border-l-red-500',
+        MEDIUM: 'border-l-[3px] border-l-amber-400',
+        LOW: 'border-l-[3px] border-l-emerald-500',
+      }[effectivePriority]
+    : '';
 
   const handleToggle = () => {
     if (todo.isVirtual) {
@@ -79,8 +87,9 @@ export function TodoItem({ todo }: TodoItemProps) {
     <>
       <div
         className={`relative group flex flex-col gap-2 rounded-lg border p-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50 bg-white dark:bg-gray-800 dark:border-gray-700
-        ${isDone ? 'opacity-60' : ''} 
-        ${todo.isVirtual ? 'opacity-70 border-dashed bg-gray-50 dark:bg-gray-800/50' : ''}`}
+        ${isDone ? 'opacity-60' : ''}
+        ${todo.isVirtual ? 'opacity-70 border-dashed bg-gray-50 dark:bg-gray-800/50' : ''}
+        ${priorityBorderClass}`}
       >
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 overflow-hidden">
@@ -91,7 +100,6 @@ export function TodoItem({ todo }: TodoItemProps) {
               onClick={() => setIsExpanded(!isExpanded)}
             >
               <div className="flex items-center gap-2">
-                <PriorityXi priority={todo.priority || (todo.isImportant ? 'HIGH' : undefined)} />
                 <span
                   className={`font-medium truncate ${isDone ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
                 >
