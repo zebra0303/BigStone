@@ -18,8 +18,13 @@ const PORT = process.env.PORT || 3001;
 // Start background services
 startNotificationService();
 
-// Security headers
-app.use(helmet());
+// Security headers (relaxed CSP for SPA static file serving)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 
 // CORS: restrict to known origins
 const allowedOrigins = process.env.CORS_ORIGIN
