@@ -35,8 +35,8 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const isDone = todo.status === 'DONE';
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const isToday = todo.dueDate.slice(0, 10) === todayStr;
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const isToday = format(new Date(todo.dueDate), 'yyyy-MM-dd') === todayStr;
   const isOverdue =
     !isDone && safeParseDate(todo.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
 

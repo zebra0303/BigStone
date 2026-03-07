@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import db from "../db/database";
 import { v7 as uuidv7 } from "uuid";
 import { requireAdmin } from "../middleware/auth";
+import { formatInTimeZone } from "date-fns-tz";
 
 const router = Router();
 
@@ -541,7 +542,10 @@ router.post(
       const row = db.prepare(fetchSql).get(id) as any;
       if (!row) return res.status(404).json({ error: "Todo not found" });
 
-      const today = new Date().toISOString().slice(0, 10);
+      // Use admin timezone for correct "today" date
+      const tzRow = db.prepare("SELECT value FROM system_settings WHERE key = 'timezone'").get() as any;
+      const timezone = tzRow?.value || "Asia/Seoul";
+      const today = formatInTimeZone(new Date(), timezone, "yyyy-MM-dd");
       const newGroupId = uuidv7();
       const newTodoId = uuidv7();
 
