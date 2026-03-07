@@ -90,8 +90,8 @@ export function AdminPage() {
         if (data.language) setLanguage(data.language);
         if (data.timezone) setTimezone(data.timezone);
         if (data.slack_webhook_url) setSlackWebhookUrl(data.slack_webhook_url);
-      } else {
-        // If token is invalid, clear it
+      } else if (res.status === 401) {
+        // Only clear token on explicit auth rejection, not on server errors
         setIsAuthenticated(false);
         localStorage.removeItem("admin_token");
         setToken("");

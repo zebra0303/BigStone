@@ -151,7 +151,7 @@ router.post("/login", authLimiter, async (req: Request, res: Response) => {
 
     // Successful login: reset failure counter
     resetLoginFailureState();
-    const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "24h" });
+    const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
     res.json({ token });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
