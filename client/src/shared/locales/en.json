@@ -7,6 +7,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "today": "Today",
+    "bigxi_title": "Hi, I'm BigXi",
     "loading": "Loading...",
     "search": "Search",
     "search_desc": "Find and edit all your tasks in one place.",
@@ -35,8 +36,8 @@
   },
   "home": {
     "date_format": "MMM d",
-    "title": "Big Stone Task Manager",
-    "subtitle": "Put the big stones in first.",
+    "title": "BigStone Task Manager",
+    "subtitle": "Put the BigStones in first.",
     "add_task": "Add New Task",
     "add_task_btn": "Add Task",
     "view_1day": "1 Day",

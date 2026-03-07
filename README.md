@@ -2,9 +2,8 @@
 
 **English** | [한국어](./README.ko.md)
 
-> "Put the big stones in first" — A task manager that prioritizes what matters most
-<img width="1080" height="301" alt="cover_1080" src="https://github.com/user-attachments/assets/b25c225e-002c-46c5-a2bc-ac7c200efba6" />
-
+> "Put the BigStones in first" — A task manager that prioritizes what matters most
+> <img width="1080" height="301" alt="cover_1080" src="https://github.com/user-attachments/assets/b25c225e-002c-46c5-a2bc-ac7c200efba6" />
 
 ## Features
 
@@ -19,13 +18,13 @@
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
-| State | Zustand 5, TanStack Query 5 |
-| Backend | Express 5, TypeScript, better-sqlite3 |
-| Auth | bcrypt, JSON Web Token |
-| Architecture | FSD (Feature-Sliced Design), npm workspaces |
+| Layer        | Technology                                   |
+| ------------ | -------------------------------------------- |
+| Frontend     | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
+| State        | Zustand 5, TanStack Query 5                  |
+| Backend      | Express 5, TypeScript, better-sqlite3        |
+| Auth         | bcrypt, JSON Web Token                       |
+| Architecture | FSD (Feature-Sliced Design), npm workspaces  |
 
 ## Getting Started
 
@@ -52,6 +51,7 @@ npm run dev
 ```
 
 After starting the dev server:
+
 - Client: `http://localhost:5050` (or `VITE_PORT` in `.env`)
 - Server API: `http://localhost:3300` (or `PORT` in `.env`)
 

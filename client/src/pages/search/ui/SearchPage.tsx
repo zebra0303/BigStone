@@ -71,8 +71,9 @@ export function SearchPage() {
       <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
         <div className="flex items-center gap-3">
           <img
-            src="/stone.png"
-            alt="Big Stone Mascot"
+            src="/bigxi.png"
+            alt="BigXi"
+            title={t("common.bigxi_title")}
             className="w-12 h-12 object-contain drop-shadow-sm opacity-80"
           />
           <div>

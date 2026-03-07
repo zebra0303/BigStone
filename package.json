@@ -1,7 +1,7 @@
 {
   "name": "bigstone",
   "version": "1.0.0",
-  "description": "Big Stone Task Manager",
+  "description": "BigStone Task Manager",
   "private": true,
   "workspaces": [
     "client",

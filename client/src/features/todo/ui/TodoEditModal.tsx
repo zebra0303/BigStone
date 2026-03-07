@@ -233,8 +233,9 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
           <div className="flex items-center gap-2">
             <img
-              src="/stone.png"
-              alt="Big Stone"
+              src="/bigxi.png"
+              alt="BigXi"
+              title={t("common.bigxi_title")}
               className="h-6 w-6 object-contain"
             />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
