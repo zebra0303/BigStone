@@ -419,7 +419,8 @@ export function HomePage() {
               <div className="mb-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
                 <div className="flex items-center gap-2">
                   <h2
-                    className={`text-lg font-bold flex items-center gap-2 ${isToday ? "text-blue-700 dark:text-blue-400" : "text-gray-800 dark:text-gray-100"}`}
+                    className="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-gray-100"
+                    style={isToday ? { color: "var(--primary)" } : {}}
                   >
                     {format(date, t("home.date_format", "MMM d'일'"), {
                       locale: getDateLocale(),
