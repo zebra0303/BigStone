@@ -18,6 +18,7 @@ import { Button } from '@/shared/ui/Button';
 import { TodoEditModal } from './TodoEditModal';
 import { ConfirmModal } from '@/shared/ui/ConfirmModal';
 import { LinkifiedText } from '@/shared/lib/linkify';
+import { Toast } from '@/shared/ui/Toast';
 
 interface TodoItemProps {
   todo: Todo;
@@ -33,6 +34,7 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const isDone = todo.status === 'DONE';
   const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -80,7 +82,9 @@ export function TodoItem({ todo }: TodoItemProps) {
     const realId = todo.id.startsWith('virtual-')
       ? todo.id.replace(/^virtual-/, '').replace(/-\d+$/, '')
       : todo.id;
-    copyToToday.mutate(realId);
+    copyToToday.mutate(realId, {
+      onSuccess: () => setToastMessage(t('task.copied_to_today', '오늘 일정으로 복사되었습니다')),
+    });
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -212,6 +216,10 @@ export function TodoItem({ todo }: TodoItemProps) {
       </div>
 
       {isEditModalOpen && <TodoEditModal todo={todo} onClose={() => setIsEditModalOpen(false)} />}
+
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage('')} />
+      )}
 
       <ConfirmModal
         isOpen={isDeleteConfirmOpen}
