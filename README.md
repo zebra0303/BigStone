@@ -3,8 +3,7 @@
 **English** | [한국어](./README.ko.md)
 
 > "Put the big stones in first" — A task manager that prioritizes what matters most
-
-<img width="3904" height="1088" alt="Gemini_Generated_Image_pspl93pspl93pspl" src="https://github.com/user-attachments/assets/a3827494-8990-43ce-a8cd-f4a8e6fef26a" />
+<img width="1080" height="301" alt="cover_1080" src="https://github.com/user-attachments/assets/b25c225e-002c-46c5-a2bc-ac7c200efba6" />
 
 
 ## Features
