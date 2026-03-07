@@ -7,13 +7,15 @@
 
 ## Features
 
-- **Priority Management** — 3-level priority (HIGH / MEDIUM / LOW) to tackle important tasks first
+- **Priority Management** — 3-level priority (HIGH / MEDIUM / LOW) with color-coded left border indicators
 - **Recurring Tasks** — Daily / Weekly / Monthly / Yearly recurrence with end conditions (date, count)
-- **Multiple View Modes** — 1-day / 3-day / Workweek / Full week calendar views
+- **Multiple View Modes** — 1-day / 3-day / Workweek / Full week calendar views (persisted per user)
 - **File Attachments** — Attach and download files per task (10MB limit)
-- **Multi-language** — Korean / English support
+- **Slack Notifications** — Scheduled Slack alerts for today's incomplete tasks via Incoming Webhook
+- **PWA Support** — Installable app with offline caching (Service Worker + Workbox)
+- **Multi-language** — Korean / English support with auto-detection
 - **Theme Customization** — Dark mode, primary color picker, web font selection
-- **Admin Authentication** — bcrypt + JWT-based admin settings protection
+- **Admin Authentication** — bcrypt + JWT with account lockout (5 failures = 15 min lock)
 - **Search** — Filter tasks by keyword and status
 
 ## Tech Stack
@@ -23,7 +25,10 @@
 | Frontend     | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
 | State        | Zustand 5, TanStack Query 5                  |
 | Backend      | Express 5, TypeScript, better-sqlite3        |
-| Auth         | bcrypt, JSON Web Token                       |
+| Auth         | bcrypt, JWT, express-rate-limit              |
+| Notifications| node-cron, Slack Incoming Webhook            |
+| PWA          | vite-plugin-pwa, Workbox                     |
+| Security     | helmet, CORS, account lockout                |
 | Architecture | FSD (Feature-Sliced Design), npm workspaces  |
 
 ## Getting Started
@@ -61,6 +66,8 @@ After starting the dev server:
 PORT=3300              # Server port
 VITE_PORT=5050         # Client dev server port
 VITE_API_URL=/api      # API base path
+JWT_SECRET=...         # JWT signing secret (required in production)
+CORS_ORIGIN=...        # Allowed CORS origins
 ```
 
 ## Commands
@@ -69,8 +76,9 @@ VITE_API_URL=/api      # API base path
 npm run dev            # Start dev server (client + server)
 npm run build          # Production build
 npm run start          # Run production
-npm test               # Run tests
+npm test               # Run tests (Vitest)
 npm run lint -w client # ESLint check
+npx prettier --write . # Format all files
 ```
 
 ## Project Structure
@@ -88,11 +96,23 @@ BigStone/
 │   └── src/
 │       ├── db/                # SQLite initialization and schema
 │       ├── routes/            # REST API (todos, settings, attachments)
-│       └── utils/             # Recurring date calculation logic
+│       ├── middleware/        # JWT authentication guard
+│       ├── services/          # Slack notification scheduler (node-cron)
+│       └── utils/             # Recurring date logic, Slack webhook
 ├── .env.example               # Environment variable template
 ├── CLAUDE.md                  # AI development guidelines
 └── package.json               # Workspace root
 ```
+
+## Security
+
+- **Password**: bcrypt (10 rounds) hashing
+- **Token**: JWT with 24-hour expiry
+- **Rate Limiting**: 10 login attempts per 15 minutes per IP
+- **Account Lockout**: 5 consecutive failures locks the account for 15 minutes (DB-persisted, IP-independent)
+- **Headers**: helmet for security headers (XSS, clickjacking protection)
+- **CORS**: Origin whitelist validation
+- **File Upload**: 10MB limit, UUID-based filenames, forced download headers
 
 ## License
 
