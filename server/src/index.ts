@@ -26,10 +26,17 @@ app.use(
   }),
 );
 
-// CORS: restrict to known origins
+// CORS: allow same-origin (single-port mode) + configured origins
+const serverPort = process.env.PORT || 3001;
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
-  : [`http://localhost:${process.env.VITE_PORT || 5173}`];
+  : [];
+
+// Always allow the server's own origin for single-port SPA deployment
+const selfOrigins = [
+  `http://localhost:${serverPort}`,
+  `http://localhost:${process.env.VITE_PORT || 5173}`,
+];
 
 app.use(
   cors({
@@ -38,12 +45,13 @@ app.use(
       if (!origin) return callback(null, true);
 
       const isAllowed =
-        allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+        allowedOrigins.includes("*") ||
+        allowedOrigins.includes(origin) ||
+        selfOrigins.includes(origin);
 
       if (isAllowed) {
         callback(null, true);
       } else {
-        // Log the rejected origin for debugging instead of throwing an unhandled exception
         console.warn(`CORS blocked request from origin: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
