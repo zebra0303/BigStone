@@ -30,10 +30,16 @@ type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 export function HomePage() {
   const { t } = useTranslation();
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("1DAY");
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (localStorage.getItem("bigstone-view-mode") as ViewMode) || "1DAY",
+  );
   const [baseDateStr, setBaseDateStr] = useState(
     format(new Date(), "yyyy-MM-dd"),
   );
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem("bigstone-view-mode", mode);
+  };
   const { data: todos = [] } = useTodos();
 
   const baseDate = useMemo(() => {
@@ -274,7 +280,7 @@ export function HomePage() {
             <Button
               variant="ghost"
               size="xs"
-              onClick={() => setViewMode("1DAY")}
+              onClick={() => handleViewModeChange("1DAY")}
               className={cn(
                 "whitespace-nowrap px-3 transition-all duration-200",
                 viewMode === "1DAY"
@@ -295,7 +301,7 @@ export function HomePage() {
             <Button
               variant="ghost"
               size="xs"
-              onClick={() => setViewMode("3DAY")}
+              onClick={() => handleViewModeChange("3DAY")}
               className={cn(
                 "whitespace-nowrap px-3 transition-all duration-200",
                 viewMode === "3DAY"
@@ -316,7 +322,7 @@ export function HomePage() {
             <Button
               variant="ghost"
               size="xs"
-              onClick={() => setViewMode("WEEK_WORK")}
+              onClick={() => handleViewModeChange("WEEK_WORK")}
               className={cn(
                 "whitespace-nowrap px-3 transition-all duration-200",
                 viewMode === "WEEK_WORK"
@@ -337,7 +343,7 @@ export function HomePage() {
             <Button
               variant="ghost"
               size="xs"
-              onClick={() => setViewMode("WEEK_ALL")}
+              onClick={() => handleViewModeChange("WEEK_ALL")}
               className={cn(
                 "whitespace-nowrap px-3 transition-all duration-200",
                 viewMode === "WEEK_ALL"
