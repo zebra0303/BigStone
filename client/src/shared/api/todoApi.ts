@@ -69,6 +69,15 @@ export const todoApi = {
     if (!res.ok) throw new Error("Failed to complete virtual todo");
   },
 
+  copyToToday: async (id: string): Promise<{ id: string; groupId: string }> => {
+    const res = await fetch(`${API_BASE}/${id}/copy-to-today`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to copy todo to today");
+    return res.json();
+  },
+
   uploadAttachment: async (groupId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);

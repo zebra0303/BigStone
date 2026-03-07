@@ -522,6 +522,62 @@ router.post(
   },
 );
 
+// Copy to Today (create a one-time copy of a task for today)
+router.post(
+  "/:id/copy-to-today",
+  requireAdmin,
+  (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const fetchSql = `
+      SELECT t.groupId, g.title, g.description, g.isImportant, g.priority,
+             g.slackEnabled, g.slackNotificationTime, g.notificationMinutesBefore
+      FROM todos t
+      JOIN todo_groups g ON t.groupId = g.id
+      WHERE t.id = ?
+    `;
+
+    try {
+      const row = db.prepare(fetchSql).get(id) as any;
+      if (!row) return res.status(404).json({ error: "Todo not found" });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const newGroupId = uuidv7();
+      const newTodoId = uuidv7();
+
+      // Create a non-recurring copy
+      const groupSql = `
+        INSERT INTO todo_groups (
+          id, title, description, isImportant, priority,
+          recurringType, slackEnabled, slackNotificationTime,
+          notificationMinutesBefore, startDate, endOption, occurrenceCount
+        ) VALUES (?, ?, ?, ?, ?, 'NONE', ?, ?, ?, ?, 'NONE', 1)
+      `;
+      db.prepare(groupSql).run(
+        newGroupId,
+        row.title,
+        row.description,
+        row.isImportant,
+        row.priority,
+        row.slackEnabled,
+        row.slackNotificationTime,
+        row.notificationMinutesBefore,
+        today,
+      );
+
+      const todoSql = `
+        INSERT INTO todos (id, groupId, dueDate, status, completedAt)
+        VALUES (?, ?, ?, 'TODO', NULL)
+      `;
+      db.prepare(todoSql).run(newTodoId, newGroupId, today);
+
+      res.json({ id: newTodoId, groupId: newGroupId });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
+
 // Delete
 router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
   // If we delete the todo, do we delete the group?

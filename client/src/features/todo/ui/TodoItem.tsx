@@ -5,11 +5,12 @@ import {
   useUpdateTodoStatus,
   useDeleteTodo,
   useCompleteVirtualTodo,
+  useCopyToToday,
 } from '@/features/todo/model/hooks';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { Badge } from '@/shared/ui/Badge';
 import { format } from 'date-fns';
-import { Trash2, Edit2, Repeat, Paperclip } from 'lucide-react';
+import { Trash2, Edit2, Repeat, Paperclip, CopyPlus } from 'lucide-react';
 import { safeParseDate } from '@/shared/lib/recurringDate';
 import { getDateLocale } from '@/shared/lib/localeUtils';
 
@@ -27,12 +28,15 @@ export function TodoItem({ todo }: TodoItemProps) {
   const updateTodo = useUpdateTodoStatus();
   const deleteTodo = useDeleteTodo();
   const completeVirtualTodo = useCompleteVirtualTodo();
+  const copyToToday = useCopyToToday();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const isDone = todo.status === 'DONE';
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isToday = todo.dueDate.slice(0, 10) === todayStr;
   const isOverdue =
     !isDone && safeParseDate(todo.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
 
@@ -69,6 +73,14 @@ export function TodoItem({ todo }: TodoItemProps) {
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditModalOpen(true);
+  };
+
+  const handleCopyToToday = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const realId = todo.id.startsWith('virtual-')
+      ? todo.id.replace(/^virtual-/, '').replace(/-\d+$/, '')
+      : todo.id;
+    copyToToday.mutate(realId);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -133,6 +145,17 @@ export function TodoItem({ todo }: TodoItemProps) {
           </div>
 
           <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-1 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+            {!isToday && !isDone && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCopyToToday}
+                className="h-7 w-7 text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 flex-shrink-0 bg-transparent hover:bg-green-50 dark:hover:bg-green-900/20"
+                aria-label={t('task.copy_to_today', '오늘로 복사')}
+              >
+                <CopyPlus className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

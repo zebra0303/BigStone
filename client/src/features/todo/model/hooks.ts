@@ -100,6 +100,17 @@ export function useCompleteVirtualTodo() {
   });
 }
 
+export function useCopyToToday() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => todoApi.copyToToday(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+    },
+  });
+}
+
 export function useUploadAttachment() {
   const queryClient = useQueryClient();
 
