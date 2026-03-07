@@ -111,42 +111,42 @@ export function getNextOccurrence(
     return nextDate;
   }
 
-  if (
-    recurring.type === "WEEKLY" &&
-    recurring.weeklyDays &&
-    recurring.weeklyDays.length > 0
-  ) {
-    for (let i = 0; i < 7; i++) {
-      if (recurring.weeklyDays.includes(getDay(nextDate))) {
-        return nextDate;
+  if (recurring.type === "WEEKLY") {
+    if (recurring.weeklyDays && recurring.weeklyDays.length > 0) {
+      for (let i = 0; i < 7; i++) {
+        if (recurring.weeklyDays.includes(getDay(nextDate))) {
+          return nextDate;
+        }
+        nextDate = addDays(nextDate, 1);
       }
-      nextDate = addDays(nextDate, 1);
     }
+    return null;
   }
 
-  if (recurring.type === "MONTHLY" && recurring.monthlyDay) {
-    nextDate = setDate(referenceDate, recurring.monthlyDay);
-    if (nextDate.getTime() <= referenceDate.getTime()) {
-      nextDate = addMonths(nextDate, 1);
+  if (recurring.type === "MONTHLY") {
+    if (recurring.monthlyDay) {
+      nextDate = setDate(referenceDate, recurring.monthlyDay);
+      if (nextDate.getTime() <= referenceDate.getTime()) {
+        nextDate = addMonths(nextDate, 1);
+      }
+      return nextDate;
     }
-    return nextDate;
+    return null;
   }
 
-  if (
-    recurring.type === "YEARLY" &&
-    recurring.yearlyMonth &&
-    recurring.yearlyDay
-  ) {
-    nextDate = setDate(
-      setMonth(referenceDate, recurring.yearlyMonth - 1),
-      recurring.yearlyDay,
-    );
-    if (nextDate.getTime() <= referenceDate.getTime()) {
-      nextDate = addYears(nextDate, 1);
+  if (recurring.type === "YEARLY") {
+    if (recurring.yearlyMonth && recurring.yearlyDay) {
+      nextDate = setDate(
+        setMonth(referenceDate, recurring.yearlyMonth - 1),
+        recurring.yearlyDay,
+      );
+      if (nextDate.getTime() <= referenceDate.getTime()) {
+        nextDate = addYears(nextDate, 1);
+      }
+      return nextDate;
     }
-    return nextDate;
+    return null;
   }
 
-  // Fallbacks
-  return nextDate;
+  return null;
 }
