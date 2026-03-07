@@ -40,9 +40,9 @@ export function TodoItem({ todo }: TodoItemProps) {
   const effectivePriority = todo.priority || (todo.isImportant ? 'HIGH' : undefined);
   const priorityBorderClass = effectivePriority
     ? {
-        HIGH: 'border-l-[3px] !border-l-red-500',
-        MEDIUM: 'border-l-[3px] !border-l-amber-400',
-        LOW: 'border-l-[3px] !border-l-emerald-500',
+        HIGH: 'border-l-[3px] !border-l-red-500 !border-l-solid',
+        MEDIUM: 'border-l-[3px] !border-l-amber-400 !border-l-solid',
+        LOW: 'border-l-[3px] !border-l-emerald-500 !border-l-solid',
       }[effectivePriority]
     : '';
 
