@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { v7 as uuidv7 } from "uuid";
 import db from "../db/database";
+import { requireAdmin } from "../middleware/auth";
 
 const router = Router();
 
@@ -31,6 +32,7 @@ const upload = multer({
 // Upload attachment
 router.post(
   "/:groupId",
+  requireAdmin,
   upload.single("file"),
   (req: Request, res: Response) => {
     const { groupId } = req.params;
@@ -106,7 +108,7 @@ router.get("/:id/download", (req: Request, res: Response) => {
 });
 
 // Delete attachment
-router.delete("/:id", (req: Request, res: Response) => {
+router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {

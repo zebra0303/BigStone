@@ -3,16 +3,15 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import db from "../db/database";
+import { requireAdmin } from "../middleware/auth";
 
 const router = Router();
 
-// Require JWT_SECRET from environment; fallback only for development
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  "dev_only_secret_" + require("crypto").randomBytes(16).toString("hex");
+// Use the same secret logic as the middleware
+const JWT_SECRET = process.env.JWT_SECRET || "dev_only_secret";
 if (!process.env.JWT_SECRET) {
   console.warn(
-    "WARNING: JWT_SECRET is not set. Using random secret (tokens will not persist across restarts).",
+    "WARNING: JWT_SECRET is not set. Using fallback secret.",
   );
 }
 
@@ -24,22 +23,6 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many login attempts, please try again later." },
 });
-
-// Middleware to protect admin routes
-export const requireAdmin = (req: Request, res: Response, next: Function) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const token = authHeader.split(" ")[1];
-  try {
-    jwt.verify(token, JWT_SECRET);
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token" });
-  }
-};
 
 // 1. Check if admin is set up
 router.get("/status", (req: Request, res: Response) => {

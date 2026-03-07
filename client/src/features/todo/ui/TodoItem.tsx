@@ -15,6 +15,7 @@ import { getDateLocale } from "@/shared/lib/localeUtils";
 
 import { Button } from "@/shared/ui/Button";
 import { TodoEditModal } from "./TodoEditModal";
+import { ConfirmModal } from "@/shared/ui/ConfirmModal";
 
 import { LinkifiedText } from "@/shared/lib/linkify";
 
@@ -30,6 +31,7 @@ export function TodoItem({ todo }: TodoItemProps) {
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const isDone = todo.status === "DONE";
   const isOverdue =
@@ -63,6 +65,10 @@ export function TodoItem({ todo }: TodoItemProps) {
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
     const realId = todo.id.startsWith("virtual-")
       ? todo.id.replace(/^virtual-/, "").replace(/-\d+$/, "")
       : todo.id;
@@ -203,6 +209,22 @@ export function TodoItem({ todo }: TodoItemProps) {
       {isEditModalOpen && (
         <TodoEditModal todo={todo} onClose={() => setIsEditModalOpen(false)} />
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        title={t("task.delete_confirm_title", "할일 삭제")}
+        message={
+          todo.recurring.type !== "NONE"
+            ? t(
+                "task.delete_recurring_confirm_msg",
+                "이 할일은 반복 일정입니다. 삭제하면 모든 반복 회차가 함께 삭제됩니다. 정말 삭제하시겠습니까?",
+              )
+            : t("task.delete_confirm_msg", "정말 이 할일을 삭제하시겠습니까?")
+        }
+        confirmLabel={t("common.delete", "삭제")}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import db from "../db/database";
 import { v7 as uuidv7 } from "uuid";
+import { requireAdmin } from "../middleware/auth";
 
 const router = Router();
 
@@ -73,7 +74,7 @@ router.get("/", (req: Request, res: Response) => {
 });
 
 // Create
-router.post("/", (req: Request, res: Response) => {
+router.post("/", requireAdmin, (req: Request, res: Response) => {
   const {
     title,
     description,
@@ -145,7 +146,7 @@ router.post("/", (req: Request, res: Response) => {
 });
 
 // Update
-router.put("/:id", async (req: Request, res: Response) => {
+router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
 
@@ -369,7 +370,7 @@ router.put("/:id", async (req: Request, res: Response) => {
 });
 
 // Complete Virtual Task (Skip intermediate)
-router.post("/:id/complete-virtual", async (req: Request, res: Response) => {
+router.post("/:id/complete-virtual", requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { targetDate } = req.body; // YYYY-MM-DD
 
@@ -495,7 +496,7 @@ router.post("/:id/complete-virtual", async (req: Request, res: Response) => {
 });
 
 // Delete
-router.delete("/:id", (req: Request, res: Response) => {
+router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
   // If we delete the todo, do we delete the group?
   // Our schema is structured so deleting a group cascades.
   // Let's find the groupId and delete that, which will cascade.

@@ -2,6 +2,15 @@ import type { Todo } from "@/entities/todo/model/types";
 
 const API_BASE = "/api/todos";
 
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem("admin_token");
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 export const todoApi = {
   getAll: async (): Promise<Todo[]> => {
     const res = await fetch(API_BASE);
@@ -14,7 +23,10 @@ export const todoApi = {
   ): Promise<{ id: string; groupId: string }> => {
     const res = await fetch(API_BASE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...getAuthHeaders()
+      },
       body: JSON.stringify(todo),
     });
     if (!res.ok) throw new Error("Failed to create todo");
@@ -27,7 +39,10 @@ export const todoApi = {
   ): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...getAuthHeaders()
+      },
       body: JSON.stringify(updates),
     });
     if (!res.ok) throw new Error("Failed to update todo");
@@ -37,6 +52,7 @@ export const todoApi = {
   delete: async (id: string): Promise<void> => {
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error("Failed to delete todo");
   },
@@ -44,7 +60,10 @@ export const todoApi = {
   completeVirtual: async (id: string, targetDate: string): Promise<void> => {
     const res = await fetch(`${API_BASE}/${id}/complete-virtual`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...getAuthHeaders()
+      },
       body: JSON.stringify({ targetDate }),
     });
     if (!res.ok) throw new Error("Failed to complete virtual todo");
@@ -55,6 +74,7 @@ export const todoApi = {
     formData.append("file", file);
     const res = await fetch(`${API_BASE}/attachments/${groupId}`, {
       method: "POST",
+      headers: getAuthHeaders(),
       body: formData,
     });
     if (!res.ok) throw new Error("Failed to upload attachment");
@@ -64,6 +84,7 @@ export const todoApi = {
   deleteAttachment: async (attachmentId: string) => {
     const res = await fetch(`${API_BASE}/attachments/${attachmentId}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error("Failed to delete attachment");
     return res.json();
