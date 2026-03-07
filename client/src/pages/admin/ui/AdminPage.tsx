@@ -4,7 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Select } from "@/shared/ui/Select";
-import { ChevronLeft, Lock, Globe, Save, Moon, Palette, Type } from "lucide-react";
+import {
+  ChevronLeft,
+  Lock,
+  Globe,
+  Save,
+  Moon,
+  Palette,
+  Type,
+} from "lucide-react";
+import { Footer } from "@/widgets/footer";
 
 export function AdminPage() {
   const { t, i18n } = useTranslation();
@@ -354,6 +363,7 @@ export function AdminPage() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }

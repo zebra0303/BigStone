@@ -5,6 +5,8 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import todosRouter from "./routes/todos";
 import settingsRouter from "./routes/settings";
 import attachmentsRouter from "./routes/attachments";
@@ -12,11 +14,52 @@ import attachmentsRouter from "./routes/attachments";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
-app.use(express.json());
+// Security headers
+app.use(helmet());
 
-// Serve uploaded files statically
-app.use("/uploads", express.static(path.resolve(__dirname, "../../server/data/uploads")));
+// CORS: restrict to known origins
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : [`http://localhost:${process.env.VITE_PORT || 5173}`];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, curl, mobile apps)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  }),
+);
+
+// Body size limit
+app.use(express.json({ limit: "1mb" }));
+
+// Global rate limit: 100 requests per minute per IP
+app.use(
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." },
+  }),
+);
+
+// Serve uploaded files statically with download-only headers
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    // Force download to prevent Stored XSS via uploaded HTML/SVG
+    res.setHeader("Content-Disposition", "attachment");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    next();
+  },
+  express.static(path.resolve(__dirname, "../../server/data/uploads")),
+);
 
 app.use("/api/todos", todosRouter);
 app.use("/api/todos/attachments", attachmentsRouter);

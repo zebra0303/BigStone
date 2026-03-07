@@ -23,6 +23,7 @@ import { Link } from "react-router-dom";
 import { safeParseDate, getNextOccurrence } from "@/shared/lib/recurringDate";
 import { getDateLocale } from "@/shared/lib/localeUtils";
 import { cn } from "@/shared/lib/utils";
+import { Footer } from "@/widgets/footer";
 
 type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
@@ -466,6 +467,7 @@ export function HomePage() {
           );
         })}
       </div>
+      <Footer />
     </div>
   );
 }

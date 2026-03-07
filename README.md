@@ -1,97 +1,97 @@
 # BigStone - Task Manager
 
-[English](./README.en.md) | **한국어**
+**English** | [한국어](./README.ko.md)
 
-> "큰 돌(중요한 일)을 먼저 넣어라" — 중요한 일부터 처리하는 할 일 관리 앱
+> "Put the big stones in first" — A task manager that prioritizes what matters most
 
-## 주요 기능
+## Features
 
-- **우선순위 관리** — HIGH / MEDIUM / LOW 3단계 우선순위로 중요한 일을 먼저 처리
-- **반복 일정** — 일간 / 주간 / 월간 / 연간 반복 + 종료 조건 (날짜, 횟수) 지원
-- **다중 뷰 모드** — 1일 / 3일 / 주간(평일) / 주간(전체) 캘린더 뷰
-- **파일 첨부** — 할 일에 파일 첨부 및 다운로드 (10MB 제한)
-- **다국어** — 한국어 / 영어 지원
-- **테마 커스터마이징** — 다크 모드, 주요 색상, 웹 폰트 선택
-- **관리자 인증** — bcrypt + JWT 기반 관리자 설정 보호
-- **검색** — 키워드 및 상태별 할 일 검색
+- **Priority Management** — 3-level priority (HIGH / MEDIUM / LOW) to tackle important tasks first
+- **Recurring Tasks** — Daily / Weekly / Monthly / Yearly recurrence with end conditions (date, count)
+- **Multiple View Modes** — 1-day / 3-day / Workweek / Full week calendar views
+- **File Attachments** — Attach and download files per task (10MB limit)
+- **Multi-language** — Korean / English support
+- **Theme Customization** — Dark mode, primary color picker, web font selection
+- **Admin Authentication** — bcrypt + JWT-based admin settings protection
+- **Search** — Filter tasks by keyword and status
 
-## 기술 스택
+## Tech Stack
 
-| 영역 | 기술 |
-|------|------|
+| Layer | Technology |
+|-------|-----------|
 | Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
 | State | Zustand 5, TanStack Query 5 |
 | Backend | Express 5, TypeScript, better-sqlite3 |
 | Auth | bcrypt, JSON Web Token |
 | Architecture | FSD (Feature-Sliced Design), npm workspaces |
 
-## 시작하기
+## Getting Started
 
-### 사전 요구사항
+### Prerequisites
 
 - Node.js 18+
 - npm 9+
 
-### 설치 및 실행
+### Installation
 
 ```bash
-# 저장소 클론
+# Clone the repository
 git clone https://github.com/zebra0303/BigStone.git
 cd BigStone
 
-# 의존성 설치
+# Install dependencies
 npm install
 
-# 환경 변수 설정
+# Set up environment variables
 cp .env.example .env
 
-# 개발 서버 실행 (클라이언트 + 서버 동시 실행)
+# Start development server (client + server concurrently)
 npm run dev
 ```
 
-개발 서버 실행 후:
-- 클라이언트: `http://localhost:5050` (또는 `.env`의 `VITE_PORT`)
-- 서버 API: `http://localhost:3300` (또는 `.env`의 `PORT`)
+After starting the dev server:
+- Client: `http://localhost:5050` (or `VITE_PORT` in `.env`)
+- Server API: `http://localhost:3300` (or `PORT` in `.env`)
 
-### 환경 변수
+### Environment Variables
 
 ```env
-PORT=3300              # 서버 포트
-VITE_PORT=5050         # 클라이언트 개발 서버 포트
-VITE_API_URL=/api      # API 기본 경로
+PORT=3300              # Server port
+VITE_PORT=5050         # Client dev server port
+VITE_API_URL=/api      # API base path
 ```
 
-## 주요 명령어
+## Commands
 
 ```bash
-npm run dev            # 개발 서버 실행 (client + server)
-npm run build          # 프로덕션 빌드
-npm run start          # 프로덕션 실행
-npm test               # 테스트 실행
-npm run lint -w client # ESLint 검사
+npm run dev            # Start dev server (client + server)
+npm run build          # Production build
+npm run start          # Run production
+npm test               # Run tests
+npm run lint -w client # ESLint check
 ```
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 BigStone/
-├── client/                    # React 프론트엔드
+├── client/                    # React frontend
 │   └── src/
-│       ├── app/               # 전역 설정, 라우팅, 테마 초기화
+│       ├── app/               # Global config, routing, theme initialization
 │       ├── pages/             # HomePage, SearchPage, AdminPage
-│       ├── features/          # Todo CRUD 훅 및 UI 컴포넌트
-│       ├── entities/          # Todo 타입 정의 및 Zustand 스토어
-│       └── shared/            # API 클라이언트, UI 컴포넌트, 유틸리티, i18n
-├── server/                    # Express 백엔드
+│       ├── features/          # Todo CRUD hooks and UI components
+│       ├── entities/          # Todo type definitions and Zustand store
+│       └── shared/            # API client, UI components, utilities, i18n
+├── server/                    # Express backend
 │   └── src/
-│       ├── db/                # SQLite 초기화 및 스키마
+│       ├── db/                # SQLite initialization and schema
 │       ├── routes/            # REST API (todos, settings, attachments)
-│       └── utils/             # 반복 일정 계산 로직
-├── .env.example               # 환경 변수 템플릿
-├── CLAUDE.md                  # AI 개발 지침
-└── package.json               # 워크스페이스 루트
+│       └── utils/             # Recurring date calculation logic
+├── .env.example               # Environment variable template
+├── CLAUDE.md                  # AI development guidelines
+└── package.json               # Workspace root
 ```
 
-## 라이선스
+## License
 
 ISC

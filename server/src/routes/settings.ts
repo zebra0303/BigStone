@@ -1,11 +1,29 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
 import db from "../db/database";
 
 const router = Router();
+
+// Require JWT_SECRET from environment; fallback only for development
 const JWT_SECRET =
-  process.env.JWT_SECRET || "fallback_big_stone_secret_key_change_me";
+  process.env.JWT_SECRET ||
+  "dev_only_secret_" + require("crypto").randomBytes(16).toString("hex");
+if (!process.env.JWT_SECRET) {
+  console.warn(
+    "WARNING: JWT_SECRET is not set. Using random secret (tokens will not persist across restarts).",
+  );
+}
+
+// Strict rate limit for auth endpoints to prevent brute-force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts, please try again later." },
+});
 
 // Middleware to protect admin routes
 export const requireAdmin = (req: Request, res: Response, next: Function) => {
@@ -36,7 +54,7 @@ router.get("/status", (req: Request, res: Response) => {
 });
 
 // 2. Initial Setup (Set Password)
-router.post("/setup", async (req: Request, res: Response) => {
+router.post("/setup", authLimiter, async (req: Request, res: Response) => {
   const { password } = req.body;
   if (!password) return res.status(400).json({ error: "Password is required" });
 
@@ -63,7 +81,7 @@ router.post("/setup", async (req: Request, res: Response) => {
 });
 
 // 3. Login
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", authLimiter, async (req: Request, res: Response) => {
   const { password } = req.body;
 
   try {

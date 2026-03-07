@@ -74,7 +74,6 @@ router.get("/", (req: Request, res: Response) => {
 
 // Create
 router.post("/", (req: Request, res: Response) => {
-  console.log("POST Body:", JSON.stringify(req.body, null, 2));
   const {
     title,
     description,
@@ -147,7 +146,6 @@ router.post("/", (req: Request, res: Response) => {
 
 // Update
 router.put("/:id", async (req: Request, res: Response) => {
-  console.log("PUT Body:", JSON.stringify(req.body, null, 2));
   const { id } = req.params;
   const updates = req.body;
 

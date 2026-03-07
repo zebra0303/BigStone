@@ -8,6 +8,7 @@ import { Input } from "@/shared/ui/Input";
 import { Select } from "@/shared/ui/Select";
 import { ChevronLeft, Search as SearchIcon } from "lucide-react";
 import type { Todo } from "@/entities/todo/model/types";
+import { Footer } from "@/widgets/footer";
 
 type FilterStatus = "ALL" | "TODO" | "DONE";
 
@@ -160,6 +161,7 @@ export function SearchPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
