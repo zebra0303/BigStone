@@ -13,26 +13,26 @@ export const RecurringEndOptionSchema = z.enum(["NONE", "DATE", "OCCURRENCES"]);
 
 export const RecurringConfigSchema = z.object({
   type: RecurringTypeSchema,
-  weeklyDays: z.array(z.number()).optional(),
-  monthlyDay: z.number().optional(),
-  monthlyNthWeek: z.number().optional(),
-  monthlyDayOfWeek: z.number().optional(),
-  yearlyMonth: z.number().optional(),
-  yearlyDay: z.number().optional(),
-  startDate: z.string().optional(),
-  endOption: RecurringEndOptionSchema.optional(),
-  endDate: z.string().optional(),
-  endOccurrences: z.number().optional(),
-  occurrenceCount: z.number().optional(),
+  weeklyDays: z.array(z.number()).optional().nullable(),
+  monthlyDay: z.number().optional().nullable(),
+  monthlyNthWeek: z.number().optional().nullable(),
+  monthlyDayOfWeek: z.number().optional().nullable(),
+  yearlyMonth: z.number().optional().nullable(),
+  yearlyDay: z.number().optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endOption: RecurringEndOptionSchema.optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  endOccurrences: z.number().optional().nullable(),
+  occurrenceCount: z.number().optional().nullable(),
 });
 
 export const TodoNotificationSchema = z.object({
-  minutesBefore: z.number(),
+  minutesBefore: z.number().optional().nullable(),
 });
 
 export const TodoSlackNotificationSchema = z.object({
-  enabled: z.boolean(),
-  time: z.string(),
+  enabled: z.boolean().optional().nullable(),
+  time: z.string().optional().nullable(),
 });
 
 export const AttachmentSchema = z.object({
@@ -46,21 +46,21 @@ export const AttachmentSchema = z.object({
 
 export const TodoSchema = z.object({
   id: z.string(),
-  groupId: z.string().optional(),
-  title: z.string(),
-  description: z.string().optional(),
+  groupId: z.string().optional().nullable(),
+  title: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   isImportant: z.boolean(), // deprecated fallback
-  priority: TodoPrioritySchema.optional(),
-  isPinned: z.boolean().optional(),
-  isCopied: z.boolean().optional(),
+  priority: TodoPrioritySchema.optional().nullable(),
+  isPinned: z.boolean().optional().nullable(),
+  isCopied: z.boolean().optional().nullable(),
   dueDate: z.coerce.date(), // handles ISO string to Date conversion natively
   status: TodoStatusSchema,
   recurring: RecurringConfigSchema,
-  notification: TodoNotificationSchema.optional(),
-  slackNotification: TodoSlackNotificationSchema.optional(),
+  notification: TodoNotificationSchema.optional().nullable(),
+  slackNotification: TodoSlackNotificationSchema.optional().nullable(),
   completedAt: z.coerce.date().optional().nullable(),
-  isVirtual: z.boolean().optional(),
-  attachments: z.array(AttachmentSchema).optional(),
+  isVirtual: z.boolean().optional().nullable(),
+  attachments: z.array(AttachmentSchema).optional().nullable(),
 });
 
 // Create types from Zod schemas to ensure sync

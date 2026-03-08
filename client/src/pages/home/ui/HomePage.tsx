@@ -88,6 +88,8 @@ export function HomePage() {
 
   const getTodosForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const isToday = dateStr === todayStr;
     const dateMs = startOfDay(date).getTime();
 
     // Collect pinned tasks visible on this date
@@ -105,12 +107,20 @@ export function HomePage() {
       return true; // not done: show on all dates
     });
 
-    // Regular (non-pinned) tasks matched by exact date
+    // Regular (non-pinned) tasks
     const regularForDate = activeTodos.filter((todo) => {
-      if (todo.isPinned) return false; // handled separately above
+      if (todo.isPinned) return false;
       const parsedDue = safeParseDate(todo.dueDate);
       const dueDateStr = format(parsedDue, "yyyy-MM-dd");
-      return dueDateStr === dateStr;
+
+      if (dueDateStr === dateStr) return true;
+
+      // Special case: If it's today's view, also show non-done tasks from the past
+      if (isToday && todo.status !== "DONE" && dueDateStr < todayStr) {
+        return true;
+      }
+
+      return false;
     });
 
     // Sort helper
@@ -128,6 +138,8 @@ export function HomePage() {
       const scoreA = getPriorityScore(a);
       const scoreB = getPriorityScore(b);
       if (scoreA !== scoreB) return scoreB - scoreA;
+
+      // If priorities are equal, sort by actual due date (oldest first)
       return (
         safeParseDate(a.dueDate).getTime() - safeParseDate(b.dueDate).getTime()
       );

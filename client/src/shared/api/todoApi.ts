@@ -2,6 +2,7 @@ import type { Todo } from "@/entities/todo/model/types";
 import { TodoSchema } from "@/entities/todo/model/schema";
 import { z } from "zod";
 import { handleApiError } from "@/shared/lib/errors";
+import { format } from "date-fns";
 
 const API_BASE = "/api/todos";
 
@@ -19,19 +20,32 @@ export const todoApi = {
     const res = await fetch(API_BASE);
     if (!res.ok) await handleApiError(res, "Failed to fetch todos");
     const data = await res.json();
-    return z.array(TodoSchema).parse(data) as Todo[];
+    try {
+      return z.array(TodoSchema).parse(data) as Todo[];
+    } catch (e) {
+      console.error("Zod Parsing Error:", e);
+      // Fallback to avoid complete failure if possible, or rethrow
+      throw e;
+    }
   },
 
   create: async (
     todo: Omit<Todo, "id" | "groupId">,
   ): Promise<{ id: string; groupId: string }> => {
+    const payload = {
+      ...todo,
+      dueDate:
+        todo.dueDate instanceof Date
+          ? format(todo.dueDate, "yyyy-MM-dd")
+          : todo.dueDate,
+    };
     const res = await fetch(API_BASE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeaders(),
       },
-      body: JSON.stringify(todo),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) await handleApiError(res, "Failed to create todo");
     return res.json();
@@ -41,13 +55,20 @@ export const todoApi = {
     id: string,
     updates: Partial<Todo>,
   ): Promise<{ message: string }> => {
+    const payload = {
+      ...updates,
+      dueDate:
+        updates.dueDate instanceof Date
+          ? format(updates.dueDate, "yyyy-MM-dd")
+          : updates.dueDate,
+    };
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeaders(),
       },
-      body: JSON.stringify(updates),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) await handleApiError(res, "Failed to update todo");
     return res.json();

@@ -15,11 +15,15 @@ export function useProjectedTodos(todos: Todo[], displayDates: Date[]) {
   return useMemo(() => {
     // 1. Filter valid tasks for the current view
     const validTodos = todos.filter((todo) => {
-      if (todo.status === "DONE") {
-        const dueDateStr = format(safeParseDate(todo.dueDate), "yyyy-MM-dd");
-        return displayDates.some((d) => format(d, "yyyy-MM-dd") === dueDateStr);
-      }
-      return true;
+      // Non-done tasks should always be considered (to handle overdue cases)
+      if (todo.status !== "DONE") return true;
+
+      // Pinned tasks should always be considered (handled by their own logic)
+      if (todo.isPinned) return true;
+
+      // Done tasks are only relevant if they align with the current display range
+      const dueDateStr = format(safeParseDate(todo.dueDate), "yyyy-MM-dd");
+      return displayDates.some((d) => format(d, "yyyy-MM-dd") === dueDateStr);
     });
 
     // 2. Generate Virtual Projections for Recurring tasks

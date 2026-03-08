@@ -11,11 +11,18 @@ import {
 import type { RecurringConfig } from "@/entities/todo/model/types";
 
 export function safeParseDate(input: Date | string): Date {
-  if (typeof input === "string" && input.includes("T") === false) {
+  if (input instanceof Date) return startOfDay(input);
+  if (typeof input === "string") {
+    if (input.includes("T")) {
+      // ISO DateTime string (e.g., 2026-03-06T15:00:00.000Z)
+      // Parse it, then extract local year/month/day to avoid timezone shifting
+      const d = new Date(input);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
     const [y, m, d] = input.split("-").map(Number);
     return new Date(y, m - 1, d);
   }
-  return new Date(input);
+  return startOfDay(new Date(input));
 }
 
 export function getNextValidDueDate(
