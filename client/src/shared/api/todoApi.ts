@@ -19,7 +19,7 @@ export const todoApi = {
     const res = await fetch(API_BASE);
     if (!res.ok) await handleApiError(res, "Failed to fetch todos");
     const data = await res.json();
-    return z.array(TodoSchema).parse(data);
+    return z.array(TodoSchema).parse(data) as Todo[];
   },
 
   create: async (

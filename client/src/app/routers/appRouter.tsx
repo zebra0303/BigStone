@@ -1,16 +1,38 @@
+/* eslint-disable react-refresh/only-export-components */
+import React, { Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
-import { HomePage } from "@/pages/home";
-import { SearchPage } from "@/pages/search";
-import { AdminPage } from "@/pages/admin";
-import { RetrospectivePage } from "@/pages/retrospective";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { PageLoader } from "@/shared/ui/PageLoader";
+
+// Dynamically import pages for code splitting
+const HomePage = React.lazy(() =>
+  import("@/pages/home").then((module) => ({ default: module.HomePage })),
+);
+const SearchPage = React.lazy(() =>
+  import("@/pages/search").then((module) => ({ default: module.SearchPage })),
+);
+const AdminPage = React.lazy(() =>
+  import("@/pages/admin").then((module) => ({ default: module.AdminPage })),
+);
+const RetrospectivePage = React.lazy(() =>
+  import("@/pages/retrospective").then((module) => ({
+    default: module.RetrospectivePage,
+  })),
+);
+
+// Wrapper component to apply Suspense to all routes
+const SuspendedRoute = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<PageLoader />}>{children}</Suspense>
+);
 
 export const appRouter = createBrowserRouter([
   {
     path: "/",
     element: (
       <ProtectedRoute>
-        <HomePage />
+        <SuspendedRoute>
+          <HomePage />
+        </SuspendedRoute>
       </ProtectedRoute>
     ),
   },
@@ -18,7 +40,9 @@ export const appRouter = createBrowserRouter([
     path: "/search",
     element: (
       <ProtectedRoute>
-        <SearchPage />
+        <SuspendedRoute>
+          <SearchPage />
+        </SuspendedRoute>
       </ProtectedRoute>
     ),
   },
@@ -26,12 +50,18 @@ export const appRouter = createBrowserRouter([
     path: "/retrospective",
     element: (
       <ProtectedRoute>
-        <RetrospectivePage />
+        <SuspendedRoute>
+          <RetrospectivePage />
+        </SuspendedRoute>
       </ProtectedRoute>
     ),
   },
   {
     path: "/admin",
-    element: <AdminPage />,
+    element: (
+      <SuspendedRoute>
+        <AdminPage />
+      </SuspendedRoute>
+    ),
   },
 ]);
