@@ -157,6 +157,18 @@ export function TodoItem({ todo }: TodoItemProps) {
                     </Badge>
                   </>
                 )}
+                {todo.isCopied && (
+                  <>
+                    <span>•</span>
+                    <Badge
+                      variant="secondary"
+                      className="px-1.5 py-0.5 text-[10px] flex items-center gap-1 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap shrink-0 !bg-sky-50 !text-sky-700 dark:!bg-sky-900/30 dark:!text-sky-400"
+                    >
+                      <CopyPlus className="h-3 w-3" />
+                      {t("task.copied", "복사됨")}
+                    </Badge>
+                  </>
+                )}
                 {todo.recurring.type !== "NONE" && (
                   <>
                     <span>•</span>

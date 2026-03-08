@@ -9,6 +9,8 @@ import {
   Save,
   Trash2,
   Clock,
+  Pin,
+  CopyPlus,
 } from "lucide-react";
 import { Button } from "@/shared/ui/Button";
 import { Footer } from "@/widgets/footer";
@@ -286,9 +288,13 @@ export function RetrospectivePage() {
                 {Object.entries(tasksByDate).map(([date, tasks]) => (
                   <div key={date}>
                     <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1">
-                      {format(new Date(date), t("task.date_format", "M월 d일"), {
-                        locale: getDateLocale(),
-                      })}
+                      {format(
+                        new Date(date),
+                        t("task.date_format", "M월 d일"),
+                        {
+                          locale: getDateLocale(),
+                        },
+                      )}
                     </div>
                     {tasks.map((task) => (
                       <div
@@ -305,6 +311,19 @@ export function RetrospectivePage() {
                         >
                           {task.title}
                         </span>
+                        {/* Origin indicator badges for pinned/copied tasks */}
+                        {task.isPinned && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
+                            <Pin className="h-2.5 w-2.5" />
+                            {t("task.pinned", "고정")}
+                          </span>
+                        )}
+                        {task.isCopied && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400 shrink-0">
+                            <CopyPlus className="h-2.5 w-2.5" />
+                            {t("task.copied", "복사됨")}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -410,7 +429,8 @@ export function RetrospectivePage() {
                   {retro.periodStart} ~ {retro.periodEnd}
                 </div>
                 <div className="text-xs text-gray-400 mt-0.5">
-                  {t("retro.created_at", "작성")}: {format(new Date(retro.createdAt), "yyyy-MM-dd HH:mm")}
+                  {t("retro.created_at", "작성")}:{" "}
+                  {format(new Date(retro.createdAt), "yyyy-MM-dd HH:mm")}
                 </div>
               </div>
               <Button

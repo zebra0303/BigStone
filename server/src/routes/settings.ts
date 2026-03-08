@@ -29,10 +29,14 @@ const LOGIN_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 function getLoginFailureState(): { count: number; lockedUntil: number } {
   try {
     const row = db
-      .prepare("SELECT value FROM system_settings WHERE key = 'login_failure_state'")
+      .prepare(
+        "SELECT value FROM system_settings WHERE key = 'login_failure_state'",
+      )
       .get() as any;
     if (row) return JSON.parse(row.value);
-  } catch { /* ignore parse errors */ }
+  } catch {
+    /* ignore parse errors */
+  }
   return { count: 0, lockedUntil: 0 };
 }
 
@@ -163,6 +167,53 @@ router.post("/refresh", requireAdmin, (req: Request, res: Response) => {
   const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
   res.json({ token });
 });
+
+// 4-1. Change password (Admin only)
+router.put(
+  "/password",
+  requireAdmin,
+  authLimiter,
+  async (req: Request, res: Response) => {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: "Current password and new password are required" });
+    }
+    if (newPassword.length < 4) {
+      return res
+        .status(400)
+        .json({ error: "New password must be at least 4 characters" });
+    }
+
+    try {
+      const row = db
+        .prepare(
+          "SELECT value FROM system_settings WHERE key = 'admin_password'",
+        )
+        .get() as any;
+      if (!row) return res.status(400).json({ error: "Admin not set up yet" });
+
+      const match = await bcrypt.compare(currentPassword, row.value);
+      if (!match) {
+        return res.status(401).json({ error: "Current password is incorrect" });
+      }
+
+      const hash = await bcrypt.hash(newPassword, 10);
+      db.prepare(
+        "UPDATE system_settings SET value = ? WHERE key = 'admin_password'",
+      ).run(hash);
+
+      // Issue a new token after password change
+      const token = jwt.sign({ role: "admin" }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      res.json({ message: "Password changed successfully", token });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  },
+);
 
 // Internal keys that should not be exposed to the client
 const INTERNAL_KEYS = ["admin_password", "login_failure_state"];

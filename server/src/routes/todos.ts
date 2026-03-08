@@ -15,7 +15,7 @@ router.get("/", (req: Request, res: Response) => {
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay,
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek,
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
-      g.slackEnabled, g.slackNotificationTime, g.isPinned,
+      g.slackEnabled, g.slackNotificationTime, g.isPinned, g.isCopied,
       g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount,
       (
         SELECT json_group_array(json_object(
@@ -70,6 +70,7 @@ router.get("/", (req: Request, res: Response) => {
         time: r.slackNotificationTime || "09:00",
       },
       isPinned: Boolean(r.isPinned),
+      isCopied: Boolean(r.isCopied),
       completedAt: r.completedAt,
       attachments: r.attachments ? JSON.parse(r.attachments) : [],
     }));
@@ -571,13 +572,13 @@ router.post(
       const newGroupId = uuidv7();
       const newTodoId = uuidv7();
 
-      // Create a non-recurring copy
+      // Create a non-recurring copy marked as isCopied
       const groupSql = `
         INSERT INTO todo_groups (
-          id, title, description, isImportant, priority,
+          id, title, description, isImportant, priority, isCopied,
           recurringType, slackEnabled, slackNotificationTime,
           notificationMinutesBefore, startDate, endOption, occurrenceCount
-        ) VALUES (?, ?, ?, ?, ?, 'NONE', ?, ?, ?, ?, 'NONE', 1)
+        ) VALUES (?, ?, ?, ?, ?, 1, 'NONE', ?, ?, ?, ?, 'NONE', 1)
       `;
       db.prepare(groupSql).run(
         newGroupId,

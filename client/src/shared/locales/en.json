@@ -82,6 +82,7 @@
     "pinned": "Pinned",
     "pin_desc": "Show at top every day until done",
     "pin_start_date": "Start date",
+    "copied": "Copied",
     "attachments": "Attachments",
     "attach_file": "Attach File",
     "date_format": "MMM d",
@@ -114,7 +115,16 @@
     "slack_help": "Enter the Incoming Webhook URL from your Slack workspace.",
     "save_success": "Settings saved successfully. Please refresh the page to apply.",
     "setup_complete_msg": "Password set successfully. Please login again.",
-    "back_to_home": "Back to Home"
+    "back_to_home": "Back to Home",
+    "change_password_title": "Change Password",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_password": "Confirm New Password",
+    "change_password_btn": "Change Password",
+    "password_changed": "Password changed successfully.",
+    "password_fields_required": "Please fill in all fields.",
+    "password_min_length": "New password must be at least 4 characters.",
+    "password_mismatch": "New passwords do not match."
   },
   "retro": {
     "title": "Retrospective",

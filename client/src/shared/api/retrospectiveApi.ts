@@ -20,6 +20,8 @@ export interface TaskSummary {
     status: string;
     priority: string;
     completedAt: string | null;
+    isPinned?: boolean;
+    isCopied?: boolean;
   }[];
 }
 

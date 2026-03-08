@@ -13,6 +13,7 @@ import {
   Palette,
   Type,
   Bell,
+  KeyRound,
 } from "lucide-react";
 import { Footer } from "@/widgets/footer";
 
@@ -38,6 +39,14 @@ export function AdminPage() {
   const [timezone, setTimezone] = useState("Asia/Seoul");
   const [slackWebhookUrl, setSlackWebhookUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const TIMEZONES = [
     { label: "Seoul (GMT+9)", value: "Asia/Seoul" },
@@ -187,9 +196,14 @@ export function AdminPage() {
         }
 
         // Update meta theme-color to match selected theme
-        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        const metaThemeColor = document.querySelector(
+          'meta[name="theme-color"]',
+        );
         if (metaThemeColor) {
-          metaThemeColor.setAttribute("content", theme === "dark" ? "#111827" : "#ffffff");
+          metaThemeColor.setAttribute(
+            "content",
+            theme === "dark" ? "#111827" : "#ffffff",
+          );
         }
 
         // Save primary color to localStorage and apply it
@@ -229,6 +243,71 @@ export function AdminPage() {
     setToken("");
     setIsAuthenticated(false);
     setPassword("");
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordMessage("");
+    setPasswordError(false);
+
+    if (!currentPassword || !newPassword) {
+      setPasswordMessage(
+        t("admin.password_fields_required", "모든 필드를 입력해주세요."),
+      );
+      setPasswordError(true);
+      return;
+    }
+    if (newPassword.length < 4) {
+      setPasswordMessage(
+        t("admin.password_min_length", "새 비밀번호는 4자 이상이어야 합니다."),
+      );
+      setPasswordError(true);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage(
+        t("admin.password_mismatch", "새 비밀번호가 일치하지 않습니다."),
+      );
+      setPasswordError(true);
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const res = await fetch("/api/settings/password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPasswordMessage(data.error || t("common.save_failed", "저장 실패"));
+        setPasswordError(true);
+        return;
+      }
+
+      // Update token if a new one was issued
+      if (data.token) {
+        localStorage.setItem("admin_token", data.token);
+        setToken(data.token);
+      }
+
+      setPasswordMessage(
+        t("admin.password_changed", "비밀번호가 변경되었습니다."),
+      );
+      setPasswordError(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e: unknown) {
+      setPasswordMessage((e as Error).message);
+      setPasswordError(true);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   if (isSetup === null)
@@ -322,7 +401,7 @@ export function AdminPage() {
                 <option value="en">🇺🇸 영어 (English)</option>
               </Select>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-6">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
                 {t("admin.timezone_label", "시스템 타임존")}
@@ -341,6 +420,56 @@ export function AdminPage() {
             </div>
           </div>
 
+          {/* Theme */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
+              <Moon className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
+              {t("admin.theme_title", "테마 설정")}
+            </h3>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
+                {t("admin.theme_label", "화면 테마")}
+              </label>
+              <Select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className="max-w-xs"
+              >
+                <option value="light">
+                  ☀️ {t("admin.theme_light", "라이트")}
+                </option>
+                <option value="dark">🌙 {t("admin.theme_dark", "다크")}</option>
+              </Select>
+            </div>
+          </div>
+
+          {/* Color */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
+              <Palette className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
+              {t("admin.color_title", "색상 설정")}
+            </h3>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
+                {t("admin.primary_color_label", "대표 색상")}
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  className="h-10 w-20 cursor-pointer rounded border border-gray-300 dark:border-gray-700 bg-transparent"
+                />
+                <span className="text-sm font-mono text-gray-500 uppercase">
+                  {primaryColor}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Font */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
               <Type className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
@@ -365,29 +494,7 @@ export function AdminPage() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
-              <Moon className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
-              {t("admin.theme_title", "테마 설정")}
-            </h3>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
-                {t("admin.theme_label", "화면 테마")}
-              </label>
-              <Select
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                className="max-w-xs"
-              >
-                <option value="light">
-                  ☀️ {t("admin.theme_light", "라이트")}
-                </option>
-                <option value="dark">🌙 {t("admin.theme_dark", "다크")}</option>
-              </Select>
-            </div>
-          </div>
-
+          {/* Slack */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
               <Bell className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
@@ -414,38 +521,80 @@ export function AdminPage() {
             </div>
           </div>
 
+          {/* Save Settings Button */}
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSaveSettings}
+              disabled={isSaving}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />{" "}
+              {isSaving ? t("common.saving") : t("common.save")}
+            </Button>
+          </div>
+
+          {/* Password Change Section */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 mb-6">
-              <Palette className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
-              {t("admin.color_title", "색상 설정")}
+              <KeyRound className="h-5 w-5 text-gray-400 dark:text-gray-500" />{" "}
+              {t("admin.change_password_title", "비밀번호 변경")}
             </h3>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 shrink-0">
-                {t("admin.primary_color_label", "대표 색상")}
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="h-10 w-20 cursor-pointer rounded border border-gray-300 dark:border-gray-700 bg-transparent"
+            <div className="flex flex-col gap-4 max-w-sm">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
+                  {t("admin.current_password", "현재 비밀번호")}
+                </label>
+                <Input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder={t("admin.current_password", "현재 비밀번호")}
                 />
-                <span className="text-sm font-mono text-gray-500 uppercase">
-                  {primaryColor}
-                </span>
               </div>
-            </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
+                  {t("admin.new_password", "새 비밀번호")}
+                </label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={t("admin.new_password", "새 비밀번호")}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
+                  {t("admin.confirm_password", "새 비밀번호 확인")}
+                </label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder={t("admin.confirm_password", "새 비밀번호 확인")}
+                />
+              </div>
 
-            <div className="mt-8 flex justify-end">
-              <Button
-                onClick={handleSaveSettings}
-                disabled={isSaving}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />{" "}
-                {isSaving ? t("common.saving") : t("common.save")}
-              </Button>
+              {passwordMessage && (
+                <p
+                  className={`text-sm ${passwordError ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
+                >
+                  {passwordMessage}
+                </p>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={isChangingPassword}
+                  className="flex items-center gap-2"
+                >
+                  <KeyRound className="h-4 w-4" />
+                  {isChangingPassword
+                    ? t("common.saving", "저장 중...")
+                    : t("admin.change_password_btn", "비밀번호 변경")}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

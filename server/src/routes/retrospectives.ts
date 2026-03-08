@@ -44,7 +44,7 @@ router.get("/summary/tasks", (req: Request, res: Response) => {
     const tasks = db
       .prepare(
         `SELECT t.id, t.dueDate, t.status, t.completedAt,
-                g.title, g.priority, g.isImportant, g.isPinned
+                g.title, g.priority, g.isImportant, g.isPinned, g.isCopied
          FROM todos t
          JOIN todo_groups g ON t.groupId = g.id
          WHERE (t.dueDate >= ? AND t.dueDate <= ?)
@@ -65,6 +65,8 @@ router.get("/summary/tasks", (req: Request, res: Response) => {
         status: t.status,
         priority: t.priority || (t.isImportant ? "HIGH" : "MEDIUM"),
         completedAt: t.completedAt,
+        isPinned: Boolean(t.isPinned),
+        isCopied: Boolean(t.isCopied),
       })),
     };
 

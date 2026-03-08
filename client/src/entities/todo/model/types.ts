@@ -47,6 +47,7 @@ export interface Todo {
   isImportant: boolean; // deprecated: use priority instead, kept for migration
   priority?: TodoPriority;
   isPinned?: boolean; // pinned tasks show at top of every day until completed
+  isCopied?: boolean; // tasks created via copy-to-today
   dueDate: Date;
   status: TodoStatus;
   recurring: RecurringConfig;

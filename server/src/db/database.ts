@@ -63,6 +63,13 @@ try {
   // Ignore error if column already exists
 }
 
+// Add isCopied column to mark tasks created via copy-to-today
+try {
+  db.exec("ALTER TABLE todo_groups ADD COLUMN isCopied INTEGER DEFAULT 0");
+} catch {
+  // Ignore error if column already exists
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS todos (
     id TEXT PRIMARY KEY,
