@@ -1,4 +1,5 @@
 import type { Todo } from "@/entities/todo/model/types";
+import { handleApiError } from "@/shared/lib/errors";
 
 const API_BASE = "/api/todos";
 
@@ -14,7 +15,7 @@ const getAuthHeaders = (): Record<string, string> => {
 export const todoApi = {
   getAll: async (): Promise<Todo[]> => {
     const res = await fetch(API_BASE);
-    if (!res.ok) throw new Error("Failed to fetch todos");
+    if (!res.ok) await handleApiError(res, "Failed to fetch todos");
     return res.json();
   },
 
@@ -29,7 +30,7 @@ export const todoApi = {
       },
       body: JSON.stringify(todo),
     });
-    if (!res.ok) throw new Error("Failed to create todo");
+    if (!res.ok) await handleApiError(res, "Failed to create todo");
     return res.json();
   },
 
@@ -45,7 +46,7 @@ export const todoApi = {
       },
       body: JSON.stringify(updates),
     });
-    if (!res.ok) throw new Error("Failed to update todo");
+    if (!res.ok) await handleApiError(res, "Failed to update todo");
     return res.json();
   },
 
@@ -54,7 +55,7 @@ export const todoApi = {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to delete todo");
+    if (!res.ok) await handleApiError(res, "Failed to delete todo");
   },
 
   completeVirtual: async (id: string, targetDate: string): Promise<void> => {
@@ -66,7 +67,7 @@ export const todoApi = {
       },
       body: JSON.stringify({ targetDate }),
     });
-    if (!res.ok) throw new Error("Failed to complete virtual todo");
+    if (!res.ok) await handleApiError(res, "Failed to complete virtual todo");
   },
 
   copyToToday: async (id: string): Promise<{ id: string; groupId: string }> => {
@@ -74,7 +75,7 @@ export const todoApi = {
       method: "POST",
       headers: getAuthHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to copy todo to today");
+    if (!res.ok) await handleApiError(res, "Failed to copy todo to today");
     return res.json();
   },
 
@@ -86,7 +87,7 @@ export const todoApi = {
       headers: getAuthHeaders(),
       body: formData,
     });
-    if (!res.ok) throw new Error("Failed to upload attachment");
+    if (!res.ok) await handleApiError(res, "Failed to upload attachment");
     return res.json();
   },
 
@@ -95,7 +96,7 @@ export const todoApi = {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to delete attachment");
+    if (!res.ok) await handleApiError(res, "Failed to delete attachment");
     return res.json();
   },
 };

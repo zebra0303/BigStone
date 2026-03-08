@@ -1,3 +1,5 @@
+import { handleApiError } from "@/shared/lib/errors";
+
 const API_BASE = "/api/retrospectives";
 
 const getAuthHeaders = (): Record<string, string> => {
@@ -39,13 +41,13 @@ export interface Retrospective {
 export const retrospectiveApi = {
   getAll: async (): Promise<Retrospective[]> => {
     const res = await fetch(API_BASE);
-    if (!res.ok) throw new Error("Failed to fetch retrospectives");
+    if (!res.ok) await handleApiError(res, "Failed to fetch retrospectives");
     return res.json();
   },
 
   getById: async (id: string): Promise<Retrospective> => {
     const res = await fetch(`${API_BASE}/${id}`);
-    if (!res.ok) throw new Error("Failed to fetch retrospective");
+    if (!res.ok) await handleApiError(res, "Failed to fetch retrospective");
     return res.json();
   },
 
@@ -53,7 +55,7 @@ export const retrospectiveApi = {
     const res = await fetch(
       `${API_BASE}/summary/tasks?start=${start}&end=${end}`,
     );
-    if (!res.ok) throw new Error("Failed to fetch task summary");
+    if (!res.ok) await handleApiError(res, "Failed to fetch task summary");
     return res.json();
   },
 
@@ -69,7 +71,7 @@ export const retrospectiveApi = {
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error("Failed to create retrospective");
+    if (!res.ok) await handleApiError(res, "Failed to create retrospective");
     return res.json();
   },
 
@@ -82,7 +84,7 @@ export const retrospectiveApi = {
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error("Failed to update retrospective");
+    if (!res.ok) await handleApiError(res, "Failed to update retrospective");
     return res.json();
   },
 
@@ -91,6 +93,6 @@ export const retrospectiveApi = {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to delete retrospective");
+    if (!res.ok) await handleApiError(res, "Failed to delete retrospective");
   },
 };
