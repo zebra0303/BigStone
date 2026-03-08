@@ -351,7 +351,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                         href={`/api/todos/attachments/${att.id}/download`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-blue-400 hover:underline truncate"
+                        className="text-primary hover:underline truncate"
                       >
                         {att.originalName}
                       </a>

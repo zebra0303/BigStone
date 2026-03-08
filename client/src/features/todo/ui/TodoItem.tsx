@@ -203,7 +203,7 @@ export function TodoItem({ todo }: TodoItemProps) {
               variant="ghost"
               size="icon"
               onClick={handleEditClick}
-              className="h-7 w-7 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 flex-shrink-0 bg-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              className="h-7 w-7 text-gray-400 dark:text-gray-500 hover:text-primary flex-shrink-0 bg-transparent hover:bg-primary/10 transition-colors"
               aria-label={t("common.edit")}
             >
               <Edit2 className="h-3.5 w-3.5" />
@@ -240,7 +240,7 @@ export function TodoItem({ todo }: TodoItemProps) {
                       href={`/api/todos/attachments/${att.id}/download`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Paperclip className="h-3.5 w-3.5" />

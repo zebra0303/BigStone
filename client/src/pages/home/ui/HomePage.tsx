@@ -282,7 +282,10 @@ export function HomePage() {
               <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-gray-100">
                 {t("home.title")}
               </h1>
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 italic">
+              <p
+                className="text-sm font-bold italic"
+                style={{ color: "var(--primary)" }}
+              >
                 {t("home.subtitle")}
               </p>
             </div>
@@ -290,7 +293,7 @@ export function HomePage() {
             <nav className="flex items-center gap-3 mt-1 flex-wrap">
               <Link
                 to="/search"
-                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase tracking-wider"
+                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:!text-primary transition-colors uppercase tracking-wider"
               >
                 <SearchIcon className="w-3.5 h-3.5" />{" "}
                 <span>{t("common.search")}</span>
@@ -298,7 +301,7 @@ export function HomePage() {
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <Link
                 to="/retrospective"
-                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase tracking-wider"
+                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:!text-primary transition-colors uppercase tracking-wider"
               >
                 <BookOpen className="w-3.5 h-3.5" />{" "}
                 <span>{t("retro.title", "톺아보기")}</span>
@@ -306,7 +309,7 @@ export function HomePage() {
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <Link
                 to="/admin"
-                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase tracking-wider"
+                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:!text-primary transition-colors uppercase tracking-wider"
               >
                 <SettingsIcon className="w-3.5 h-3.5" />{" "}
                 <span>{t("admin.title")}</span>

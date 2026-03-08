@@ -19,7 +19,7 @@ export function LinkifiedText({ text }: { text: string }) {
               href={part}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 hover:underline"
+              className="!text-primary hover:underline font-medium"
               onClick={(e) => e.stopPropagation()} // Prevent triggering parent click events (like accordion toggle)
             >
               {part}
