@@ -9,6 +9,7 @@ vi.mock("@/features/todo/model/hooks", () => ({
   useDeleteTodo: () => ({ mutate: vi.fn() }),
   useCreateTodo: () => ({ mutate: vi.fn() }),
   useCompleteVirtualTodo: () => ({ mutate: vi.fn() }),
+  useCopyToToday: () => ({ mutate: vi.fn() }),
 }));
 
 // Mock react-i18next
