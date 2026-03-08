@@ -27,10 +27,7 @@ function tryRefreshToken() {
     .then((data) => {
       if (data?.token) {
         localStorage.setItem("admin_token", data.token);
-        localStorage.setItem(
-          "admin_token_refreshed_at",
-          String(Date.now()),
-        );
+        localStorage.setItem("admin_token_refreshed_at", String(Date.now()));
       }
     })
     .catch(() => {});

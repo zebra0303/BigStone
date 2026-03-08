@@ -7,7 +7,9 @@ import db from "../db/database";
 function getSlackWebhookUrl(): string | null {
   try {
     const row = db
-      .prepare("SELECT value FROM system_settings WHERE key = 'slack_webhook_url'")
+      .prepare(
+        "SELECT value FROM system_settings WHERE key = 'slack_webhook_url'",
+      )
       .get() as any;
     return row ? row.value : null;
   } catch (error) {
@@ -36,7 +38,9 @@ export async function sendSlackNotification(text: string, blocks?: any[]) {
     });
 
     if (response.status !== 200) {
-      console.error(`Slack Webhook error: ${response.status} ${response.statusText}`);
+      console.error(
+        `Slack Webhook error: ${response.status} ${response.statusText}`,
+      );
     }
   } catch (error) {
     console.error("Error sending Slack notification:", error);

@@ -48,7 +48,11 @@ describe("getNextOccurrence (server)", () => {
 
     it("should return null for empty weeklyDays", () => {
       expect(
-        getNextOccurrence("2026-03-07", { type: "WEEKLY", weeklyDays: [] }, true),
+        getNextOccurrence(
+          "2026-03-07",
+          { type: "WEEKLY", weeklyDays: [] },
+          true,
+        ),
       ).toBeNull();
     });
 

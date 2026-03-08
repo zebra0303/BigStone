@@ -1,7 +1,7 @@
-import cron from 'node-cron';
-import db from '../db/database';
-import { formatInTimeZone } from 'date-fns-tz';
-import { sendSlackNotification } from '../utils/slack';
+import cron from "node-cron";
+import db from "../db/database";
+import { formatInTimeZone } from "date-fns-tz";
+import { sendSlackNotification } from "../utils/slack";
 
 /**
  * Fetches the system timezone from settings.
@@ -9,10 +9,12 @@ import { sendSlackNotification } from '../utils/slack';
  */
 function getSystemTimezone(): string {
   try {
-    const row = db.prepare("SELECT value FROM system_settings WHERE key = 'timezone'").get() as any;
-    return row ? row.value : 'Asia/Seoul';
+    const row = db
+      .prepare("SELECT value FROM system_settings WHERE key = 'timezone'")
+      .get() as any;
+    return row ? row.value : "Asia/Seoul";
   } catch {
-    return 'Asia/Seoul';
+    return "Asia/Seoul";
   }
 }
 
@@ -21,12 +23,12 @@ function getSystemTimezone(): string {
  * Runs every minute to check if any tasks need a notification.
  */
 export function startNotificationService() {
-  cron.schedule('* * * * *', async () => {
+  cron.schedule("* * * * *", async () => {
     const timezone = getSystemTimezone();
 
     const now = new Date();
-    const currentTime = formatInTimeZone(now, timezone, 'HH:mm');
-    const todayStr = formatInTimeZone(now, timezone, 'yyyy-MM-dd');
+    const currentTime = formatInTimeZone(now, timezone, "HH:mm");
+    const todayStr = formatInTimeZone(now, timezone, "yyyy-MM-dd");
 
     console.log(
       `[Notification Check] Checking at ${currentTime} for date ${todayStr} (TZ: ${timezone})`,
@@ -54,7 +56,9 @@ export function startNotificationService() {
           AND t.status != 'DONE'
       `;
 
-      const tasksToNotify = db.prepare(query).all(currentTime, todayStr) as any[];
+      const tasksToNotify = db
+        .prepare(query)
+        .all(currentTime, todayStr) as any[];
 
       for (const task of tasksToNotify) {
         console.log(
@@ -62,18 +66,26 @@ export function startNotificationService() {
         );
 
         const priorityEmoji =
-          task.priority === 'HIGH' ? '🔴' : task.priority === 'MEDIUM' ? '🟡' : '🟢';
+          task.priority === "HIGH"
+            ? "🔴"
+            : task.priority === "MEDIUM"
+              ? "🟡"
+              : "🟢";
 
         const priorityText =
-          task.priority === 'HIGH' ? '높음' : task.priority === 'MEDIUM' ? '보통' : '낮음';
+          task.priority === "HIGH"
+            ? "높음"
+            : task.priority === "MEDIUM"
+              ? "보통"
+              : "낮음";
 
         const message = `[BigStone 알림] 오늘 할 일이 있습니다!`;
         const blocks = [
           {
-            type: 'section',
+            type: "section",
             text: {
-              type: 'mrkdwn',
-              text: `*${message}*\n*제목:* ${task.title}\n*우선순위:* ${priorityEmoji} ${priorityText}${task.description ? `\n*설명:* ${task.description}` : ''}`,
+              type: "mrkdwn",
+              text: `*${message}*\n*제목:* ${task.title}\n*우선순위:* ${priorityEmoji} ${priorityText}${task.description ? `\n*설명:* ${task.description}` : ""}`,
             },
           },
         ];
@@ -87,9 +99,9 @@ export function startNotificationService() {
         );
       }
     } catch (error) {
-      console.error('[Notification Error]', error);
+      console.error("[Notification Error]", error);
     }
   });
 
-  console.log('Notification service started (checking every minute).');
+  console.log("Notification service started (checking every minute).");
 }

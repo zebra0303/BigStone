@@ -30,7 +30,7 @@
 | Auth         | bcrypt, JWT, express-rate-limit              |
 | 알림         | node-cron, Slack Incoming Webhook            |
 | PWA          | vite-plugin-pwa, Workbox                     |
-| 보안         | helmet, CORS, 계정 잠금                       |
+| 보안         | helmet, CORS, 계정 잠금                      |
 | Architecture | FSD (Feature-Sliced Design), npm workspaces  |
 
 ## 시작하기

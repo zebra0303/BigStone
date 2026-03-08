@@ -1,34 +1,38 @@
-import { cn } from '@/shared/lib/utils';
-import type { TodoPriority } from '@/entities/todo/model/types';
+import { cn } from "@/shared/lib/utils";
+import type { TodoPriority } from "@/entities/todo/model/types";
 
 interface PriorityXiProps {
   priority?: TodoPriority;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
-export function PriorityXi({ priority, className, size = 'sm' }: PriorityXiProps) {
+export function PriorityXi({
+  priority,
+  className,
+  size = "sm",
+}: PriorityXiProps) {
   const sizeClasses = {
-    sm: 'h-6 w-6',
-    md: 'h-8 w-8',
-    lg: 'h-10 w-10',
+    sm: "h-6 w-6",
+    md: "h-8 w-8",
+    lg: "h-10 w-10",
   };
 
   const priorityStyles = {
     HIGH: {
-      tieColor: 'fill-red-500',
-      borderColor: 'border-red-500',
-      glow: 'drop-shadow-[0_0_2px_rgba(239,68,68,0.8)]',
+      tieColor: "fill-red-500",
+      borderColor: "border-red-500",
+      glow: "drop-shadow-[0_0_2px_rgba(239,68,68,0.8)]",
     },
     MEDIUM: {
-      tieColor: 'fill-amber-400',
-      borderColor: 'border-amber-400',
-      glow: 'drop-shadow-[0_0_2px_rgba(247,241,59,0.8)]',
+      tieColor: "fill-amber-400",
+      borderColor: "border-amber-400",
+      glow: "drop-shadow-[0_0_2px_rgba(247,241,59,0.8)]",
     },
     LOW: {
-      tieColor: 'fill-emerald-500',
-      borderColor: 'border-emerald-500',
-      glow: 'drop-shadow-[0_0_2px_rgba(16,185,129,0.8)]',
+      tieColor: "fill-emerald-500",
+      borderColor: "border-emerald-500",
+      glow: "drop-shadow-[0_0_2px_rgba(16,185,129,0.8)]",
     },
   };
 
@@ -37,8 +41,8 @@ export function PriorityXi({ priority, className, size = 'sm' }: PriorityXiProps
   return (
     <div
       className={cn(
-        'relative flex items-center justify-center rounded-full border-[2px] bg-white dark:bg-gray-900 shadow-md overflow-hidden transition-all',
-        style ? style.borderColor : 'border-gray-100 dark:border-gray-800',
+        "relative flex items-center justify-center rounded-full border-[2px] bg-white dark:bg-gray-900 shadow-md overflow-hidden transition-all",
+        style ? style.borderColor : "border-gray-100 dark:border-gray-800",
         sizeClasses[size],
         className,
       )}
@@ -52,8 +56,16 @@ export function PriorityXi({ priority, className, size = 'sm' }: PriorityXiProps
 
       {/* Bowtie Overlay */}
       {style && (
-        <div className={cn('absolute bottom-0.5 left-1/2 -translate-x-1/2 z-20 w-3/5', style.glow)}>
-          <svg viewBox="0 0 24 12" className={cn('w-full h-auto', style.tieColor)}>
+        <div
+          className={cn(
+            "absolute bottom-0.5 left-1/2 -translate-x-1/2 z-20 w-3/5",
+            style.glow,
+          )}
+        >
+          <svg
+            viewBox="0 0 24 12"
+            className={cn("w-full h-auto", style.tieColor)}
+          >
             {/* Simple Bowtie Shape */}
             <path d="M2 1 L10 6 L2 11 Z" /> {/* Left wing */}
             <path d="M22 1 L14 6 L22 11 Z" /> {/* Right wing */}

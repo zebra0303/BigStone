@@ -69,11 +69,9 @@ describe("requireAdmin middleware", () => {
   });
 
   it("should reject expired token", () => {
-    const expiredToken = jwt.sign(
-      { role: "admin" },
-      JWT_SECRET,
-      { expiresIn: "0s" },
-    );
+    const expiredToken = jwt.sign({ role: "admin" }, JWT_SECRET, {
+      expiresIn: "0s",
+    });
     const { req, res, next } = createMockReqRes(`Bearer ${expiredToken}`);
 
     // Small delay to ensure expiry
@@ -83,11 +81,9 @@ describe("requireAdmin middleware", () => {
   });
 
   it("should accept valid token and call next()", () => {
-    const validToken = jwt.sign(
-      { role: "admin" },
-      JWT_SECRET,
-      { expiresIn: "1h" },
-    );
+    const validToken = jwt.sign({ role: "admin" }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
     const { req, res, next } = createMockReqRes(`Bearer ${validToken}`);
     requireAdmin(req, res, next);
     expect(next).toHaveBeenCalledTimes(1);
@@ -95,11 +91,9 @@ describe("requireAdmin middleware", () => {
   });
 
   it("should reject token signed with wrong secret", () => {
-    const wrongToken = jwt.sign(
-      { role: "admin" },
-      "wrong_secret_key",
-      { expiresIn: "1h" },
-    );
+    const wrongToken = jwt.sign({ role: "admin" }, "wrong_secret_key", {
+      expiresIn: "1h",
+    });
     const { req, res, next } = createMockReqRes(`Bearer ${wrongToken}`);
     requireAdmin(req, res, next);
     expect(res.statusCode).toBe(401);

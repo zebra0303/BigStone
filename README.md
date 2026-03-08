@@ -22,16 +22,16 @@
 
 ## Tech Stack
 
-| Layer        | Technology                                   |
-| ------------ | -------------------------------------------- |
-| Frontend     | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
-| State        | Zustand 5, TanStack Query 5                  |
-| Backend      | Express 5, TypeScript, better-sqlite3        |
-| Auth         | bcrypt, JWT, express-rate-limit              |
-| Notifications| node-cron, Slack Incoming Webhook            |
-| PWA          | vite-plugin-pwa, Workbox                     |
-| Security     | helmet, CORS, account lockout                |
-| Architecture | FSD (Feature-Sliced Design), npm workspaces  |
+| Layer         | Technology                                   |
+| ------------- | -------------------------------------------- |
+| Frontend      | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
+| State         | Zustand 5, TanStack Query 5                  |
+| Backend       | Express 5, TypeScript, better-sqlite3        |
+| Auth          | bcrypt, JWT, express-rate-limit              |
+| Notifications | node-cron, Slack Incoming Webhook            |
+| PWA           | vite-plugin-pwa, Workbox                     |
+| Security      | helmet, CORS, account lockout                |
+| Architecture  | FSD (Feature-Sliced Design), npm workspaces  |
 
 ## Getting Started
 

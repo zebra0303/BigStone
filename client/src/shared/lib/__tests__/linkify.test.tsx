@@ -37,9 +37,7 @@ describe("LinkifiedText", () => {
   });
 
   it("should handle text that is only a URL", () => {
-    const { container } = render(
-      <LinkifiedText text="https://example.com" />,
-    );
+    const { container } = render(<LinkifiedText text="https://example.com" />);
     const link = container.querySelector("a");
     expect(link).not.toBeNull();
     expect(link!.getAttribute("href")).toBe("https://example.com");

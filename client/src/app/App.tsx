@@ -47,14 +47,9 @@ function App() {
       } else {
         document.documentElement.classList.remove("dark");
       }
-      const metaThemeColor = document.querySelector(
-        'meta[name="theme-color"]',
-      );
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
       if (metaThemeColor) {
-        metaThemeColor.setAttribute(
-          "content",
-          isDark ? "#111827" : "#ffffff",
-        );
+        metaThemeColor.setAttribute("content", isDark ? "#111827" : "#ffffff");
       }
 
       // Primary color

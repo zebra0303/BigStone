@@ -12,6 +12,7 @@
     "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
     "install:all": "npm install",
     "build": "npm run build -w client && npm run build -w server",
+    "lint": "npm run lint -w client",
     "test": "npm run test -w client && npm run test -w server",
     "prepare": "husky"
   },

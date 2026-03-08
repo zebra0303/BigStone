@@ -269,49 +269,49 @@ export function HomePage() {
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-8">
-      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="flex items-center gap-4">
           <img
             src="/bigxi.png"
             alt="BigXi"
             title={t("common.bigxi_title")}
-            className="w-12 h-12 object-contain drop-shadow-sm"
+            className="w-14 h-14 object-contain drop-shadow-sm shrink-0"
           />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-              {t("home.title")}
-            </h1>
-            <div className="flex items-center gap-4 mt-1">
-              <p className="text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+              <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-gray-100">
+                {t("home.title")}
+              </h1>
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 italic">
                 {t("home.subtitle")}
               </p>
-              <span className="text-gray-300 dark:text-gray-600">|</span>
+            </div>
+
+            <nav className="flex items-center gap-3 mt-1 flex-wrap">
               <Link
                 to="/search"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase tracking-wider"
               >
-                <SearchIcon className="w-4 h-4" />{" "}
-                <span className="hidden sm:inline">{t("common.search")}</span>
+                <SearchIcon className="w-3.5 h-3.5" />{" "}
+                <span>{t("common.search")}</span>
               </Link>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <Link
                 to="/retrospective"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase tracking-wider"
               >
-                <BookOpen className="w-4 h-4" />{" "}
-                <span className="hidden sm:inline">
-                  {t("retro.title", "톺아보기")}
-                </span>
+                <BookOpen className="w-3.5 h-3.5" />{" "}
+                <span>{t("retro.title", "톺아보기")}</span>
               </Link>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <Link
                 to="/admin"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase tracking-wider"
               >
-                <SettingsIcon className="w-4 h-4" />{" "}
-                <span className="hidden sm:inline">{t("admin.title")}</span>
+                <SettingsIcon className="w-3.5 h-3.5" />{" "}
+                <span>{t("admin.title")}</span>
               </Link>
-            </div>
+            </nav>
           </div>
         </div>
 

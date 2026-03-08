@@ -7,7 +7,9 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(({ mode }) => {
   // Load env file from the root directory
   const env = loadEnv(mode, path.resolve(__dirname, "../"), "");
-  console.log(`[Vite Config] Loaded env from: ${path.resolve(__dirname, "../")}`);
+  console.log(
+    `[Vite Config] Loaded env from: ${path.resolve(__dirname, "../")}`,
+  );
   console.log(`[Vite Config] PORT: ${env.PORT}, VITE_PORT: ${env.VITE_PORT}`);
 
   const serverPort = parseInt(env.PORT || "3001", 10);
