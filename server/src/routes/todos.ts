@@ -15,7 +15,7 @@ router.get("/", (req: Request, res: Response) => {
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay,
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek,
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
-      g.slackEnabled, g.slackNotificationTime,
+      g.slackEnabled, g.slackNotificationTime, g.isPinned,
       g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount,
       (
         SELECT json_group_array(json_object(
@@ -69,6 +69,7 @@ router.get("/", (req: Request, res: Response) => {
         enabled: Boolean(r.slackEnabled),
         time: r.slackNotificationTime || "09:00",
       },
+      isPinned: Boolean(r.isPinned),
       completedAt: r.completedAt,
       attachments: r.attachments ? JSON.parse(r.attachments) : [],
     }));
@@ -85,6 +86,7 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
     title,
     description,
     isImportant,
+    isPinned,
     priority,
     dueDate,
     status,
@@ -97,12 +99,15 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
 
   const effectivePriority = priority || (isImportant ? "HIGH" : "MEDIUM");
 
+  // Pinned tasks are mutually exclusive with recurring
+  const effectiveRecurringType = isPinned ? "NONE" : recurring?.type || "NONE";
+
   const groupSql = `
     INSERT INTO todo_groups (
-      id, title, description, isImportant, priority,
+      id, title, description, isImportant, priority, isPinned,
       recurringType, recurringWeeklyDays, recurringMonthlyDay, recurringMonthlyNthWeek, recurringMonthlyDayOfWeek, recurringYearlyMonth, recurringYearlyDay,
       notificationMinutesBefore, slackEnabled, slackNotificationTime, startDate, endOption, endDate, endOccurrences, occurrenceCount
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `;
 
   const groupParams = [
@@ -111,23 +116,25 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
     description || null,
     isImportant ? 1 : 0, // Keep for backward compatibility
     effectivePriority,
-    recurring?.type || "NONE",
-    recurring?.type === "WEEKLY" && recurring?.weeklyDays
+    isPinned ? 1 : 0,
+    effectiveRecurringType,
+    effectiveRecurringType === "WEEKLY" && recurring?.weeklyDays
       ? JSON.stringify(recurring.weeklyDays)
       : null,
-    recurring?.type === "MONTHLY" && recurring?.monthlyDay
+    effectiveRecurringType === "MONTHLY" && recurring?.monthlyDay
       ? recurring.monthlyDay
       : null,
-    recurring?.type === "MONTHLY" && recurring?.monthlyNthWeek
+    effectiveRecurringType === "MONTHLY" && recurring?.monthlyNthWeek
       ? recurring.monthlyNthWeek
       : null,
-    recurring?.type === "MONTHLY" && recurring?.monthlyDayOfWeek !== undefined
+    effectiveRecurringType === "MONTHLY" &&
+    recurring?.monthlyDayOfWeek !== undefined
       ? recurring.monthlyDayOfWeek
       : null,
-    recurring?.type === "YEARLY" && recurring?.yearlyMonth
+    effectiveRecurringType === "YEARLY" && recurring?.yearlyMonth
       ? recurring.yearlyMonth
       : null,
-    recurring?.type === "YEARLY" && recurring?.yearlyDay
+    effectiveRecurringType === "YEARLY" && recurring?.yearlyDay
       ? recurring.yearlyDay
       : null,
     notification?.minutesBefore || null,
@@ -167,7 +174,7 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
       g.recurringType, g.recurringWeeklyDays, g.recurringMonthlyDay,
       g.recurringMonthlyNthWeek, g.recurringMonthlyDayOfWeek,
       g.recurringYearlyMonth, g.recurringYearlyDay, g.notificationMinutesBefore,
-      g.slackEnabled, g.slackNotificationTime,
+      g.slackEnabled, g.slackNotificationTime, g.isPinned,
       g.startDate, g.endOption, g.endDate, g.endOccurrences, g.occurrenceCount
     FROM todos t
     JOIN todo_groups g ON t.groupId = g.id
@@ -179,6 +186,13 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
     if (!row) return res.status(404).json({ error: "Todo not found" });
 
     // Identify effective values
+    const effectiveIsPinned =
+      updates.isPinned !== undefined
+        ? updates.isPinned
+          ? 1
+          : 0
+        : row.isPinned;
+
     const effectiveSlackEnabled =
       updates.slackNotification?.enabled !== undefined
         ? updates.slackNotification.enabled
@@ -259,9 +273,14 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
 
     const groupId = row.groupId;
 
+    // Pinned tasks force recurringType to NONE
+    if (effectiveIsPinned) {
+      effRecType = "NONE";
+    }
+
     const groupSql = `
       UPDATE todo_groups SET
-        title = ?, description = ?, isImportant = ?, priority = ?,
+        title = ?, description = ?, isImportant = ?, priority = ?, isPinned = ?,
         recurringType = ?, recurringWeeklyDays = ?, recurringMonthlyDay = ?,
         recurringMonthlyNthWeek = ?, recurringMonthlyDayOfWeek = ?,
         recurringYearlyMonth = ?, recurringYearlyDay = ?,
@@ -275,6 +294,7 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
       effectiveDesc,
       effectiveImportant,
       effectivePriority,
+      effectiveIsPinned,
       effRecType,
       effRecWeekly ? JSON.stringify(effRecWeekly) : null,
       effRecMonthDay,
@@ -543,7 +563,9 @@ router.post(
       if (!row) return res.status(404).json({ error: "Todo not found" });
 
       // Use admin timezone for correct "today" date
-      const tzRow = db.prepare("SELECT value FROM system_settings WHERE key = 'timezone'").get() as any;
+      const tzRow = db
+        .prepare("SELECT value FROM system_settings WHERE key = 'timezone'")
+        .get() as any;
       const timezone = tzRow?.value || "Asia/Seoul";
       const today = formatInTimeZone(new Date(), timezone, "yyyy-MM-dd");
       const newGroupId = uuidv7();

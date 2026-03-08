@@ -34,20 +34,25 @@ router.get("/:id", (req: Request, res: Response) => {
 router.get("/summary/tasks", (req: Request, res: Response) => {
   const { start, end } = req.query;
   if (!start || !end) {
-    return res.status(400).json({ error: "start and end query params required" });
+    return res
+      .status(400)
+      .json({ error: "start and end query params required" });
   }
 
   try {
+    // Include pinned tasks completed within the period (by completedAt date)
     const tasks = db
       .prepare(
         `SELECT t.id, t.dueDate, t.status, t.completedAt,
-                g.title, g.priority, g.isImportant
+                g.title, g.priority, g.isImportant, g.isPinned
          FROM todos t
          JOIN todo_groups g ON t.groupId = g.id
-         WHERE t.dueDate >= ? AND t.dueDate <= ?
+         WHERE (t.dueDate >= ? AND t.dueDate <= ?)
+            OR (g.isPinned = 1 AND t.completedAt IS NOT NULL
+                AND SUBSTR(t.completedAt, 1, 10) >= ? AND SUBSTR(t.completedAt, 1, 10) <= ?)
          ORDER BY t.dueDate ASC`,
       )
-      .all(start, end) as any[];
+      .all(start, end, start, end) as any[];
 
     const summary = {
       total: tasks.length,
@@ -74,7 +79,9 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
   const { periodStart, periodEnd, keepText, problemText, tryText } = req.body;
 
   if (!periodStart || !periodEnd) {
-    return res.status(400).json({ error: "periodStart and periodEnd are required" });
+    return res
+      .status(400)
+      .json({ error: "periodStart and periodEnd are required" });
   }
 
   try {
@@ -84,9 +91,27 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
     db.prepare(
       `INSERT INTO retrospectives (id, periodStart, periodEnd, keepText, problemText, tryText, createdAt, updatedAt)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(id, periodStart, periodEnd, keepText || "", problemText || "", tryText || "", now, now);
+    ).run(
+      id,
+      periodStart,
+      periodEnd,
+      keepText || "",
+      problemText || "",
+      tryText || "",
+      now,
+      now,
+    );
 
-    res.json({ id, periodStart, periodEnd, keepText, problemText, tryText, createdAt: now, updatedAt: now });
+    res.json({
+      id,
+      periodStart,
+      periodEnd,
+      keepText,
+      problemText,
+      tryText,
+      createdAt: now,
+      updatedAt: now,
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -100,7 +125,8 @@ router.put("/:id", requireAdmin, (req: Request, res: Response) => {
     const existing = db
       .prepare("SELECT id FROM retrospectives WHERE id = ?")
       .get(req.params.id);
-    if (!existing) return res.status(404).json({ error: "Retrospective not found" });
+    if (!existing)
+      return res.status(404).json({ error: "Retrospective not found" });
 
     const now = new Date().toISOString();
     db.prepare(
@@ -119,7 +145,8 @@ router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
     const result = db
       .prepare("DELETE FROM retrospectives WHERE id = ?")
       .run(req.params.id);
-    if (result.changes === 0) return res.status(404).json({ error: "Retrospective not found" });
+    if (result.changes === 0)
+      return res.status(404).json({ error: "Retrospective not found" });
     res.json({ message: "Deleted" });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

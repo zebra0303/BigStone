@@ -17,7 +17,7 @@ import { Textarea } from "@/shared/ui/Textarea";
 import { Select } from "@/shared/ui/Select";
 import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
-import { X, Paperclip, Loader2 } from "lucide-react";
+import { X, Paperclip, Loader2, Pin } from "lucide-react";
 import { getNextValidDueDate, safeParseDate } from "@/shared/lib/recurringDate";
 import { cn } from "@/shared/lib/utils";
 
@@ -57,6 +57,8 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
   const [slackTime, setSlackTime] = useState(
     todo.slackNotification?.time || "09:00",
   );
+
+  const [isPinned, setIsPinned] = useState(todo.isPinned || false);
 
   const originalDateStr = format(
     safeParseDate(todo.recurring.startDate || todo.dueDate),
@@ -182,6 +184,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
           title: title.trim(),
           description: description.trim(),
           isImportant: priority === "HIGH", // legacy fallback
+          isPinned,
           priority,
           slackNotification: {
             enabled: slackEnabled,
@@ -285,7 +288,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 className={cn(
                   "w-full",
                   errors.title &&
-                    "border-red-500 focus:ring-red-500 dark:border-red-500"
+                    "border-red-500 focus:ring-red-500 dark:border-red-500",
                 )}
               />
               {errors.title && (
@@ -372,10 +375,38 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
             )}
           </div>
 
+          {/* Pin toggle - pinned tasks show at top every day until done */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isPinned;
+                setIsPinned(next);
+                if (next) setRecurring("NONE");
+              }}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all",
+                isPinned
+                  ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                  : "border-gray-200 bg-white text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600",
+              )}
+            >
+              <Pin className={cn("h-4 w-4", isPinned && "fill-current")} />
+              {t("task.pin", "고정")}
+            </button>
+            {isPinned && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {t("task.pin_desc", "완료할 때까지 매일 상단에 표시")}
+              </span>
+            )}
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center">
             <div className="w-full sm:w-auto flex-1 sm:flex-none">
               <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">
-                {t("common.date", "일자")}
+                {isPinned
+                  ? t("task.pin_start_date", "시작일")
+                  : t("common.date", "일자")}
               </label>
               <Input
                 type="date"
@@ -384,22 +415,26 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
                 className="w-full sm:w-40 [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
-            <div className="w-full sm:w-auto flex-1 sm:flex-none">
-              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">
-                {t("common.repeat", "반복")}
-              </label>
-              <Select
-                value={recurring}
-                onChange={(e) => setRecurring(e.target.value as RecurringType)}
-                className="w-full sm:w-40"
-              >
-                <option value="NONE">{t("task.repeat_none")}</option>
-                <option value="DAILY">{t("task.repeat_daily")}</option>
-                <option value="WEEKLY">{t("task.repeat_weekly")}</option>
-                <option value="MONTHLY">{t("task.repeat_monthly")}</option>
-                <option value="YEARLY">{t("task.repeat_yearly")}</option>
-              </Select>
-            </div>
+            {!isPinned && (
+              <div className="w-full sm:w-auto flex-1 sm:flex-none">
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">
+                  {t("common.repeat", "반복")}
+                </label>
+                <Select
+                  value={recurring}
+                  onChange={(e) =>
+                    setRecurring(e.target.value as RecurringType)
+                  }
+                  className="w-full sm:w-40"
+                >
+                  <option value="NONE">{t("task.repeat_none")}</option>
+                  <option value="DAILY">{t("task.repeat_daily")}</option>
+                  <option value="WEEKLY">{t("task.repeat_weekly")}</option>
+                  <option value="MONTHLY">{t("task.repeat_monthly")}</option>
+                  <option value="YEARLY">{t("task.repeat_yearly")}</option>
+                </Select>
+              </div>
+            )}
           </div>
 
           {recurring === "WEEKLY" && (

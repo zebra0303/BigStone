@@ -181,41 +181,68 @@ export function HomePage() {
     return [...validTodos, ...projected];
   }, [todos, displayDates]);
 
+  // Pinned tasks: show at top of every day from dueDate until completedAt date
+  const pinnedTodos = useMemo(() => {
+    return todos.filter((todo) => {
+      if (!todo.isPinned) return false;
+      // Not completed → show on all dates from dueDate onward
+      // Completed → show only up to completedAt date (inclusive)
+      return true;
+    });
+  }, [todos]);
+
   const getTodosForDate = (date: Date) => {
-    return activeTodos
-      .filter((todo) => {
-        // Strict match on the exact date. Overdue tasks do not slide to 'today',
-        // and DONE tasks stay precisely on the date they were due.
-        const parsedDue = safeParseDate(todo.dueDate);
-        const dueDateStr = format(parsedDue, "yyyy-MM-dd");
-        const dateStr = format(date, "yyyy-MM-dd");
+    const dateStr = format(date, "yyyy-MM-dd");
+    const dateMs = startOfDay(date).getTime();
 
-        // Strict match on the exact date. Overdue tasks no longer slide to 'today'
-        return dueDateStr === dateStr;
-      })
-      .sort((a, b) => {
-        // Priority sorting mapping
-        const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-
-        // Fallback for legacy data without priority
-        const getPriorityScore = (todo: typeof a) => {
-          if (todo.priority) return priorityOrder[todo.priority];
-          if (todo.isImportant) return priorityOrder.HIGH;
-          return priorityOrder.MEDIUM;
-        };
-
-        const scoreA = getPriorityScore(a);
-        const scoreB = getPriorityScore(b);
-
-        if (scoreA !== scoreB) {
-          return scoreB - scoreA; // Descending order (HIGH first)
-        }
-
-        return (
-          safeParseDate(a.dueDate).getTime() -
-          safeParseDate(b.dueDate).getTime()
+    // Collect pinned tasks visible on this date
+    const pinnedForDate = pinnedTodos.filter((todo) => {
+      const dueDateMs = startOfDay(safeParseDate(todo.dueDate)).getTime();
+      if (dateMs < dueDateMs) return false; // before task start
+      if (todo.status === "DONE" && todo.completedAt) {
+        // Show on completedAt date but not after
+        const completedDateStr = format(
+          new Date(todo.completedAt),
+          "yyyy-MM-dd",
         );
-      });
+        return dateStr <= completedDateStr;
+      }
+      return true; // not done: show on all dates
+    });
+
+    // Regular (non-pinned) tasks matched by exact date
+    const regularForDate = activeTodos.filter((todo) => {
+      if (todo.isPinned) return false; // handled separately above
+      const parsedDue = safeParseDate(todo.dueDate);
+      const dueDateStr = format(parsedDue, "yyyy-MM-dd");
+      return dueDateStr === dateStr;
+    });
+
+    // Sort helper
+    const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+    const getPriorityScore = (todo: (typeof activeTodos)[0]) => {
+      if (todo.priority) return priorityOrder[todo.priority];
+      if (todo.isImportant) return priorityOrder.HIGH;
+      return priorityOrder.MEDIUM;
+    };
+
+    const sortByPriority = (
+      a: (typeof activeTodos)[0],
+      b: (typeof activeTodos)[0],
+    ) => {
+      const scoreA = getPriorityScore(a);
+      const scoreB = getPriorityScore(b);
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return (
+        safeParseDate(a.dueDate).getTime() - safeParseDate(b.dueDate).getTime()
+      );
+    };
+
+    // Pinned first (sorted by priority), then regular (sorted by priority)
+    return [
+      ...pinnedForDate.sort(sortByPriority),
+      ...regularForDate.sort(sortByPriority),
+    ];
   };
 
   const handlePrev = () => {
@@ -272,7 +299,9 @@ export function HomePage() {
                 className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <BookOpen className="w-4 h-4" />{" "}
-                <span className="hidden sm:inline">{t("retro.title", "톺아보기")}</span>
+                <span className="hidden sm:inline">
+                  {t("retro.title", "톺아보기")}
+                </span>
               </Link>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <Link

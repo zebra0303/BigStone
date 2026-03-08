@@ -56,6 +56,13 @@ try {
   // Ignore error if columns already exist
 }
 
+// Add isPinned column for tasks that show at top of every day until completed
+try {
+  db.exec("ALTER TABLE todo_groups ADD COLUMN isPinned INTEGER DEFAULT 0");
+} catch {
+  // Ignore error if column already exists
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS todos (
     id TEXT PRIMARY KEY,
