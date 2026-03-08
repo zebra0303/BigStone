@@ -1,0 +1,20 @@
+echo "🔍 Running coverage reports before push..."
+echo ""
+
+echo "=== Client Coverage ==="
+npm run test:coverage -w client
+CLIENT_EXIT=$?
+
+echo ""
+echo "=== Server Coverage ==="
+npm run test:coverage -w server
+SERVER_EXIT=$?
+
+if [ $CLIENT_EXIT -ne 0 ] || [ $SERVER_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ Coverage check failed. Push aborted."
+  exit 1
+fi
+
+echo ""
+echo "✅ All coverage reports passed."
