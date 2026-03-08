@@ -118,11 +118,26 @@ export function TodoItem({ todo }: TodoItemProps) {
               checked={isDone}
               onChange={handleToggle}
               className="h-5 w-5 rounded-full"
+              aria-label={
+                isDone
+                  ? t("task.mark_incomplete", "할 일로 표시")
+                  : t("task.mark_complete", "완료로 표시")
+              }
             />
 
             <div
-              className="flex flex-col gap-1 overflow-hidden cursor-pointer"
+              className="flex flex-col gap-1 overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-sm px-1 -mx-1"
               onClick={() => setIsExpanded(!isExpanded)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsExpanded(!isExpanded);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-expanded={isExpanded}
+              aria-controls={`todo-content-${todo.id}`}
             >
               <div className="flex items-center gap-2">
                 <span
@@ -221,7 +236,10 @@ export function TodoItem({ todo }: TodoItemProps) {
         </div>
 
         {isExpanded && (
-          <div className="mt-2 pl-9 pr-8 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words flex flex-col gap-3">
+          <div
+            id={`todo-content-${todo.id}`}
+            className="mt-2 pl-9 pr-8 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words flex flex-col gap-3"
+          >
             {todo.description && (
               <div>
                 <LinkifiedText text={todo.description} />
