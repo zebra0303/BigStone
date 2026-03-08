@@ -150,25 +150,36 @@ export function RetrospectivePage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl p-4 md:p-8 space-y-6 min-h-screen">
+    <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-6 min-h-screen">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
-        <div className="flex items-center gap-3">
+      <header className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={() => navigate("/")}
-            className="shrink-0 -ml-2"
+            className="shrink-0 flex items-center gap-1 -ml-2 text-gray-500 hover:!text-primary transition-colors font-bold"
           >
             <ChevronLeft className="h-5 w-5" />
+            {t("common.today", "Home")}
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-gray-100">
-              {t("retro.title", "톺아보기")}
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t("retro.subtitle", "지난 일정을 돌아보고 성장하세요")}
-            </p>
+
+          <div className="h-8 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
+
+          <div className="flex items-center gap-3">
+            <img
+              src="/bigxi.png"
+              alt="BigXi"
+              className="w-8 h-8 object-contain drop-shadow-sm"
+            />
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-100">
+                {t("retro.title")}
+              </h1>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                {t("retro.subtitle")}
+              </p>
+            </div>
           </div>
         </div>
         <Button

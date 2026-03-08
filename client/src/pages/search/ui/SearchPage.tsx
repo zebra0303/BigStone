@@ -68,35 +68,36 @@ export function SearchPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-8 min-h-screen">
-      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
-        <div className="flex items-center gap-3">
-          <img
-            src="/bigxi.png"
-            alt="BigXi"
-            title={t("common.bigxi_title")}
-            className="w-12 h-12 object-contain drop-shadow-sm opacity-80"
-          />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-gray-100">
-              {t("common.search")}
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              {t(
-                "common.search_desc",
-                "모든 일정을 한곳에서 찾아보고 수정하세요.",
-              )}
-            </p>
+      <header className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="shrink-0 flex items-center gap-1 -ml-2 text-gray-500 hover:!text-primary transition-colors font-bold"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            {t("common.today", "Home")}
+          </Button>
+
+          <div className="h-8 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
+
+          <div className="flex items-center gap-3">
+            <img
+              src="/bigxi.png"
+              alt="BigXi"
+              className="w-8 h-8 object-contain drop-shadow-sm"
+            />
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-100">
+                {t("common.search")}
+              </h1>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                {t("common.search_desc")}
+              </p>
+            </div>
           </div>
         </div>
-
-        <Button
-          variant="outline"
-          onClick={() => navigate("/")}
-          className="shrink-0 flex items-center gap-2 dark:bg-gray-800 dark:border-gray-700"
-        >
-          <ChevronLeft className="h-4 w-4" />{" "}
-          {t("admin.back_to_home", "홈으로 돌아가기")}
-        </Button>
       </header>
 
       <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-4">
