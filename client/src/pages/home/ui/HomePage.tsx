@@ -21,10 +21,12 @@ import {
   BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { safeParseDate, getNextOccurrence } from "@/shared/lib/recurringDate";
+import { safeParseDate } from "@/shared/lib/recurringDate";
 import { getDateLocale } from "@/shared/lib/localeUtils";
 import { cn } from "@/shared/lib/utils";
 import { Footer } from "@/widgets/footer";
+
+import { useProjectedTodos } from "@/features/todo/model/useProjectedTodos";
 
 type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
@@ -71,115 +73,8 @@ export function HomePage() {
     return dates;
   }, [baseDate, viewMode]);
 
-  // Filter out archived/stale tasks AND pre-calculate virtual projections
-  const activeTodos = useMemo(() => {
-    const validTodos = todos.filter((todo) => {
-      if (todo.status === "DONE") {
-        const dueDateStr = format(safeParseDate(todo.dueDate), "yyyy-MM-dd");
-        return displayDates.some((d) => format(d, "yyyy-MM-dd") === dueDateStr);
-      }
-      return true;
-    });
-
-    // Generate Virtual Projections for Recurring tasks
-    // If a task is not DONE and is RECURRING, we should project its future occurrences
-    // up to the latest date in the current displayDates view.
-    const projected: typeof validTodos = [];
-    const maxDateMs =
-      displayDates.length > 0
-        ? Math.max(...displayDates.map((d) => startOfDay(d).getTime()))
-        : 0;
-    const minDateMs =
-      displayDates.length > 0
-        ? Math.min(...displayDates.map((d) => startOfDay(d).getTime()))
-        : 0;
-
-    const existingDatesPerGroup = new Map<string, Set<string>>();
-    todos.forEach((todo) => {
-      if (todo.groupId) {
-        if (!existingDatesPerGroup.has(todo.groupId)) {
-          existingDatesPerGroup.set(todo.groupId, new Set());
-        }
-        existingDatesPerGroup
-          .get(todo.groupId)!
-          .add(format(safeParseDate(todo.dueDate), "yyyy-MM-dd"));
-      }
-    });
-
-    validTodos.forEach((todo) => {
-      if (todo.status !== "DONE" && todo.recurring.type !== "NONE") {
-        // Start projection from Math.max(dueDate, today). The backend skips missed
-        // strictly sequence forward from the last true due date.
-        // This ensures the visual calendar paints intermediate missed days correctly.
-        let currentRefDate = safeParseDate(todo.dueDate);
-
-        // We increase the safeguard iterator to 1000 (roughly 3 years for daily tasks)
-        // so users can scroll far ahead. Memory is saved by only pushing visible dates.
-        let projectionCount = 0;
-        let runningOccurences = todo.recurring.occurrenceCount || 1; // 1 is default for the DB instance itself
-
-        while (projectionCount < 1000) {
-          // Pass `true` for ignoreToday so virtual projections strictly sequence forward
-          // from the last computed date, rather than clustering repeatedly on `today`.
-          const nextDate = getNextOccurrence(
-            currentRefDate,
-            todo.recurring,
-            true,
-          );
-          if (!nextDate) break;
-
-          const nextDateStr = format(nextDate, "yyyy-MM-dd");
-          if (todo.groupId) {
-            if (existingDatesPerGroup.get(todo.groupId)?.has(nextDateStr)) {
-              // A real task for this date already exists in the group. Let that real task handle further projections.
-              break;
-            }
-            // Register this date so another overlapping task in the same group doesn't project it again
-            existingDatesPerGroup.get(todo.groupId)?.add(nextDateStr);
-          }
-
-          const nextDateMs = startOfDay(nextDate).getTime();
-
-          // Stop projecting if it's beyond our current calendar view
-          if (nextDateMs > maxDateMs) {
-            break;
-          }
-
-          // Check End Conditions before projecting
-          if (todo.recurring.endOption === "DATE" && todo.recurring.endDate) {
-            const endLimitMs = startOfDay(
-              safeParseDate(todo.recurring.endDate),
-            ).getTime();
-            if (nextDateMs > endLimitMs) break;
-          }
-
-          if (
-            todo.recurring.endOption === "OCCURRENCES" &&
-            todo.recurring.endOccurrences
-          ) {
-            if (runningOccurences >= todo.recurring.endOccurrences) break;
-          }
-
-          // Generate Virtual item ONLY if it's visible in the current timeline view (>= minDateMs)
-          if (nextDateMs >= minDateMs) {
-            projected.push({
-              ...todo,
-              id: `virtual-${todo.id}-${projectionCount}`,
-              dueDate: nextDate,
-              isVirtual: true,
-            });
-          }
-
-          // Step forward
-          currentRefDate = nextDate;
-          projectionCount++;
-          runningOccurences++;
-        }
-      }
-    });
-
-    return [...validTodos, ...projected];
-  }, [todos, displayDates]);
+  // Use the extracted hook for virtual projections
+  const activeTodos = useProjectedTodos(todos, displayDates);
 
   // Pinned tasks: show at top of every day from dueDate until completedAt date
   const pinnedTodos = useMemo(() => {
