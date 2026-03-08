@@ -1,4 +1,6 @@
 import type { Todo } from "@/entities/todo/model/types";
+import { TodoSchema } from "@/entities/todo/model/schema";
+import { z } from "zod";
 import { handleApiError } from "@/shared/lib/errors";
 
 const API_BASE = "/api/todos";
@@ -16,7 +18,8 @@ export const todoApi = {
   getAll: async (): Promise<Todo[]> => {
     const res = await fetch(API_BASE);
     if (!res.ok) await handleApiError(res, "Failed to fetch todos");
-    return res.json();
+    const data = await res.json();
+    return z.array(TodoSchema).parse(data);
   },
 
   create: async (
