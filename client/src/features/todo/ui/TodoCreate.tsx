@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   RecurringType,
@@ -79,6 +79,41 @@ export function TodoCreate({
     { value: 5, label: t("common.days.fri", "금") },
     { value: 6, label: t("common.days.sat", "토") },
   ];
+
+  // Auto-update dueDate to nearest future date when recurring settings change.
+  // This syncs derived state (dueDate) with recurring config — a valid use of useEffect.
+  useEffect(() => {
+    if (recurring === "NONE") return;
+    const nextDate = getNextValidDueDate(new Date(), {
+      type: recurring,
+      weeklyDays: recurring === "WEEKLY" ? weeklyDays : undefined,
+      monthlyDay:
+        recurring === "MONTHLY" && monthlyType === "DATE"
+          ? monthlyDay
+          : undefined,
+      monthlyNthWeek:
+        recurring === "MONTHLY" && monthlyType === "NTH"
+          ? monthlyNthWeek
+          : undefined,
+      monthlyDayOfWeek:
+        recurring === "MONTHLY" && monthlyType === "NTH"
+          ? monthlyDayOfWeek
+          : undefined,
+      yearlyMonth: recurring === "YEARLY" ? yearlyMonth : undefined,
+      yearlyDay: recurring === "YEARLY" ? yearlyDay : undefined,
+    });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs dueDate with recurring config
+    setDueDate(format(nextDate, "yyyy-MM-dd"));
+  }, [
+    recurring,
+    weeklyDays,
+    monthlyType,
+    monthlyDay,
+    monthlyNthWeek,
+    monthlyDayOfWeek,
+    yearlyMonth,
+    yearlyDay,
+  ]);
 
   const handleDayToggle = (day: number) => {
     setWeeklyDays((prev) =>

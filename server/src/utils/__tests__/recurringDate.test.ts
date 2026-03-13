@@ -171,28 +171,30 @@ describe("getNextOccurrence (server)", () => {
 
 describe("getNextValidDueDate (server)", () => {
   it("should return same date for DAILY", () => {
-    const result = getNextValidDueDate("2026-03-07", { type: "DAILY" });
-    expect(result.getDate()).toBe(7);
+    // Use a future date to avoid today-based shifting
+    const result = getNextValidDueDate("2027-06-15", { type: "DAILY" });
+    expect(result.getDate()).toBe(15);
   });
 
   it("should return matching weekday for WEEKLY", () => {
     const config: RecurringConfig = { type: "WEEKLY", weeklyDays: [6] }; // Saturday
-    // 2026-03-07 is Saturday
-    const result = getNextValidDueDate("2026-03-07", config);
+    // 2027-06-12 is Saturday
+    const result = getNextValidDueDate("2027-06-12", config);
     expect(result.getDay()).toBe(6);
-    expect(result.getDate()).toBe(7);
+    expect(result.getDate()).toBe(12);
   });
 
   it("should find next matching day for WEEKLY when no match", () => {
     const config: RecurringConfig = { type: "WEEKLY", weeklyDays: [1] }; // Monday
-    // 2026-03-07 is Saturday, next Monday is March 9
-    const result = getNextValidDueDate("2026-03-07", config);
+    // 2027-06-12 is Saturday, next Monday is June 14
+    const result = getNextValidDueDate("2027-06-12", config);
     expect(result.getDay()).toBe(1);
-    expect(result.getDate()).toBe(9);
+    expect(result.getDate()).toBe(14);
   });
 
   it("should return baseDate as fallback for NONE", () => {
-    const result = getNextValidDueDate("2026-03-07", { type: "NONE" });
-    expect(result.getDate()).toBe(7);
+    // Use a future date to avoid today-based shifting
+    const result = getNextValidDueDate("2027-06-15", { type: "NONE" });
+    expect(result.getDate()).toBe(15);
   });
 });

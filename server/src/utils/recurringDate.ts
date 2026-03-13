@@ -1,12 +1,12 @@
 import {
   addMonths,
   setDate,
-  isPast,
   getDay,
   addDays,
   startOfDay,
   addYears,
   setMonth,
+  subDays,
 } from "date-fns";
 export type RecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
@@ -34,6 +34,33 @@ function safeParseDate(input: Date | string): Date {
   return new Date(input);
 }
 
+/**
+ * Find the Nth occurrence of a specific weekday in a given month.
+ * nth=5 means "last" occurrence.
+ */
+function getNthDayOfMonth(
+  year: number,
+  month: number,
+  nth: number,
+  dayOfWeek: number,
+): Date | null {
+  if (nth === 5) {
+    // "Last" — scan backward from month end
+    let date = new Date(year, month + 1, 0); // last day of month
+    while (getDay(date) !== dayOfWeek) {
+      date = subDays(date, 1);
+    }
+    return date;
+  }
+  let date = new Date(year, month, 1);
+  while (getDay(date) !== dayOfWeek) {
+    date = addDays(date, 1);
+  }
+  date = addDays(date, (nth - 1) * 7);
+  if (date.getMonth() !== month) return null;
+  return date;
+}
+
 export function getNextValidDueDate(
   baseDateInput: Date | string,
   recurring: RecurringConfig,
@@ -41,12 +68,10 @@ export function getNextValidDueDate(
   const baseDate = startOfDay(safeParseDate(baseDateInput));
   const today = startOfDay(new Date());
 
-  // Strictly respect the baseDate, even if it is in the past. This allows users
-  // to create recurring schedules that retroactively start from a past date.
-  const referenceDate = baseDate;
+  // Use today as reference so the result is always the nearest future date
+  const referenceDate = baseDate < today ? today : baseDate;
 
   if (recurring.type === "DAILY") {
-    // If it's a daily task, it should just be due on the reference date
     return referenceDate;
   }
 
@@ -55,7 +80,6 @@ export function getNextValidDueDate(
     recurring.weeklyDays &&
     recurring.weeklyDays.length > 0
   ) {
-    // Find the next available day of the week
     let nextDate = new Date(referenceDate);
     for (let i = 0; i < 7; i++) {
       if (recurring.weeklyDays.includes(getDay(nextDate))) {
@@ -65,12 +89,39 @@ export function getNextValidDueDate(
     }
   }
 
-  if (recurring.type === "MONTHLY" && recurring.monthlyDay) {
-    let nextDate = setDate(referenceDate, recurring.monthlyDay);
-    if (isPast(nextDate) && nextDate.getTime() !== today.getTime()) {
-      nextDate = addMonths(nextDate, 1);
+  if (recurring.type === "MONTHLY") {
+    // NTH weekday pattern
+    if (
+      recurring.monthlyNthWeek != null &&
+      recurring.monthlyDayOfWeek != null
+    ) {
+      const thisMonth = getNthDayOfMonth(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        recurring.monthlyNthWeek,
+        recurring.monthlyDayOfWeek,
+      );
+      if (thisMonth && thisMonth.getTime() >= referenceDate.getTime()) {
+        return thisMonth;
+      }
+      const nextMonthRef = addMonths(referenceDate, 1);
+      const nextMonth = getNthDayOfMonth(
+        nextMonthRef.getFullYear(),
+        nextMonthRef.getMonth(),
+        recurring.monthlyNthWeek,
+        recurring.monthlyDayOfWeek,
+      );
+      return nextMonth || addMonths(referenceDate, 1);
     }
-    return nextDate;
+
+    // Specific date pattern
+    if (recurring.monthlyDay) {
+      let nextDate = setDate(referenceDate, recurring.monthlyDay);
+      if (nextDate.getTime() < referenceDate.getTime()) {
+        nextDate = addMonths(nextDate, 1);
+      }
+      return nextDate;
+    }
   }
 
   if (
@@ -82,14 +133,13 @@ export function getNextValidDueDate(
       setMonth(referenceDate, recurring.yearlyMonth - 1),
       recurring.yearlyDay,
     );
-    if (isPast(nextDate) && nextDate.getTime() !== today.getTime()) {
+    if (nextDate.getTime() < referenceDate.getTime()) {
       nextDate = addYears(nextDate, 1);
     }
     return nextDate;
   }
 
-  // Fallback for NTH which is more complex, just align to the base date and let user manually pick
-  return baseDate;
+  return referenceDate;
 }
 
 export function getNextOccurrence(
@@ -102,8 +152,6 @@ export function getNextOccurrence(
   const baseDate = startOfDay(safeParseDate(baseDateInput));
   const today = startOfDay(new Date());
 
-  // We want the next occurrence strictly AFTER the current due date,
-  // or strictly AFTER today if the task is overdue, UNLESS ignoreToday is true.
   const referenceDate = !ignoreToday && baseDate < today ? today : baseDate;
   let nextDate = addDays(referenceDate, 1);
 
@@ -124,6 +172,32 @@ export function getNextOccurrence(
   }
 
   if (recurring.type === "MONTHLY") {
+    // NTH weekday pattern
+    if (
+      recurring.monthlyNthWeek != null &&
+      recurring.monthlyDayOfWeek != null
+    ) {
+      const thisMonth = getNthDayOfMonth(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        recurring.monthlyNthWeek,
+        recurring.monthlyDayOfWeek,
+      );
+      if (thisMonth && thisMonth.getTime() > referenceDate.getTime()) {
+        return thisMonth;
+      }
+      const nextMonthRef = addMonths(referenceDate, 1);
+      return (
+        getNthDayOfMonth(
+          nextMonthRef.getFullYear(),
+          nextMonthRef.getMonth(),
+          recurring.monthlyNthWeek,
+          recurring.monthlyDayOfWeek,
+        ) || null
+      );
+    }
+
+    // Specific date pattern
     if (recurring.monthlyDay) {
       nextDate = setDate(referenceDate, recurring.monthlyDay);
       if (nextDate.getTime() <= referenceDate.getTime()) {

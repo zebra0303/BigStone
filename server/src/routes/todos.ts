@@ -322,11 +322,34 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
       .run(effectiveDueDate, effectiveStatus, effectiveCompletedAt, id);
 
     // Backend Task Spawning Logic
-    if (
+    // Spawn next occurrence on:
+    // 1) Transitioning to DONE from any non-DONE status (TODO or IN_PROGRESS)
+    // 2) Already DONE + recurrence pattern changed (re-spawn with new pattern)
+    const isTransitionToDone =
+      effectiveStatus === "DONE" && row.status !== "DONE";
+    const isRecurrenceChangeWhileDone =
       effectiveStatus === "DONE" &&
-      row.status !== "DONE" &&
+      row.status === "DONE" &&
+      updates.recurring != null;
+
+    if (
+      (isTransitionToDone || isRecurrenceChangeWhileDone) &&
       effRecType !== "NONE"
     ) {
+      // When recurrence pattern changed on a completed task,
+      // remove old future TODO instances spawned by the previous pattern
+      if (isRecurrenceChangeWhileDone) {
+        const cleanupResult = db
+          .prepare(
+            "DELETE FROM todos WHERE groupId = ? AND status = 'TODO' AND dueDate > ?",
+          )
+          .run(groupId, effectiveDueDate);
+        if (cleanupResult.changes > 0) {
+          db.prepare(
+            "UPDATE todo_groups SET occurrenceCount = occurrenceCount - ? WHERE id = ?",
+          ).run(cleanupResult.changes, groupId);
+        }
+      }
       // Check count condition
       if (
         effEndOption === "OCCURRENCES" &&
@@ -387,11 +410,11 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
 
       return res.json({ message: "Updated", changes: todoResult.changes });
     } else if (
-      effectiveStatus === "TODO" &&
+      effectiveStatus !== "DONE" &&
       row.status === "DONE" &&
       effRecType !== "NONE"
     ) {
-      // Rollback: Delete any auto-spawned future tasks for this group
+      // Rollback: revert from DONE to TODO/IN_PROGRESS — delete auto-spawned future tasks
       const rollbackSql = `
         DELETE FROM todos
         WHERE groupId = ? AND status = 'TODO' AND dueDate > ?
