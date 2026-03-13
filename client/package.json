@@ -18,6 +18,7 @@
     "@tanstack/react-query-persist-client": "^5.90.24",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
+    "@zebra/core": "github:zebra0303/zCore#main",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
