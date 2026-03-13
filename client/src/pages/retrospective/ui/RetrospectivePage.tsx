@@ -314,11 +314,13 @@ export function RetrospectivePage() {
                       >
                         {task.status === "DONE" ? (
                           <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                        ) : task.status === "IN_PROGRESS" ? (
+                          <Clock className="h-4 w-4 text-blue-500 shrink-0" />
                         ) : (
                           <XCircle className="h-4 w-4 text-red-400 shrink-0" />
                         )}
                         <span
-                          className={`truncate ${task.status === "DONE" ? "text-gray-500 dark:text-gray-400 line-through" : "text-gray-800 dark:text-gray-200"}`}
+                          className={`truncate ${task.status === "DONE" ? "text-gray-500 dark:text-gray-400 line-through" : task.status === "IN_PROGRESS" ? "text-blue-600 dark:text-blue-400" : "text-gray-800 dark:text-gray-200"}`}
                         >
                           {task.title}
                         </span>

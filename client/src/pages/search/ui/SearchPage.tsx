@@ -10,7 +10,7 @@ import { ChevronLeft, Search as SearchIcon } from "lucide-react";
 import type { Todo } from "@/entities/todo/model/types";
 import { Footer } from "@/widgets/footer";
 
-type FilterStatus = "ALL" | "TODO" | "DONE";
+type FilterStatus = "ALL" | "TODO" | "IN_PROGRESS" | "DONE";
 
 export function SearchPage() {
   const { t } = useTranslation();
@@ -30,7 +30,8 @@ export function SearchPage() {
 
       const matchStatus =
         filterStatus === "ALL" ||
-        (filterStatus === "TODO" && todo.status !== "DONE") ||
+        (filterStatus === "TODO" && todo.status === "TODO") ||
+        (filterStatus === "IN_PROGRESS" && todo.status === "IN_PROGRESS") ||
         (filterStatus === "DONE" && todo.status === "DONE");
 
       return matchKeyword && matchStatus;
@@ -123,8 +124,9 @@ export function SearchPage() {
             className="w-full md:w-40"
           >
             <option value="ALL">{t("common.all_status", "모든 상태")}</option>
-            <option value="TODO">
-              {t("common.todo_status", "진행 중 (할 일)")}
+            <option value="TODO">{t("common.todo_status", "할 일")}</option>
+            <option value="IN_PROGRESS">
+              {t("common.in_progress_status", "진행중")}
             </option>
             <option value="DONE">{t("common.done_status", "완료됨")}</option>
           </Select>

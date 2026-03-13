@@ -7,12 +7,22 @@ import {
   useCompleteVirtualTodo,
   useCopyToToday,
 } from "@/features/todo/model/hooks";
-import { Checkbox } from "@/shared/ui/Checkbox";
 import { Badge } from "@/shared/ui/Badge";
 import { format } from "date-fns";
-import { Trash2, Edit2, Repeat, Paperclip, CopyPlus, Pin } from "lucide-react";
+import {
+  Trash2,
+  Edit2,
+  Repeat,
+  Paperclip,
+  CopyPlus,
+  Pin,
+  Circle,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
 import { safeParseDate } from "@/shared/lib/recurringDate";
 import { getDateLocale } from "@/shared/lib/localeUtils";
+import { cn } from "@/shared/lib/utils";
 
 import { Button } from "@/shared/ui/Button";
 import { TodoEditModal } from "./TodoEditModal";
@@ -37,6 +47,7 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [toastMessage, setToastMessage] = useState("");
 
   const isDone = todo.status === "DONE";
+  const isInProgress = todo.status === "IN_PROGRESS";
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const isToday = format(new Date(todo.dueDate), "yyyy-MM-dd") === todayStr;
   const isOverdue =
@@ -54,22 +65,27 @@ export function TodoItem({ todo }: TodoItemProps) {
       }[effectivePriority]
     : "";
 
+  // Cycle: TODO → IN_PROGRESS → DONE → TODO
   const handleToggle = () => {
     if (todo.isVirtual) {
-      // The real ID is the base ID before the "-index" suffix
       const realId = todo.id.replace(/^virtual-/, "").replace(/-\d+$/, "");
       const targetDate = format(todo.dueDate, "yyyy-MM-dd");
       completeVirtualTodo.mutate({ id: realId, targetDate });
       return;
     }
 
-    const newStatus = isDone ? "TODO" : "DONE";
+    const nextStatus =
+      todo.status === "TODO"
+        ? "IN_PROGRESS"
+        : todo.status === "IN_PROGRESS"
+          ? "DONE"
+          : "TODO";
 
     updateTodo.mutate({
       id: todo.id,
       updates: {
-        status: newStatus,
-        completedAt: newStatus === "DONE" ? new Date() : undefined,
+        status: nextStatus,
+        completedAt: nextStatus === "DONE" ? new Date() : undefined,
       },
     });
   };
@@ -114,16 +130,32 @@ export function TodoItem({ todo }: TodoItemProps) {
       >
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 overflow-hidden">
-            <Checkbox
-              checked={isDone}
-              onChange={handleToggle}
-              className="h-5 w-5 rounded-full"
+            {/* 3-state status button: TODO(circle) → IN_PROGRESS(clock) → DONE(check) */}
+            <button
+              type="button"
+              onClick={handleToggle}
+              className={cn(
+                "shrink-0 h-5 w-5 flex items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                isDone && "text-green-500",
+                isInProgress && "text-blue-500",
+                !isDone && !isInProgress && "text-gray-400 dark:text-gray-500",
+              )}
               aria-label={
                 isDone
-                  ? t("task.mark_incomplete", "할 일로 표시")
-                  : t("task.mark_complete", "완료로 표시")
+                  ? t("task.mark_todo", "할 일로 표시")
+                  : isInProgress
+                    ? t("task.mark_complete", "완료로 표시")
+                    : t("task.mark_in_progress", "진행중으로 표시")
               }
-            />
+            >
+              {isDone ? (
+                <CheckCircle2 className="h-5 w-5" />
+              ) : isInProgress ? (
+                <Clock className="h-5 w-5" />
+              ) : (
+                <Circle className="h-5 w-5" />
+              )}
+            </button>
 
             <div
               className="flex flex-col gap-1 overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-sm px-1 -mx-1"
@@ -141,12 +173,34 @@ export function TodoItem({ todo }: TodoItemProps) {
             >
               <div className="flex items-center gap-2">
                 <span
-                  className={`font-medium truncate ${isDone ? "line-through text-gray-500 dark:text-gray-400" : "text-gray-900 dark:text-gray-100"}`}
+                  className={cn(
+                    "font-medium truncate",
+                    isDone && "line-through text-gray-500 dark:text-gray-400",
+                    isInProgress && "text-blue-600 dark:text-blue-400",
+                    !isDone &&
+                      !isInProgress &&
+                      "text-gray-900 dark:text-gray-100",
+                  )}
                 >
                   {todo.title}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 flex-wrap sm:flex-nowrap">
+                {isInProgress && (
+                  <>
+                    <Badge
+                      variant="secondary"
+                      className="px-1.5 py-0.5 text-[10px] flex items-center gap-1 whitespace-nowrap shrink-0 !bg-blue-50 !text-blue-600 dark:!bg-blue-900/30 dark:!text-blue-400"
+                    >
+                      <Clock className="h-3 w-3" />
+                      {t("task.in_progress", "진행중")}
+                    </Badge>
+                    {(todo.description ||
+                      todo.recurring.type !== "NONE" ||
+                      todo.isPinned ||
+                      todo.isCopied) && <span>•</span>}
+                  </>
+                )}
                 {todo.description && !isExpanded && (
                   <span className="truncate max-w-[200px]">
                     {todo.description}
