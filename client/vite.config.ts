@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+          globPatterns: ["**/*.{ico,png,svg,webp,jpg,jpeg,gif,woff,woff2,ttf,eot}"],
           navigateFallback: "/index.html",
           skipWaiting: true,
           clientsClaim: true,
