@@ -32,6 +32,7 @@
 | PWA           | vite-plugin-pwa, Workbox                     |
 | Security      | helmet, CORS, account lockout                |
 | Architecture  | FSD (Feature-Sliced Design), npm workspaces  |
+| Shared Lib    | @zebra/core (common UI, utils, types)        |
 
 ## Getting Started
 
