@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: "autoUpdate",
+        manifestFilename: "manifest.webmanifest",
         devOptions: {
           enabled: true,
         },
@@ -59,6 +60,7 @@ export default defineConfig(({ mode }) => {
           navigateFallback: "/index.html",
           skipWaiting: true,
           clientsClaim: true,
+          cleanupOutdatedCaches: true,
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
