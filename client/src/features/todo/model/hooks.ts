@@ -8,7 +8,8 @@ export const TODO_QUERY_KEY = ["todos"];
 
 const TOKEN_REFRESH_INTERVAL = 24 * 60 * 60 * 1000; // 1 day
 
-// Refresh admin token if last refresh was more than 1 day ago
+// TODO(security): admin_token is stored in localStorage for simplicity.
+// Migrate to HttpOnly cookie when backend auth flow supports it.
 function tryRefreshToken() {
   const token = localStorage.getItem("admin_token");
   if (!token) return;
