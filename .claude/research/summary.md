@@ -1,5 +1,7 @@
 # BigStone Project - Research Summary
 
+> **2026-03-22 Architecture Update:** Core UI components (Button, Card, Input, Textarea, Badge, ConfirmModal) and common API types have been extracted from this repository into the `@zebra/core` (`zCore` repo) shared library. These are now imported directly via `package.json` (`github:zebra0303/zCore#main`) to maintain DRY principles across the BigStone, zlog, and zGo ecosystem.
+
 ## 1. Overview
 
 BigStone is a full-stack todo/task management application based on the philosophy of
