@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: [
-            "**/*.{ico,png,svg,webp,jpg,jpeg,gif,woff,woff2,ttf,eot}",
+            "**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,gif,woff,woff2,ttf,eot}",
           ],
           navigateFallback: "/index.html",
           skipWaiting: true,
