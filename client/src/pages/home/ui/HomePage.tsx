@@ -116,7 +116,14 @@ export function HomePage() {
       if (dueDateStr === dateStr) return true;
 
       // Special case: If it's today's view, also show non-done tasks from the past
-      if (isToday && todo.status !== "DONE" && dueDateStr < todayStr) {
+      // But exclude recurring tasks, since they belong strictly to their past date
+      // and their future occurrences are naturally projected anyway.
+      if (
+        isToday &&
+        todo.status !== "DONE" &&
+        dueDateStr < todayStr &&
+        todo.recurring.type === "NONE"
+      ) {
         return true;
       }
 
