@@ -20,13 +20,11 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import { safeParseDate } from "@/shared/lib/recurringDate";
-import { getDateLocale } from "@/shared/lib/localeUtils";
-import { cn } from "@/shared/lib/utils";
+import { safeParseDate, getDateLocale, cn } from "@/shared/lib";
 
 import { TodoEditModal } from "./TodoEditModal";
-import { LinkifiedText } from "@/shared/lib/linkify";
-import { Toast } from "@/shared/ui/Toast";
+import { LinkifiedText } from "@/shared/lib";
+import { Toast } from "@/shared/ui";
 
 interface TodoItemProps {
   todo: Todo;

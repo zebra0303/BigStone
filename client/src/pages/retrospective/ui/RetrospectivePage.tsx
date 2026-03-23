@@ -14,13 +14,13 @@ import {
 } from "lucide-react";
 import { Button } from "@zebra/core/client";
 import { Footer } from "@/widgets/footer";
-import { getDateLocale } from "@/shared/lib/localeUtils";
+import { getDateLocale } from "@/shared/lib";
 import {
   retrospectiveApi,
   type TaskSummary,
   type Retrospective,
-} from "@/shared/api/retrospectiveApi";
-import { Toast } from "@/shared/ui/Toast";
+} from "@/shared/api";
+import { Toast } from "@/shared/ui";
 
 type PeriodType = "7" | "14" | "30";
 

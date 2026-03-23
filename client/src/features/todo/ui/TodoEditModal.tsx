@@ -12,12 +12,11 @@ import {
   useDeleteAttachment,
 } from "@/features/todo/model/hooks";
 import { Button, Input, Textarea } from "@zebra/core/client";
-import { Select } from "@/shared/ui/Select";
+import { Select } from "@/shared/ui";
 import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
 import { X, Paperclip, Loader2, Pin } from "lucide-react";
-import { getNextValidDueDate, safeParseDate } from "@/shared/lib/recurringDate";
-import { cn } from "@/shared/lib/utils";
+import { getNextValidDueDate, safeParseDate, cn } from "@/shared/lib";
 
 interface TodoEditModalProps {
   todo: Todo;

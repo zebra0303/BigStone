@@ -6,17 +6,15 @@ import type {
   RecurringEndOption,
   TodoPriority,
 } from "@/entities/todo/model/types";
-import { useCreateTodo } from "@/features/todo/model/hooks";
-import { todoApi } from "@/shared/api/todoApi";
+import { useCreateTodo, TODO_QUERY_KEY } from "@/features/todo/model/hooks";
+import { todoApi } from "@/shared/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { TODO_QUERY_KEY } from "@/features/todo/model/hooks";
 import { Button, Input, Textarea } from "@zebra/core/client";
-import { Select } from "@/shared/ui/Select";
+import { Select } from "@/shared/ui";
 import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
 import { X, Paperclip, Loader2, Pin } from "lucide-react";
-import { getNextValidDueDate } from "@/shared/lib/recurringDate";
-import { cn } from "@/shared/lib/utils";
+import { getNextValidDueDate, cn } from "@/shared/lib";
 
 interface TodoCreateProps {
   initialDate?: string;

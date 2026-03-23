@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { format, startOfDay } from "date-fns";
 import type { Todo } from "@/entities/todo/model/types";
-import { safeParseDate, getNextOccurrence } from "@/shared/lib/recurringDate";
+import { safeParseDate, getNextOccurrence } from "@/shared/lib";
 
 /**
  * Custom hook to encapsulate the complex logic of projecting virtual occurrences

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTodos } from "@/features/todo/model/hooks";
 import { TodoList } from "@/features/todo/ui/TodoList";
 import { Button, Input } from "@zebra/core/client";
-import { Select } from "@/shared/ui/Select";
+import { Select } from "@/shared/ui";
 import { ChevronLeft, Search as SearchIcon } from "lucide-react";
 import type { Todo } from "@/entities/todo/model/types";
 import { Footer } from "@/widgets/footer";

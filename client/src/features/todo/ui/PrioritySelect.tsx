@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import type { TodoPriority } from "@/entities/todo/model/types";
-import { cn } from "@/shared/lib/utils";
-import { PriorityXi } from "@/shared/ui/PriorityXi";
+import { cn } from "@/shared/lib";
+import { PriorityXi } from "@/shared/ui";
 
 interface PrioritySelectProps {
   value: TodoPriority;

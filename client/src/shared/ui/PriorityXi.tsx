@@ -1,4 +1,4 @@
-import { cn } from "@/shared/lib/utils";
+import { cn } from "@/shared/lib";
 import type { TodoPriority } from "@/entities/todo/model/types";
 
 interface PriorityXiProps {

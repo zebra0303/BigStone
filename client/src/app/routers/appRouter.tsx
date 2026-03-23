@@ -2,7 +2,7 @@
 import React, { Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
-import { PageLoader } from "@/shared/ui/PageLoader";
+import { PageLoader } from "@/shared/ui";
 
 // Dynamically import pages for code splitting
 const HomePage = React.lazy(() =>

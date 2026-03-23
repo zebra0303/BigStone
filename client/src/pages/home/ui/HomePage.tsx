@@ -21,9 +21,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { safeParseDate } from "@/shared/lib/recurringDate";
-import { getDateLocale } from "@/shared/lib/localeUtils";
-import { cn } from "@/shared/lib/utils";
+import { safeParseDate, getDateLocale, cn } from "@/shared/lib";
 import { Footer } from "@/widgets/footer";
 
 import { useProjectedTodos } from "@/features/todo/model/useProjectedTodos";
