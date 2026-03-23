@@ -12,7 +12,7 @@ import {
   Pin,
   CopyPlus,
 } from "lucide-react";
-import { Button } from "@/shared/ui/Button";
+import { Button } from "@zebra/core/client";
 import { Footer } from "@/widgets/footer";
 import { getDateLocale } from "@/shared/lib/localeUtils";
 import {

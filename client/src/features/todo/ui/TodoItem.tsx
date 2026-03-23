@@ -7,7 +7,7 @@ import {
   useCompleteVirtualTodo,
   useCopyToToday,
 } from "@/features/todo/model/hooks";
-import { Badge } from "@/shared/ui/Badge";
+import { Badge, Button, ConfirmModal } from "@zebra/core/client";
 import { format } from "date-fns";
 import {
   Trash2,
@@ -24,9 +24,7 @@ import { safeParseDate } from "@/shared/lib/recurringDate";
 import { getDateLocale } from "@/shared/lib/localeUtils";
 import { cn } from "@/shared/lib/utils";
 
-import { Button } from "@/shared/ui/Button";
 import { TodoEditModal } from "./TodoEditModal";
-import { ConfirmModal } from "@/shared/ui/ConfirmModal";
 import { LinkifiedText } from "@/shared/lib/linkify";
 import { Toast } from "@/shared/ui/Toast";
 

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useTodos } from "@/features/todo/model/hooks";
 import { TodoCreate } from "@/features/todo/ui/TodoCreate";
 import { TodoList } from "@/features/todo/ui/TodoList";
-import { Button } from "@/shared/ui/Button";
+import { Button } from "@zebra/core/client";
 import {
   format,
   addDays,

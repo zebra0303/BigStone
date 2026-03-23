@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
+import { Button, Input } from "@zebra/core/client";
 import { Select } from "@/shared/ui/Select";
 import {
   ChevronLeft,

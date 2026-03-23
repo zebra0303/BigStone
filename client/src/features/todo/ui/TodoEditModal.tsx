@@ -11,9 +11,7 @@ import {
   useUploadAttachment,
   useDeleteAttachment,
 } from "@/features/todo/model/hooks";
-import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
-import { Textarea } from "@/shared/ui/Textarea";
+import { Button, Input, Textarea } from "@zebra/core/client";
 import { Select } from "@/shared/ui/Select";
 import { PrioritySelect } from "./PrioritySelect";
 import { format } from "date-fns";
