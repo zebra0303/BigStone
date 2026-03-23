@@ -156,7 +156,13 @@ router.post("/login", authLimiter, async (req: Request, res: Response) => {
     // Successful login: reset failure counter
     resetLoginFailureState();
     const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
-    res.json({ token });
+    res.cookie("admin_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    res.json({ message: "Login successful" });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -165,10 +171,26 @@ router.post("/login", authLimiter, async (req: Request, res: Response) => {
 // 4. Refresh token (extends session for active users)
 router.post("/refresh", requireAdmin, (req: Request, res: Response) => {
   const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
-  res.json({ token });
+  res.cookie("admin_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+  res.json({ message: "Token refreshed" });
 });
 
-// 4-1. Change password (Admin only)
+// 4-1. Logout
+router.post("/logout", (req: Request, res: Response) => {
+  res.clearCookie("admin_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.json({ message: "Logged out successfully" });
+});
+
+// 4-2. Change password (Admin only)
 router.put(
   "/password",
   requireAdmin,
@@ -208,7 +230,13 @@ router.put(
       const token = jwt.sign({ role: "admin" }, JWT_SECRET, {
         expiresIn: "7d",
       });
-      res.json({ message: "Password changed successfully", token });
+      res.cookie("admin_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      res.json({ message: "Password changed successfully" });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }

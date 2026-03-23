@@ -16,11 +16,12 @@ import { requireAdmin } from "../auth";
 const JWT_SECRET = process.env.JWT_SECRET || "dev_only_secret";
 
 // Helper to create mock Express objects
-function createMockReqRes(authHeader?: string) {
+function createMockReqRes(authHeader?: string, cookies: any = {}) {
   const req = {
     headers: {
       authorization: authHeader,
     },
+    cookies: cookies,
   } as any;
 
   const res = {

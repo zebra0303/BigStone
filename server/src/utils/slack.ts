@@ -1,4 +1,3 @@
-import axios from "axios";
 import db from "../db/database";
 
 /**
@@ -32,12 +31,18 @@ export async function sendSlackNotification(text: string, blocks?: any[]) {
   }
 
   try {
-    const response = await axios.post(webhookUrl, {
-      text,
-      blocks,
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        blocks,
+      }),
     });
 
-    if (response.status !== 200) {
+    if (!response.ok) {
       console.error(
         `Slack Webhook error: ${response.status} ${response.statusText}`,
       );

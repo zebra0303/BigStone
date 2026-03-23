@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button, Input } from "@zebra/core/client";
-import { Select } from "@/shared/ui/Select";
+import { Select } from "@/shared/ui";
 import {
   ChevronLeft,
   Lock,
@@ -20,10 +20,11 @@ export function AdminPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    localStorage.getItem("is_admin_logged_in") === "true",
+  );
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [token, setToken] = useState(localStorage.getItem("admin_token") || "");
 
   // Settings State
   const [language, setLanguage] = useState("ko");
@@ -72,11 +73,10 @@ export function AdminPage() {
 
   useEffect(() => {
     checkStatus();
-    if (token) {
-      setIsAuthenticated(true);
-      fetchSettings(token);
+    if (isAuthenticated) {
+      fetchSettings();
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   const checkStatus = async () => {
     try {
@@ -88,10 +88,10 @@ export function AdminPage() {
     }
   };
 
-  const fetchSettings = async (jwtToken: string) => {
+  const fetchSettings = async () => {
     try {
       const res = await fetch("/api/settings/config", {
-        headers: { Authorization: `Bearer ${jwtToken}` },
+        credentials: "include",
       });
       if (res.ok) {
         const data = await res.json();
@@ -104,20 +104,16 @@ export function AdminPage() {
       } else if (res.status === 401) {
         // Only clear token on explicit auth rejection, not on server errors
         setIsAuthenticated(false);
-        localStorage.removeItem("admin_token");
-        setToken("");
+        localStorage.removeItem("is_admin_logged_in");
       }
 
       // Refresh token to extend session
       const refreshRes = await fetch("/api/settings/refresh", {
         method: "POST",
-        headers: { Authorization: `Bearer ${jwtToken}` },
+        credentials: "include",
       });
       if (refreshRes.ok) {
-        const { token: newToken } = await refreshRes.json();
-        localStorage.setItem("admin_token", newToken);
         localStorage.setItem("admin_token_refreshed_at", String(Date.now()));
-        setToken(newToken);
       }
     } catch (e) {
       console.error("Failed to fetch settings", e);
@@ -144,10 +140,9 @@ export function AdminPage() {
 
       if (isSetup) {
         // Login successful
-        localStorage.setItem("admin_token", data.token);
-        setToken(data.token);
+        localStorage.setItem("is_admin_logged_in", "true");
         setIsAuthenticated(true);
-        fetchSettings(data.token);
+        fetchSettings();
       } else {
         // Setup successful, now switch to login mode
         setIsSetup(true);
@@ -169,9 +164,9 @@ export function AdminPage() {
     try {
       const res = await fetch("/api/settings/config", {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           language,
@@ -237,9 +232,16 @@ export function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_token");
-    setToken("");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/settings/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+    localStorage.removeItem("is_admin_logged_in");
     setIsAuthenticated(false);
     setPassword("");
   };
@@ -274,9 +276,9 @@ export function AdminPage() {
     try {
       const res = await fetch("/api/settings/password", {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
@@ -286,12 +288,6 @@ export function AdminPage() {
         setPasswordMessage(data.error || t("common.save_failed", "저장 실패"));
         setPasswordError(true);
         return;
-      }
-
-      // Update token if a new one was issued
-      if (data.token) {
-        localStorage.setItem("admin_token", data.token);
-        setToken(data.token);
       }
 
       setPasswordMessage(

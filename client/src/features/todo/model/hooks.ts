@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { todoApi } from "@/shared/api/todoApi";
+import { todoApi } from "@/shared/api";
 import type { Todo } from "@/entities/todo/model/types";
 import { useTodoStore } from "@/entities/todo/model/store";
 import { useEffect } from "react";
@@ -8,12 +8,7 @@ export const TODO_QUERY_KEY = ["todos"];
 
 const TOKEN_REFRESH_INTERVAL = 24 * 60 * 60 * 1000; // 1 day
 
-// TODO(security): admin_token is stored in localStorage for simplicity.
-// Migrate to HttpOnly cookie when backend auth flow supports it.
 function tryRefreshToken() {
-  const token = localStorage.getItem("admin_token");
-  if (!token) return;
-
   const lastRefresh = parseInt(
     localStorage.getItem("admin_token_refreshed_at") || "0",
     10,
@@ -22,12 +17,10 @@ function tryRefreshToken() {
 
   fetch("/api/settings/refresh", {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
   })
-    .then((res) => (res.ok ? res.json() : null))
-    .then((data) => {
-      if (data?.token) {
-        localStorage.setItem("admin_token", data.token);
+    .then((res) => {
+      if (res.ok) {
         localStorage.setItem("admin_token_refreshed_at", String(Date.now()));
       }
     })

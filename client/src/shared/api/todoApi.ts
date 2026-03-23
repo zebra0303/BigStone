@@ -6,18 +6,9 @@ import { format } from "date-fns";
 
 const API_BASE = "/api/todos";
 
-const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("admin_token");
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-};
-
 export const todoApi = {
   getAll: async (): Promise<Todo[]> => {
-    const res = await fetch(API_BASE);
+    const res = await fetch(API_BASE, { credentials: "include" });
     if (!res.ok) await handleApiError(res, "Failed to fetch todos");
     const data = await res.json();
     try {
@@ -41,9 +32,9 @@ export const todoApi = {
     };
     const res = await fetch(API_BASE, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        ...getAuthHeaders(),
       },
       body: JSON.stringify(payload),
     });
@@ -64,9 +55,9 @@ export const todoApi = {
     };
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "PUT",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        ...getAuthHeaders(),
       },
       body: JSON.stringify(payload),
     });
@@ -77,7 +68,7 @@ export const todoApi = {
   delete: async (id: string): Promise<void> => {
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "DELETE",
-      headers: getAuthHeaders(),
+      credentials: "include",
     });
     if (!res.ok) await handleApiError(res, "Failed to delete todo");
   },
@@ -85,9 +76,9 @@ export const todoApi = {
   completeVirtual: async (id: string, targetDate: string): Promise<void> => {
     const res = await fetch(`${API_BASE}/${id}/complete-virtual`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        ...getAuthHeaders(),
       },
       body: JSON.stringify({ targetDate }),
     });
@@ -97,7 +88,7 @@ export const todoApi = {
   copyToToday: async (id: string): Promise<{ id: string; groupId: string }> => {
     const res = await fetch(`${API_BASE}/${id}/copy-to-today`, {
       method: "POST",
-      headers: getAuthHeaders(),
+      credentials: "include",
     });
     if (!res.ok) await handleApiError(res, "Failed to copy todo to today");
     return res.json();
@@ -108,7 +99,7 @@ export const todoApi = {
     formData.append("file", file);
     const res = await fetch(`${API_BASE}/attachments/${groupId}`, {
       method: "POST",
-      headers: getAuthHeaders(),
+      credentials: "include",
       body: formData,
     });
     if (!res.ok) await handleApiError(res, "Failed to upload attachment");
@@ -118,7 +109,7 @@ export const todoApi = {
   deleteAttachment: async (attachmentId: string) => {
     const res = await fetch(`${API_BASE}/attachments/${attachmentId}`, {
       method: "DELETE",
-      headers: getAuthHeaders(),
+      credentials: "include",
     });
     if (!res.ok) await handleApiError(res, "Failed to delete attachment");
     return res.json();

@@ -2,15 +2,6 @@ import { handleApiError } from "@/shared/lib/errors";
 
 const API_BASE = "/api/retrospectives";
 
-const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("admin_token");
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-};
-
 export interface TaskSummary {
   total: number;
   completed: number;
@@ -40,13 +31,13 @@ export interface Retrospective {
 
 export const retrospectiveApi = {
   getAll: async (): Promise<Retrospective[]> => {
-    const res = await fetch(API_BASE);
+    const res = await fetch(API_BASE, { credentials: "include" });
     if (!res.ok) await handleApiError(res, "Failed to fetch retrospectives");
     return res.json();
   },
 
   getById: async (id: string): Promise<Retrospective> => {
-    const res = await fetch(`${API_BASE}/${id}`);
+    const res = await fetch(`${API_BASE}/${id}`, { credentials: "include" });
     if (!res.ok) await handleApiError(res, "Failed to fetch retrospective");
     return res.json();
   },
@@ -54,6 +45,7 @@ export const retrospectiveApi = {
   getTaskSummary: async (start: string, end: string): Promise<TaskSummary> => {
     const res = await fetch(
       `${API_BASE}/summary/tasks?start=${start}&end=${end}`,
+      { credentials: "include" },
     );
     if (!res.ok) await handleApiError(res, "Failed to fetch task summary");
     return res.json();
@@ -68,7 +60,8 @@ export const retrospectiveApi = {
   }): Promise<Retrospective> => {
     const res = await fetch(API_BASE, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!res.ok) await handleApiError(res, "Failed to create retrospective");
@@ -81,7 +74,8 @@ export const retrospectiveApi = {
   ): Promise<{ message: string; updatedAt: string }> => {
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!res.ok) await handleApiError(res, "Failed to update retrospective");
@@ -91,7 +85,7 @@ export const retrospectiveApi = {
   delete: async (id: string): Promise<void> => {
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "DELETE",
-      headers: getAuthHeaders(),
+      credentials: "include",
     });
     if (!res.ok) await handleApiError(res, "Failed to delete retrospective");
   },

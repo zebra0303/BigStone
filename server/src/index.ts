@@ -6,6 +6,7 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env"), override: true });
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import todosRouter from "./routes/todos";
 import settingsRouter from "./routes/settings";
@@ -21,6 +22,9 @@ startNotificationService();
 
 // Security headers
 app.use(helmet());
+
+// Parse cookies
+app.use(cookieParser());
 
 // CORS: restrict to known origins
 const allowedOrigins = process.env.CORS_ORIGIN
