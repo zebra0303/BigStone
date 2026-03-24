@@ -1,11 +1,8 @@
 # BigStone Project - Research Summary
 
-> **2026-03-24 Updates:**
+> **2026-03-25 Updates:**
 >
-> - Fixed PWA overly aggressive caching by including JS files in Workbox globPatterns and correcting the `r.update()` mechanism.
-> - Client project refactored to implement FSD Public APIs. Direct inner module imports are restricted in favor of `index.ts` public exports.
-> - Migrated authentication JWT from `localStorage` to `HttpOnly`, `secure`, `SameSite=Strict` cookies for enhanced XSS protection.
-> - Core UI components and types were extracted to an external library (`@zebra/core`).
+> - Refactored local error utilities to fully utilize standardized error boundaries (, , ).
 
 ## 1. Overview
 
