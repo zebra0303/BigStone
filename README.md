@@ -17,7 +17,7 @@
 - **PWA Support** — Installable app with offline caching, instant SW updates (skipWaiting + clientsClaim)
 - **Multi-language** — Korean / English support with auto-detection
 - **Theme Customization** — Dark mode, primary color picker, web font selection (DB-persisted)
-- **Admin Authentication** — bcrypt + JWT (7-day expiry, auto-refresh) with account lockout (5 failures = 15 min lock)
+- **Admin Authentication** — bcrypt + HttpOnly Cookie JWT (7-day expiry, auto-refresh) with account lockout (5 failures = 15 min lock)
 - **Search** — Filter tasks by keyword and status
 
 ## Tech Stack
@@ -118,7 +118,7 @@ BigStone/
 ## Security
 
 - **Password**: bcrypt (10 rounds) hashing
-- **Token**: JWT with 7-day expiry, auto-refresh on activity (1-day throttle)
+- **Token**: HttpOnly Cookie JWT with 7-day expiry, auto-refresh on activity (1-day throttle)
 - **Rate Limiting**: 10 login attempts per 15 minutes per IP
 - **Account Lockout**: 5 consecutive failures locks the account for 15 minutes (DB-persisted, IP-independent)
 - **Headers**: helmet for security headers (XSS, clickjacking protection)
