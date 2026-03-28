@@ -22,17 +22,17 @@
 
 ## 기술 스택
 
-| 영역            | 기술                                         |
-| --------------- | -------------------------------------------- |
-| Frontend        | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
-| State           | Zustand 5, TanStack Query 5                  |
-| Backend         | Express 5, TypeScript, better-sqlite3        |
-| Auth            | bcrypt, JWT, express-rate-limit              |
-| 알림            | node-cron, Slack Incoming Webhook            |
-| PWA             | vite-plugin-pwa, Workbox                     |
-| 보안            | helmet, CORS, 계정 잠금                      |
-| Architecture    | FSD (Feature-Sliced Design), npm workspaces  |
-| 공유 라이브러리 | @zebra/core (공통 UI, 유틸리티, 타입)        |
+| 영역            | 기술                                               |
+| --------------- | -------------------------------------------------- |
+| Frontend        | React 19, TypeScript, Vite 7, Tailwind CSS 3       |
+| State           | Zustand 5, TanStack Query 5                        |
+| Backend         | Express 5, TypeScript, better-sqlite3              |
+| Auth            | bcrypt, JWT, express-rate-limit                    |
+| 알림            | node-cron, Slack Incoming Webhook                  |
+| PWA             | vite-plugin-pwa, Workbox                           |
+| 보안            | helmet, CORS, 계정 잠금                            |
+| Architecture    | FSD (Feature-Sliced Design), npm workspaces        |
+| 공유 라이브러리 | @zebra/core (공통 UI, 유틸리티, 타입, 에러 핸들링) |
 
 ## 시작하기
 

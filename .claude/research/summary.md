@@ -2,7 +2,8 @@
 
 > **2026-03-25 Updates:**
 >
-> - Refactored local error utilities to fully utilize standardized error boundaries (, , ).
+> - Refactored local error utilities to fully utilize standardized error boundaries and masked errors from **@zebra/core**.
+> - Migrated core UI components (`Checkbox`, `Select`, `Button`, `Input`, etc.) to the shared **@zebra/core** library to maintain ecosystem consistency.
 
 ## 1. Overview
 
