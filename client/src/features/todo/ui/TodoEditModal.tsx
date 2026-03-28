@@ -282,7 +282,7 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
       <div
-        className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden dark:border dark:border-gray-800"
+        className="w-full max-w-2xl bg-card text-card-foreground rounded-xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden border border-border"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">

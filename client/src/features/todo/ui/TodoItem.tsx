@@ -335,6 +335,8 @@ export function TodoItem({ todo }: TodoItemProps) {
       <ConfirmModal
         isOpen={isDeleteConfirmOpen}
         title={t("task.delete_confirm_title", "할일 삭제")}
+        /* Force Tailwind to generate classes: bg-destructive bg-card text-card-foreground shadow-2xl */
+        className="!bg-card !text-card-foreground !border !border-border shadow-2xl"
         message={
           todo.recurring.type !== "NONE"
             ? t(

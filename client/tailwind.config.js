@@ -1,7 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: "class",
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "../node_modules/@zebra/core/dist/client/*.js",
+    "../node_modules/@zebra/core/dist/client/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
@@ -11,8 +16,8 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "var(--primary)",
-          foreground: "var(--primary-foreground)",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
