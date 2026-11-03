@@ -3,30 +3,9 @@ import { todoApi } from "@/shared/api";
 import type { Todo } from "@/entities/todo/model/types";
 import { useTodoStore } from "@/entities/todo/model/store";
 import { useEffect } from "react";
+import { tryRefreshToken } from "@/shared/lib/errors";
 
 export const TODO_QUERY_KEY = ["todos"];
-
-const TOKEN_REFRESH_INTERVAL = 24 * 60 * 60 * 1000; // 1 day
-
-function tryRefreshToken() {
-  const lastRefresh = parseInt(
-    localStorage.getItem("admin_token_refreshed_at") || "0",
-    10,
-  );
-  if (Date.now() - lastRefresh < TOKEN_REFRESH_INTERVAL) return;
-
-  fetch("/api/settings/refresh", {
-    method: "POST",
-    credentials: "include",
-  })
-    .then((res) => {
-      if (res.ok) {
-        localStorage.setItem("admin_token_refreshed_at", String(Date.now()));
-      }
-    })
-    .catch(() => {});
-}
-
 export function useTodos() {
   const query = useQuery({
     queryKey: TODO_QUERY_KEY,
@@ -50,6 +29,7 @@ export function useCreateTodo() {
     mutationFn: (newTodo: Omit<Todo, "id">) => todoApi.create(newTodo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+      void tryRefreshToken();
     },
   });
 }
@@ -62,7 +42,7 @@ export function useUpdateTodoStatus() {
       todoApi.updateStatus(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
-      tryRefreshToken();
+      void tryRefreshToken();
     },
   });
 }
@@ -74,6 +54,7 @@ export function useDeleteTodo() {
     mutationFn: (id: string) => todoApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+      void tryRefreshToken();
     },
   });
 }
@@ -86,7 +67,7 @@ export function useCompleteVirtualTodo() {
       todoApi.completeVirtual(id, targetDate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
-      tryRefreshToken();
+      void tryRefreshToken();
     },
   });
 }
@@ -98,6 +79,7 @@ export function useCopyToToday() {
     mutationFn: (id: string) => todoApi.copyToToday(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+      void tryRefreshToken();
     },
   });
 }
@@ -110,6 +92,7 @@ export function useUploadAttachment() {
       todoApi.uploadAttachment(groupId, file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+      void tryRefreshToken();
     },
   });
 }
@@ -122,6 +105,7 @@ export function useDeleteAttachment() {
       todoApi.deleteAttachment(attachmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODO_QUERY_KEY });
+      void tryRefreshToken();
     },
   });
 }

@@ -29,6 +29,20 @@ export const requireAdmin = (
   try {
     // Verify token
     jwt.verify(token, JWT_SECRET);
+
+    // Automatically slide and renew the HttpOnly cookie on authenticated cookie requests
+    if (req.cookies?.admin_token && typeof res.cookie === "function") {
+      const renewedToken = jwt.sign({ role: "admin" }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      res.cookie("admin_token", renewedToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+    }
+
     next();
   } catch (err) {
     console.warn(

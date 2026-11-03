@@ -15,6 +15,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { Footer } from "@/widgets/footer";
+import { AUTH_UNAUTHORIZED_EVENT, clearAuthSession } from "@/shared/lib/errors";
 
 export function AdminPage() {
   const { t, i18n } = useTranslation();
@@ -72,12 +73,21 @@ export function AdminPage() {
   ];
 
   useEffect(() => {
+    const handleUnauthorized = () => {
+      setIsAuthenticated(localStorage.getItem("is_admin_logged_in") === "true");
+    };
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => {
+      window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    };
+  }, []);
+
+  useEffect(() => {
     checkStatus();
     if (isAuthenticated) {
       fetchSettings();
     }
   }, [isAuthenticated]);
-
   const checkStatus = async () => {
     try {
       const res = await fetch("/api/settings/status");
@@ -103,17 +113,21 @@ export function AdminPage() {
         if (data.slack_webhook_url) setSlackWebhookUrl(data.slack_webhook_url);
       } else if (res.status === 401) {
         // Only clear token on explicit auth rejection, not on server errors
+        clearAuthSession();
         setIsAuthenticated(false);
-        localStorage.removeItem("is_admin_logged_in");
+        return;
       }
 
-      // Refresh token to extend session
+      // Refresh token to extend session; if expired (401), clear stale login flag immediately
       const refreshRes = await fetch("/api/settings/refresh", {
         method: "POST",
         credentials: "include",
       });
       if (refreshRes.ok) {
         localStorage.setItem("admin_token_refreshed_at", String(Date.now()));
+      } else if (refreshRes.status === 401) {
+        clearAuthSession();
+        setIsAuthenticated(false);
       }
     } catch (e) {
       console.error("Failed to fetch settings", e);
@@ -129,6 +143,7 @@ export function AdminPage() {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
@@ -141,6 +156,7 @@ export function AdminPage() {
       if (isSetup) {
         // Login successful
         localStorage.setItem("is_admin_logged_in", "true");
+        localStorage.setItem("admin_token_refreshed_at", String(Date.now()));
         setIsAuthenticated(true);
         fetchSettings();
       } else {
@@ -221,6 +237,10 @@ export function AdminPage() {
         document.documentElement.style.setProperty("--font-family", fontFamily);
 
         alert(t("admin.save_success"));
+      } else if (res.status === 401) {
+        // Session expired while on admin page; switch back to login view
+        clearAuthSession();
+        setIsAuthenticated(false);
       } else {
         const data = await res.json();
         alert(`${t("common.save_failed", "저장 실패")}: ${data.error}`);
@@ -241,7 +261,7 @@ export function AdminPage() {
     } catch (e) {
       console.error("Logout failed", e);
     }
-    localStorage.removeItem("is_admin_logged_in");
+    clearAuthSession();
     setIsAuthenticated(false);
     setPassword("");
   };

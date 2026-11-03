@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
 // Mock the db module to avoid SQLite dependency in tests
@@ -16,29 +17,41 @@ import { requireAdmin } from "../auth";
 const JWT_SECRET = process.env.JWT_SECRET || "dev_only_secret";
 
 // Helper to create mock Express objects
-function createMockReqRes(authHeader?: string, cookies: any = {}) {
+function createMockReqRes(
+  authHeader?: string,
+  cookies: Record<string, string> = {},
+) {
   const req = {
     headers: {
       authorization: authHeader,
     },
-    cookies: cookies,
-  } as any;
+    cookies,
+  } as unknown as Request;
 
-  const res = {
+  interface MockResponse {
+    statusCode: number;
+    body: Record<string, string>;
+    status(code: number): MockResponse;
+    json(data: Record<string, string>): MockResponse;
+    cookie: Mock;
+  }
+
+  const res: MockResponse = {
     statusCode: 200,
-    body: null as any,
+    body: {},
     status(code: number) {
       this.statusCode = code;
       return this;
     },
-    json(data: any) {
+    json(data: Record<string, string>) {
       this.body = data;
       return this;
     },
-  } as any;
+    cookie: vi.fn(),
+  };
 
   const next = vi.fn();
-  return { req, res, next };
+  return { req, res: res as unknown as Response & MockResponse, next };
 }
 
 describe("requireAdmin middleware", () => {
@@ -99,5 +112,25 @@ describe("requireAdmin middleware", () => {
     requireAdmin(req, res, next);
     expect(res.statusCode).toBe(401);
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it("should accept valid cookie token and renew the admin_token cookie", () => {
+    const validToken = jwt.sign({ role: "admin" }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    const { req, res, next } = createMockReqRes(undefined, {
+      admin_token: validToken,
+    });
+    requireAdmin(req, res, next);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(res.cookie).toHaveBeenCalledWith(
+      "admin_token",
+      expect.any(String),
+      expect.objectContaining({
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      }),
+    );
   });
 });
