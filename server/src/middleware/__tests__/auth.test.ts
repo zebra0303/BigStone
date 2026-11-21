@@ -12,9 +12,7 @@ vi.mock("../../db/database", () => ({
 }));
 
 // Import after mocking
-import { requireAdmin } from "../auth";
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev_only_secret";
+import { requireAdmin, JWT_SECRET } from "../auth";
 
 // Helper to create mock Express objects
 function createMockReqRes(
@@ -132,5 +130,15 @@ describe("requireAdmin middleware", () => {
         maxAge: 7 * 24 * 60 * 60 * 1000,
       }),
     );
+  });
+
+  it("should reject valid JWT that does not carry role=admin", () => {
+    const guestToken = jwt.sign({ role: "guest" }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    const { req, res, next } = createMockReqRes(`Bearer ${guestToken}`);
+    requireAdmin(req, res, next);
+    expect(res.statusCode).toBe(401);
+    expect(next).not.toHaveBeenCalled();
   });
 });

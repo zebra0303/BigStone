@@ -1,13 +1,12 @@
 import {
   addMonths,
-  setDate,
   getDay,
+  getDaysInMonth,
   addDays,
   startOfDay,
-  addYears,
-  setMonth,
   subDays,
 } from "date-fns";
+
 export type RecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
 export type RecurringEndOption = "NONE" | "DATE" | "OCCURRENCES";
@@ -26,17 +25,33 @@ export interface RecurringConfig {
   endOccurrences?: number;
 }
 
-function safeParseDate(input: Date | string): Date {
-  if (typeof input === "string" && input.includes("T") === false) {
+export function safeParseDate(input: Date | string): Date {
+  if (input instanceof Date) return startOfDay(input);
+  if (typeof input === "string") {
+    if (input.includes("T")) {
+      const d = new Date(input);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
     const [y, m, d] = input.split("-").map(Number);
     return new Date(y, m - 1, d);
   }
-  return new Date(input);
+  return startOfDay(new Date(input));
+}
+
+/** Construct a local date clamping day to the target month's actual length (avoids Feb 31 -> Mar 3 overflow). */
+function createClampedDate(
+  year: number,
+  monthIndex: number,
+  day: number,
+): Date {
+  const maxDay = getDaysInMonth(new Date(year, monthIndex, 1));
+  const clampedDay = Math.max(1, Math.min(day, maxDay));
+  return new Date(year, monthIndex, clampedDay);
 }
 
 /**
  * Find the Nth occurrence of a specific weekday in a given month.
- * nth=5 means "last" occurrence.
+ * nth=5 means "last" occurrence. Validates bounds to avoid infinite loops.
  */
 function getNthDayOfMonth(
   year: number,
@@ -44,9 +59,19 @@ function getNthDayOfMonth(
   nth: number,
   dayOfWeek: number,
 ): Date | null {
+  if (
+    !Number.isInteger(nth) ||
+    nth < 1 ||
+    nth > 5 ||
+    !Number.isInteger(dayOfWeek) ||
+    dayOfWeek < 0 ||
+    dayOfWeek > 6
+  ) {
+    return null;
+  }
+
   if (nth === 5) {
-    // "Last" — scan backward from month end
-    let date = new Date(year, month + 1, 0); // last day of month
+    let date = new Date(year, month + 1, 0);
     while (getDay(date) !== dayOfWeek) {
       date = subDays(date, 1);
     }
@@ -66,9 +91,12 @@ export function getNextValidDueDate(
   recurring: RecurringConfig,
 ): Date {
   const baseDate = startOfDay(safeParseDate(baseDateInput));
-  const today = startOfDay(new Date());
+  // Do not force past dates to today for non-recurring one-time tasks
+  if (recurring.type === "NONE") {
+    return baseDate;
+  }
 
-  // Use today as reference so the result is always the nearest future date
+  const today = startOfDay(new Date());
   const referenceDate = baseDate < today ? today : baseDate;
 
   if (recurring.type === "DAILY") {
@@ -90,7 +118,6 @@ export function getNextValidDueDate(
   }
 
   if (recurring.type === "MONTHLY") {
-    // NTH weekday pattern
     if (
       recurring.monthlyNthWeek != null &&
       recurring.monthlyDayOfWeek != null
@@ -114,11 +141,22 @@ export function getNextValidDueDate(
       return nextMonth || addMonths(referenceDate, 1);
     }
 
-    // Specific date pattern
     if (recurring.monthlyDay) {
-      let nextDate = setDate(referenceDate, recurring.monthlyDay);
+      let nextDate = createClampedDate(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        recurring.monthlyDay,
+      );
       if (nextDate.getTime() < referenceDate.getTime()) {
-        nextDate = addMonths(nextDate, 1);
+        const nextMonthRef = addMonths(
+          new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1),
+          1,
+        );
+        nextDate = createClampedDate(
+          nextMonthRef.getFullYear(),
+          nextMonthRef.getMonth(),
+          recurring.monthlyDay,
+        );
       }
       return nextDate;
     }
@@ -129,12 +167,17 @@ export function getNextValidDueDate(
     recurring.yearlyMonth &&
     recurring.yearlyDay
   ) {
-    let nextDate = setDate(
-      setMonth(referenceDate, recurring.yearlyMonth - 1),
+    let nextDate = createClampedDate(
+      referenceDate.getFullYear(),
+      recurring.yearlyMonth - 1,
       recurring.yearlyDay,
     );
     if (nextDate.getTime() < referenceDate.getTime()) {
-      nextDate = addYears(nextDate, 1);
+      nextDate = createClampedDate(
+        referenceDate.getFullYear() + 1,
+        recurring.yearlyMonth - 1,
+        recurring.yearlyDay,
+      );
     }
     return nextDate;
   }
@@ -172,7 +215,6 @@ export function getNextOccurrence(
   }
 
   if (recurring.type === "MONTHLY") {
-    // NTH weekday pattern
     if (
       recurring.monthlyNthWeek != null &&
       recurring.monthlyDayOfWeek != null
@@ -197,11 +239,22 @@ export function getNextOccurrence(
       );
     }
 
-    // Specific date pattern
     if (recurring.monthlyDay) {
-      nextDate = setDate(referenceDate, recurring.monthlyDay);
+      nextDate = createClampedDate(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        recurring.monthlyDay,
+      );
       if (nextDate.getTime() <= referenceDate.getTime()) {
-        nextDate = addMonths(nextDate, 1);
+        const nextMonthRef = addMonths(
+          new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1),
+          1,
+        );
+        nextDate = createClampedDate(
+          nextMonthRef.getFullYear(),
+          nextMonthRef.getMonth(),
+          recurring.monthlyDay,
+        );
       }
       return nextDate;
     }
@@ -210,12 +263,17 @@ export function getNextOccurrence(
 
   if (recurring.type === "YEARLY") {
     if (recurring.yearlyMonth && recurring.yearlyDay) {
-      nextDate = setDate(
-        setMonth(referenceDate, recurring.yearlyMonth - 1),
+      nextDate = createClampedDate(
+        referenceDate.getFullYear(),
+        recurring.yearlyMonth - 1,
         recurring.yearlyDay,
       );
       if (nextDate.getTime() <= referenceDate.getTime()) {
-        nextDate = addYears(nextDate, 1);
+        nextDate = createClampedDate(
+          referenceDate.getFullYear() + 1,
+          recurring.yearlyMonth - 1,
+          recurring.yearlyDay,
+        );
       }
       return nextDate;
     }

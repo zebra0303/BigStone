@@ -1,17 +1,15 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import db from "../db/database";
-import { requireAdmin } from "../middleware/auth";
+import {
+  bumpAdminTokenVersion,
+  isAdminRequest,
+  issueAdminCookie,
+  requireAdmin,
+} from "../middleware/auth";
 
 const router = Router();
-
-// Use the same secret logic as the middleware
-const JWT_SECRET = process.env.JWT_SECRET || "dev_only_secret";
-if (!process.env.JWT_SECRET) {
-  console.warn("WARNING: JWT_SECRET is not set. Using fallback secret.");
-}
 
 // Strict rate limit for auth endpoints to prevent brute-force (per-IP)
 const authLimiter = rateLimit({
@@ -26,13 +24,41 @@ const authLimiter = rateLimit({
 const LOGIN_MAX_FAILURES = 5;
 const LOGIN_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 
+// Explicit allowlists prevent leaking secrets or writing arbitrary internal DB keys
+const PUBLIC_CONFIG_KEYS = new Set([
+  "language",
+  "timezone",
+  "theme",
+  "primary_color",
+  "font_family",
+]);
+const ALLOWED_CONFIG_KEYS = new Set([
+  ...PUBLIC_CONFIG_KEYS,
+  "slack_webhook_url",
+]);
+const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
+
+function isValidSlackWebhookUrl(url: string): boolean {
+  if (!url) return true;
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "hooks.slack.com" &&
+      parsed.pathname.startsWith("/services/")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function getLoginFailureState(): { count: number; lockedUntil: number } {
   try {
     const row = db
       .prepare(
         "SELECT value FROM system_settings WHERE key = 'login_failure_state'",
       )
-      .get() as any;
+      .get() as { value: string } | undefined;
     if (row) return JSON.parse(row.value);
   } catch {
     /* ignore parse errors */
@@ -52,19 +78,26 @@ function resetLoginFailureState(): void {
   setLoginFailureState(0, 0);
 }
 
-function recordLoginFailure(): { locked: boolean; remainingMs: number } {
-  const state = getLoginFailureState();
-  const newCount = state.count + 1;
+// Atomic read-modify-write prevents concurrent login failures from bypassing lockout
+const recordLoginFailureTx = db.transaction(
+  (): {
+    locked: boolean;
+    remainingMs: number;
+    count: number;
+  } => {
+    const state = getLoginFailureState();
+    const newCount = state.count + 1;
 
-  if (newCount >= LOGIN_MAX_FAILURES) {
-    const lockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
-    setLoginFailureState(newCount, lockedUntil);
-    return { locked: true, remainingMs: LOGIN_LOCKOUT_MS };
-  }
+    if (newCount >= LOGIN_MAX_FAILURES) {
+      const lockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
+      setLoginFailureState(newCount, lockedUntil);
+      return { locked: true, remainingMs: LOGIN_LOCKOUT_MS, count: newCount };
+    }
 
-  setLoginFailureState(newCount, 0);
-  return { locked: false, remainingMs: 0 };
-}
+    setLoginFailureState(newCount, 0);
+    return { locked: false, remainingMs: 0, count: newCount };
+  },
+);
 
 function checkAccountLocked(): { locked: boolean; remainingMs: number } {
   const state = getLoginFailureState();
@@ -73,33 +106,36 @@ function checkAccountLocked(): { locked: boolean; remainingMs: number } {
     if (remaining > 0) {
       return { locked: true, remainingMs: remaining };
     }
-    // Lockout expired, reset state
     resetLoginFailureState();
   }
   return { locked: false, remainingMs: 0 };
 }
 
 // 1. Check if admin is set up
-router.get("/status", (req: Request, res: Response) => {
+router.get("/status", (_req: Request, res: Response) => {
   try {
     const row = db
       .prepare("SELECT value FROM system_settings WHERE key = 'admin_password'")
-      .get() as any;
+      .get() as { value: string } | undefined;
     res.json({ isSetup: !!row });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to check admin status" });
   }
 });
 
 // 2. Initial Setup (Set Password)
 router.post("/setup", authLimiter, async (req: Request, res: Response) => {
-  const { password } = req.body;
-  if (!password) return res.status(400).json({ error: "Password is required" });
+  const { password } = req.body ?? {};
+  if (typeof password !== "string" || password.length < 4) {
+    return res
+      .status(400)
+      .json({ error: "Password must be at least 4 characters" });
+  }
 
   try {
     const row = db
       .prepare("SELECT value FROM system_settings WHERE key = 'admin_password'")
-      .get() as any;
+      .get() as { value: string } | undefined;
     if (row) return res.status(400).json({ error: "Admin already set up" });
 
     const hash = await bcrypt.hash(password, 10);
@@ -107,23 +143,24 @@ router.post("/setup", authLimiter, async (req: Request, res: Response) => {
       "INSERT INTO system_settings (key, value) VALUES ('admin_password', ?)",
     ).run(hash);
 
-    // Also set default language
     db.prepare(
       "INSERT OR IGNORE INTO system_settings (key, value) VALUES ('language', 'ko')",
     ).run();
 
     res.json({ message: "Admin setup successful" });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
+  } catch {
+    res.status(500).json({ error: "Failed to complete admin setup" });
   }
 });
 
 // 3. Login
 router.post("/login", authLimiter, async (req: Request, res: Response) => {
-  const { password } = req.body;
+  const { password } = req.body ?? {};
+  if (typeof password !== "string" || !password) {
+    return res.status(400).json({ error: "Password is required" });
+  }
 
   try {
-    // Check account-level lockout before processing
     const lockStatus = checkAccountLocked();
     if (lockStatus.locked) {
       const remainingMin = Math.ceil(lockStatus.remainingMs / 60000);
@@ -134,54 +171,40 @@ router.post("/login", authLimiter, async (req: Request, res: Response) => {
 
     const row = db
       .prepare("SELECT value FROM system_settings WHERE key = 'admin_password'")
-      .get() as any;
+      .get() as { value: string } | undefined;
     if (!row) return res.status(400).json({ error: "Admin not set up yet" });
 
     const match = await bcrypt.compare(password, row.value);
     if (!match) {
-      const failState = getLoginFailureState();
-      const result = recordLoginFailure();
+      const result = recordLoginFailureTx();
       if (result.locked) {
         const remainingMin = Math.ceil(result.remainingMs / 60000);
         return res.status(429).json({
           error: `Account locked after ${LOGIN_MAX_FAILURES} failed attempts. Try again in ${remainingMin} minute(s).`,
         });
       }
-      const attemptsLeft = LOGIN_MAX_FAILURES - (failState.count + 1);
+      const attemptsLeft = Math.max(0, LOGIN_MAX_FAILURES - result.count);
       return res.status(401).json({
         error: `Incorrect password. ${attemptsLeft} attempt(s) remaining before lockout.`,
       });
     }
 
-    // Successful login: reset failure counter
     resetLoginFailureState();
-    const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
-    res.cookie("admin_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    issueAdminCookie(res);
     res.json({ message: "Login successful" });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
+  } catch {
+    res.status(500).json({ error: "Login failed" });
   }
 });
 
 // 4. Refresh token (extends session for active users)
-router.post("/refresh", requireAdmin, (req: Request, res: Response) => {
-  const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
-  res.cookie("admin_token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
+router.post("/refresh", requireAdmin, (_req: Request, res: Response) => {
+  issueAdminCookie(res);
   res.json({ message: "Token refreshed" });
 });
 
 // 4-1. Logout
-router.post("/logout", (req: Request, res: Response) => {
+router.post("/logout", (_req: Request, res: Response) => {
   res.clearCookie("admin_token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -196,8 +219,11 @@ router.put(
   requireAdmin,
   authLimiter,
   async (req: Request, res: Response) => {
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
+    const { currentPassword, newPassword } = req.body ?? {};
+    if (
+      typeof currentPassword !== "string" ||
+      typeof newPassword !== "string"
+    ) {
       return res
         .status(400)
         .json({ error: "Current password and new password are required" });
@@ -213,7 +239,7 @@ router.put(
         .prepare(
           "SELECT value FROM system_settings WHERE key = 'admin_password'",
         )
-        .get() as any;
+        .get() as { value: string } | undefined;
       if (!row) return res.status(400).json({ error: "Admin not set up yet" });
 
       const match = await bcrypt.compare(currentPassword, row.value);
@@ -226,57 +252,71 @@ router.put(
         "UPDATE system_settings SET value = ? WHERE key = 'admin_password'",
       ).run(hash);
 
-      // Issue a new token after password change
-      const token = jwt.sign({ role: "admin" }, JWT_SECRET, {
-        expiresIn: "7d",
-      });
-      res.cookie("admin_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+      // Revoke all previously issued tokens and issue a fresh cookie with the new version
+      const newVersion = bumpAdminTokenVersion();
+      issueAdminCookie(res, newVersion);
       res.json({ message: "Password changed successfully" });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
+    } catch {
+      res.status(500).json({ error: "Failed to change password" });
     }
   },
 );
 
-// Internal keys that should not be exposed to the client
-const INTERNAL_KEYS = ["admin_password", "login_failure_state"];
-
-// 5. Get general settings (publicly accessible for UI rendering like language)
+// 5. Get general settings (only safe UI keys are public; secrets require admin auth)
 router.get("/config", (req: Request, res: Response) => {
   try {
-    const placeholders = INTERNAL_KEYS.map(() => "?").join(",");
-    const rows = db
-      .prepare(
-        `SELECT key, value FROM system_settings WHERE key NOT IN (${placeholders})`,
-      )
-      .all(...INTERNAL_KEYS) as any[];
+    const isAdmin = isAdminRequest(req);
+    const allowedKeys = isAdmin ? ALLOWED_CONFIG_KEYS : PUBLIC_CONFIG_KEYS;
+    const rows = db.prepare("SELECT key, value FROM system_settings").all() as {
+      key: string;
+      value: string;
+    }[];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = rows.reduce((acc: any, row: any) => {
-      acc[row.key] = row.value;
-      return acc;
-    }, {});
+    const config: Record<string, string> = {};
+    for (const row of rows) {
+      if (allowedKeys.has(row.key)) {
+        config[row.key] = row.value;
+      }
+    }
 
-    // Default language if not set
     if (!config.language) config.language = "ko";
 
     res.json(config);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to load settings" });
   }
 });
 
-// 5. Update settings (Admin only)
+// 6. Update settings (Admin only, strict key and value validation)
 router.put("/config", requireAdmin, (req: Request, res: Response) => {
-  const updates = req.body; // e.g. { language: 'en' }
+  const updates = req.body;
+  if (!updates || typeof updates !== "object" || Array.isArray(updates)) {
+    return res.status(400).json({ error: "Invalid settings payload" });
+  }
 
-  if (Object.keys(updates).length === 0)
+  const entries = Object.entries(updates as Record<string, unknown>).filter(
+    ([key]) => ALLOWED_CONFIG_KEYS.has(key),
+  );
+  if (entries.length === 0) {
     return res.json({ message: "No updates provided" });
+  }
+
+  // Validate sensitive & security-relevant fields before saving
+  for (const [key, rawValue] of entries) {
+    const value = String(rawValue ?? "").trim();
+    if (key === "slack_webhook_url" && !isValidSlackWebhookUrl(value)) {
+      return res.status(400).json({
+        error:
+          "Slack webhook URL must start with https://hooks.slack.com/services/",
+      });
+    }
+    if (key === "primary_color" && value && !HEX_COLOR_REGEX.test(value)) {
+      return res.status(400).json({ error: "Invalid primary color format" });
+    }
+    if (key === "theme" && value && value !== "light" && value !== "dark") {
+      return res.status(400).json({ error: "Invalid theme value" });
+    }
+  }
 
   try {
     const stmt = db.prepare(`
@@ -284,19 +324,16 @@ router.put("/config", requireAdmin, (req: Request, res: Response) => {
       ON CONFLICT(key) DO UPDATE SET value = excluded.value
     `);
 
-    const upsertMany = db.transaction((entries: [string, unknown][]) => {
-      for (const [key, value] of entries) {
-        if (key !== "admin_password") {
-          // Prevent overriding password via config route
-          stmt.run(key, String(value));
-        }
+    const upsertMany = db.transaction((items: [string, unknown][]) => {
+      for (const [key, value] of items) {
+        stmt.run(key, String(value ?? "").trim());
       }
     });
-    upsertMany(Object.entries(updates));
+    upsertMany(entries);
 
     res.json({ message: "Settings updated successfully" });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
+  } catch {
+    res.status(500).json({ error: "Failed to update settings" });
   }
 });
 

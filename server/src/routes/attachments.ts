@@ -8,19 +8,34 @@ import { requireAdmin } from "../middleware/auth";
 
 const router = Router();
 
-// Configure multer storage
+// Require admin auth across all attachment endpoints including downloads
+router.use(requireAdmin);
+
 const uploadDir = path.resolve(__dirname, "../../data/uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+const SAFE_EXT_REGEX = /^\.[a-zA-Z0-9]{1,10}$/;
+
+function resolveSafeUploadPath(filename: string): string | null {
+  const safeName = path.basename(filename);
+  const resolved = path.resolve(uploadDir, safeName);
+  if (!resolved.startsWith(uploadDir + path.sep)) {
+    return null;
+  }
+  return resolved;
+}
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = uuidv7();
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+  filename: (_req, file, cb) => {
+    const rawExt = path.extname(file.originalname).toLowerCase();
+    // Sanitize file extension to prevent path or double-extension issues
+    const safeExt = SAFE_EXT_REGEX.test(rawExt) ? rawExt : "";
+    cb(null, uuidv7() + safeExt);
   },
 });
 
@@ -32,7 +47,6 @@ const upload = multer({
 // Upload attachment
 router.post(
   "/:groupId",
-  requireAdmin,
   upload.single("file"),
   (req: Request, res: Response) => {
     const { groupId } = req.params;
@@ -42,19 +56,34 @@ router.post(
       return res.status(400).json({ error: "No file uploaded" });
     }
 
+    // Decode UTF-8 original filename (multer defaults to Latin-1 header decoding, corrupting Korean names)
+    const decodedOriginalName = Buffer.from(
+      file.originalname,
+      "latin1",
+    ).toString("utf8");
     const attachmentId = uuidv7();
     const createdAt = new Date().toISOString();
 
-    const sql = `
-    INSERT INTO todo_attachments (id, groupId, originalName, filename, size, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-
     try {
-      db.prepare(sql).run(
+      const groupExists = db
+        .prepare("SELECT id FROM todo_groups WHERE id = ?")
+        .get(groupId);
+      if (!groupExists) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch {
+          /* ignore */
+        }
+        return res.status(404).json({ error: "Todo group not found" });
+      }
+
+      db.prepare(
+        `INSERT INTO todo_attachments (id, groupId, originalName, filename, size, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(
         attachmentId,
         groupId,
-        file.originalname,
+        decodedOriginalName,
         file.filename,
         file.size,
         createdAt,
@@ -63,20 +92,23 @@ router.post(
       res.status(201).json({
         id: attachmentId,
         groupId,
-        originalName: file.originalname,
+        originalName: decodedOriginalName,
         filename: file.filename,
         size: file.size,
         createdAt,
       });
-    } catch (err: any) {
-      // Clean up file if DB insert fails
-      fs.unlinkSync(file.path);
-      res.status(500).json({ error: err.message });
+    } catch {
+      try {
+        fs.unlinkSync(file.path);
+      } catch {
+        /* ignore cleanup errors */
+      }
+      res.status(500).json({ error: "Failed to save attachment" });
     }
   },
 );
 
-// Download attachment with original filename
+// Download attachment with original filename (authenticated)
 router.get("/:id/download", (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -85,50 +117,52 @@ router.get("/:id/download", (req: Request, res: Response) => {
       .prepare(
         "SELECT filename, originalName FROM todo_attachments WHERE id = ?",
       )
-      .get(id) as any;
+      .get(id) as { filename: string; originalName: string } | undefined;
     if (!row) return res.status(404).json({ error: "Attachment not found" });
 
-    const filePath = path.join(uploadDir, row.filename);
-
-    if (fs.existsSync(filePath)) {
-      res.download(filePath, row.originalName, (downloadErr) => {
-        if (downloadErr) {
-          console.error("Error downloading file:", downloadErr);
-          if (!res.headersSent) {
-            res.status(500).json({ error: "Error downloading file" });
-          }
-        }
-      });
-    } else {
-      res.status(404).json({ error: "File not found on disk" });
+    const filePath = resolveSafeUploadPath(row.filename);
+    if (!filePath || !fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "File not found on disk" });
     }
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.download(filePath, row.originalName, (downloadErr) => {
+      if (downloadErr) {
+        console.error("Error downloading file:", downloadErr);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Error downloading file" });
+        }
+      }
+    });
+  } catch {
+    res.status(500).json({ error: "Failed to download attachment" });
   }
 });
 
 // Delete attachment
-router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
+router.delete("/:id", (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
     const row = db
       .prepare("SELECT filename FROM todo_attachments WHERE id = ?")
-      .get(id) as any;
+      .get(id) as { filename: string } | undefined;
     if (!row) return res.status(404).json({ error: "Attachment not found" });
-
-    const filePath = path.join(uploadDir, row.filename);
 
     db.prepare("DELETE FROM todo_attachments WHERE id = ?").run(id);
 
-    // Remove file from disk
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    const filePath = resolveSafeUploadPath(row.filename);
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch {
+        /* ignore cleanup errors */
+      }
     }
 
     res.json({ message: "Attachment deleted successfully" });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to delete attachment" });
   }
 });
 

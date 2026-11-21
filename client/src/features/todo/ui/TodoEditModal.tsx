@@ -117,9 +117,13 @@ export function TodoEditModal({ todo, onClose }: TodoEditModalProps) {
     };
   }, []);
 
-  // Auto-update dueDate to nearest future date when recurring settings change.
-  // This syncs derived state (dueDate) with recurring config — a valid use of useEffect.
+  // Skip auto-updating dueDate on initial mount so opening the edit modal never shifts an existing recurring task
+  const isFirstRecurringRender = useRef(true);
   useEffect(() => {
+    if (isFirstRecurringRender.current) {
+      isFirstRecurringRender.current = false;
+      return;
+    }
     if (recurring === "NONE") return;
     const nextDate = getNextValidDueDate(new Date(), {
       type: recurring,

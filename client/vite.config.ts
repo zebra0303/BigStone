@@ -7,10 +7,6 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(({ mode }) => {
   // Load env file from the root directory
   const env = loadEnv(mode, path.resolve(__dirname, "../"), "");
-  console.log(
-    `[Vite Config] Loaded env from: ${path.resolve(__dirname, "../")}`,
-  );
-  console.log(`[Vite Config] PORT: ${env.PORT}, VITE_PORT: ${env.VITE_PORT}`);
 
   const serverPort = parseInt(env.PORT || "3001", 10);
   const clientPort = parseInt(env.VITE_PORT || "5173", 10);
@@ -25,7 +21,7 @@ export default defineConfig(({ mode }) => {
         devOptions: {
           enabled: true,
         },
-        includeAssets: ["favicon.ico", "bigxi.png"],
+        includeAssets: ["bigxi.png"],
         manifest: {
           name: "BigStone Task Manager",
           short_name: "BigStone",
@@ -77,11 +73,9 @@ export default defineConfig(({ mode }) => {
               },
             },
             {
-              // Exclude auth endpoints from caching entirely
+              // Exclude all settings/auth endpoints from SW caching
               urlPattern: ({ url }) =>
-                url.pathname.startsWith("/api/settings/login") ||
-                url.pathname.startsWith("/api/settings/setup") ||
-                url.pathname.startsWith("/api/settings/refresh"),
+                url.pathname.startsWith("/api/settings/"),
               handler: "NetworkOnly",
             },
             {

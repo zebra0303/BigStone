@@ -196,7 +196,7 @@ export function HomePage() {
               </h1>
               <p
                 className="text-sm font-bold italic"
-                style={{ color: "var(--primary)" }}
+                style={{ color: "hsl(var(--primary))" }}
               >
                 {t("home.subtitle")}
               </p>
@@ -245,8 +245,8 @@ export function HomePage() {
               style={
                 viewMode === "1DAY"
                   ? {
-                      backgroundColor: "var(--primary)",
-                      color: "var(--primary-foreground)",
+                      backgroundColor: "hsl(var(--primary))",
+                      color: "hsl(var(--primary-foreground))",
                     }
                   : {}
               }
@@ -266,8 +266,8 @@ export function HomePage() {
               style={
                 viewMode === "3DAY"
                   ? {
-                      backgroundColor: "var(--primary)",
-                      color: "var(--primary-foreground)",
+                      backgroundColor: "hsl(var(--primary))",
+                      color: "hsl(var(--primary-foreground))",
                     }
                   : {}
               }
@@ -287,8 +287,8 @@ export function HomePage() {
               style={
                 viewMode === "WEEK_WORK"
                   ? {
-                      backgroundColor: "var(--primary)",
-                      color: "var(--primary-foreground)",
+                      backgroundColor: "hsl(var(--primary))",
+                      color: "hsl(var(--primary-foreground))",
                     }
                   : {}
               }
@@ -308,8 +308,8 @@ export function HomePage() {
               style={
                 viewMode === "WEEK_ALL"
                   ? {
-                      backgroundColor: "var(--primary)",
-                      color: "var(--primary-foreground)",
+                      backgroundColor: "hsl(var(--primary))",
+                      color: "hsl(var(--primary-foreground))",
                     }
                   : {}
               }
@@ -383,7 +383,7 @@ export function HomePage() {
                 <div className="flex items-center gap-2">
                   <h2
                     className="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-gray-100"
-                    style={isToday ? { color: "var(--primary)" } : {}}
+                    style={isToday ? { color: "hsl(var(--primary))" } : {}}
                   >
                     {format(date, t("home.date_format", "MMM d'일'"), {
                       locale: getDateLocale(),
@@ -397,8 +397,8 @@ export function HomePage() {
                     <span
                       className="text-xs font-semibold px-2 py-0.5 rounded-full shadow-sm"
                       style={{
-                        backgroundColor: "var(--primary)",
-                        color: "var(--primary-foreground)",
+                        backgroundColor: "hsl(var(--primary))",
+                        color: "hsl(var(--primary-foreground))",
                       }}
                     >
                       {t("common.today")}

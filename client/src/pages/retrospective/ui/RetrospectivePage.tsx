@@ -209,8 +209,8 @@ export function RetrospectivePage() {
               style={
                 period === p
                   ? {
-                      backgroundColor: "var(--primary)",
-                      color: "var(--primary-foreground)",
+                      backgroundColor: "hsl(var(--primary))",
+                      color: "hsl(var(--primary-foreground))",
                     }
                   : {}
               }
@@ -277,7 +277,7 @@ export function RetrospectivePage() {
                 className="h-2.5 rounded-full transition-all duration-500"
                 style={{
                   width: `${completionRate}%`,
-                  backgroundColor: "var(--primary)",
+                  backgroundColor: "hsl(var(--primary))",
                 }}
               />
             </div>

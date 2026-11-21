@@ -1,13 +1,23 @@
 import { Router, Request, Response } from "express";
+import fs from "fs";
+import path from "path";
 import db from "../db/database";
 import { v7 as uuidv7 } from "uuid";
+import { startOfDay } from "date-fns";
+import { format, formatInTimeZone } from "date-fns-tz";
 import { requireAdmin } from "../middleware/auth";
-import { formatInTimeZone } from "date-fns-tz";
+import { getNextOccurrence, safeParseDate } from "../utils/recurringDate";
 
 const router = Router();
+const UPLOAD_DIR = path.resolve(__dirname, "../../data/uploads");
+const DATE_STR_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_VIRTUAL_ITERATIONS = 1000;
+
+// Require admin authentication on all todo routes (previously GET / was public)
+router.use(requireAdmin);
 
 // Get all
-router.get("/", (req: Request, res: Response) => {
+router.get("/", (_req: Request, res: Response) => {
   const sql = `
     SELECT
       t.id, t.groupId, t.dueDate, t.status, t.completedAt,
@@ -36,14 +46,13 @@ router.get("/", (req: Request, res: Response) => {
   try {
     const rows = db.prepare(sql).all() as any[];
 
-    // Map SQLite row format back to Todo interface
     const formatted = rows.map((r: any) => ({
       id: r.id,
       groupId: r.groupId,
       title: r.title,
       description: r.description,
       isImportant: Boolean(r.isImportant),
-      priority: r.priority || (r.isImportant ? "HIGH" : "MEDIUM"), // migration fallback
+      priority: r.priority || (r.isImportant ? "HIGH" : "MEDIUM"),
       dueDate: r.dueDate,
       status: r.status,
       recurring: {
@@ -76,13 +85,13 @@ router.get("/", (req: Request, res: Response) => {
     }));
 
     res.json(formatted);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch todos" });
   }
 });
 
 // Create
-router.post("/", requireAdmin, (req: Request, res: Response) => {
+router.post("/", (req: Request, res: Response) => {
   const {
     title,
     description,
@@ -94,13 +103,15 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
     recurring,
     notification,
     slackNotification,
-  } = req.body;
+  } = req.body ?? {};
+
+  if (typeof title !== "string" || !title.trim() || !dueDate) {
+    return res.status(400).json({ error: "Title and dueDate are required" });
+  }
+
   const groupId = uuidv7();
   const todoId = uuidv7();
-
   const effectivePriority = priority || (isImportant ? "HIGH" : "MEDIUM");
-
-  // Pinned tasks are mutually exclusive with recurring
   const effectiveRecurringType = isPinned ? "NONE" : recurring?.type || "NONE";
 
   const groupSql = `
@@ -113,9 +124,9 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
 
   const groupParams = [
     groupId,
-    title,
+    title.trim(),
     description || null,
-    isImportant ? 1 : 0, // Keep for backward compatibility
+    isImportant ? 1 : 0,
     effectivePriority,
     isPinned ? 1 : 0,
     effectiveRecurringType,
@@ -148,26 +159,27 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
   ];
 
   try {
-    db.prepare(groupSql).run(...groupParams);
-
-    const todoSql = `
-      INSERT INTO todos (id, groupId, dueDate, status, completedAt)
-      VALUES (?, ?, ?, ?, ?)
-    `;
-    db.prepare(todoSql).run(todoId, groupId, dueDate, status || "TODO", null);
+    // Wrap multi-table insert in a transaction to avoid orphaned todo_groups rows
+    const createTx = db.transaction(() => {
+      db.prepare(groupSql).run(...groupParams);
+      db.prepare(
+        `INSERT INTO todos (id, groupId, dueDate, status, completedAt)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(todoId, groupId, dueDate, status || "TODO", null);
+    });
+    createTx();
 
     res.json({ id: todoId, groupId, ...req.body });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to create todo" });
   }
 });
 
 // Update
-router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
+router.put("/:id", (req: Request, res: Response) => {
   const { id } = req.params;
-  const updates = req.body;
+  const updates = req.body ?? {};
 
-  // Fetch the existing todo + group combined
   const fetchSql = `
     SELECT
       t.id, t.groupId, t.dueDate, t.status, t.completedAt,
@@ -183,269 +195,291 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
   `;
 
   try {
-    const row = db.prepare(fetchSql).get(id) as any;
-    if (!row) return res.status(404).json({ error: "Todo not found" });
+    // Execute read, update, and recurring spawn/rollback atomically inside one transaction
+    const updateTx = db.transaction(
+      (): { status: number; body: Record<string, unknown> } => {
+        const row = db.prepare(fetchSql).get(id) as any;
+        if (!row) return { status: 404, body: { error: "Todo not found" } };
 
-    // Identify effective values
-    const effectiveIsPinned =
-      updates.isPinned !== undefined
-        ? updates.isPinned
-          ? 1
-          : 0
-        : row.isPinned;
+        const effectiveIsPinned =
+          updates.isPinned !== undefined
+            ? updates.isPinned
+              ? 1
+              : 0
+            : row.isPinned;
 
-    const effectiveSlackEnabled =
-      updates.slackNotification?.enabled !== undefined
-        ? updates.slackNotification.enabled
-          ? 1
-          : 0
-        : row.slackEnabled;
-    const effectiveSlackTime =
-      updates.slackNotification?.time !== undefined
-        ? updates.slackNotification.time
-        : row.slackNotificationTime;
+        const effectiveSlackEnabled =
+          updates.slackNotification?.enabled !== undefined
+            ? updates.slackNotification.enabled
+              ? 1
+              : 0
+            : row.slackEnabled;
+        const effectiveSlackTime =
+          updates.slackNotification?.time !== undefined
+            ? updates.slackNotification.time
+            : row.slackNotificationTime;
 
-    const effectiveTitle =
-      updates.title !== undefined ? updates.title : row.title;
-    const effectiveDesc =
-      updates.description !== undefined ? updates.description : row.description;
-    const effectiveImportant =
-      updates.isImportant !== undefined
-        ? updates.isImportant
-          ? 1
-          : 0
-        : row.isImportant;
-    const effectivePriority =
-      updates.priority !== undefined
-        ? updates.priority
-        : row.priority || (effectiveImportant ? "HIGH" : "MEDIUM");
+        const effectiveTitle =
+          updates.title !== undefined ? updates.title : row.title;
+        const effectiveDesc =
+          updates.description !== undefined
+            ? updates.description
+            : row.description;
+        const effectiveImportant =
+          updates.isImportant !== undefined
+            ? updates.isImportant
+              ? 1
+              : 0
+            : row.isImportant;
+        const effectivePriority =
+          updates.priority !== undefined
+            ? updates.priority
+            : row.priority || (effectiveImportant ? "HIGH" : "MEDIUM");
 
-    // We expect `recurring` as an object if sent from frontend
-    let effRecType = row.recurringType;
-    let effRecWeekly = row.recurringWeeklyDays
-      ? JSON.parse(row.recurringWeeklyDays)
-      : null;
-    let effRecMonthDay = row.recurringMonthlyDay;
-    let effRecMonthNth = row.recurringMonthlyNthWeek;
-    let effRecMonthDOW = row.recurringMonthlyDayOfWeek;
-    let effRecYearMonth = row.recurringYearlyMonth;
-    let effRecYearDay = row.recurringYearlyDay;
-
-    let effStartDate = row.startDate;
-    let effEndOption = row.endOption;
-    let effEndDate = row.endDate;
-    let effEndOccurrences = row.endOccurrences;
-
-    if (updates.recurring) {
-      effRecType = updates.recurring.type;
-      effRecWeekly = updates.recurring.weeklyDays || null;
-      effRecMonthDay = updates.recurring.monthlyDay || null;
-      effRecMonthNth = updates.recurring.monthlyNthWeek || null;
-      effRecMonthDOW =
-        updates.recurring.monthlyDayOfWeek !== undefined
-          ? updates.recurring.monthlyDayOfWeek
+        let effRecType = row.recurringType;
+        let effRecWeekly = row.recurringWeeklyDays
+          ? JSON.parse(row.recurringWeeklyDays)
           : null;
-      effRecYearMonth = updates.recurring.yearlyMonth || null;
-      effRecYearDay = updates.recurring.yearlyDay || null;
-      effStartDate =
-        updates.recurring.startDate !== undefined
-          ? updates.recurring.startDate
-          : row.startDate;
-      effEndOption =
-        updates.recurring.endOption !== undefined
-          ? updates.recurring.endOption
-          : row.endOption;
-      effEndDate =
-        updates.recurring.endDate !== undefined
-          ? updates.recurring.endDate
-          : row.endDate;
-      effEndOccurrences =
-        updates.recurring.endOccurrences !== undefined
-          ? updates.recurring.endOccurrences
-          : row.endOccurrences;
-    }
+        let effRecMonthDay = row.recurringMonthlyDay;
+        let effRecMonthNth = row.recurringMonthlyNthWeek;
+        let effRecMonthDOW = row.recurringMonthlyDayOfWeek;
+        let effRecYearMonth = row.recurringYearlyMonth;
+        let effRecYearDay = row.recurringYearlyDay;
 
-    const effectiveDueDate =
-      updates.dueDate !== undefined ? updates.dueDate : row.dueDate;
-    const effectiveStatus =
-      updates.status !== undefined ? updates.status : row.status;
-    const effectiveCompletedAt =
-      updates.completedAt !== undefined ? updates.completedAt : row.completedAt;
+        let effStartDate = row.startDate;
+        let effEndOption = row.endOption;
+        let effEndDate = row.endDate;
+        let effEndOccurrences = row.endOccurrences;
 
-    const groupId = row.groupId;
-
-    // Pinned tasks force recurringType to NONE
-    if (effectiveIsPinned) {
-      effRecType = "NONE";
-    }
-
-    const groupSql = `
-      UPDATE todo_groups SET
-        title = ?, description = ?, isImportant = ?, priority = ?, isPinned = ?,
-        recurringType = ?, recurringWeeklyDays = ?, recurringMonthlyDay = ?,
-        recurringMonthlyNthWeek = ?, recurringMonthlyDayOfWeek = ?,
-        recurringYearlyMonth = ?, recurringYearlyDay = ?,
-        slackEnabled = ?, slackNotificationTime = ?,
-        startDate = ?, endOption = ?, endDate = ?, endOccurrences = ?
-      WHERE id = ?
-    `;
-
-    const groupParams = [
-      effectiveTitle,
-      effectiveDesc,
-      effectiveImportant,
-      effectivePriority,
-      effectiveIsPinned,
-      effRecType,
-      effRecWeekly ? JSON.stringify(effRecWeekly) : null,
-      effRecMonthDay,
-      effRecMonthNth,
-      effRecMonthDOW,
-      effRecYearMonth,
-      effRecYearDay,
-      effectiveSlackEnabled,
-      effectiveSlackTime,
-      effStartDate,
-      effEndOption,
-      effEndDate,
-      effEndOccurrences,
-      groupId,
-    ];
-
-    db.prepare(groupSql).run(...groupParams);
-
-    const todoSql = `
-      UPDATE todos SET dueDate = ?, status = ?, completedAt = ? WHERE id = ?
-    `;
-    const todoResult = db
-      .prepare(todoSql)
-      .run(effectiveDueDate, effectiveStatus, effectiveCompletedAt, id);
-
-    // Backend Task Spawning Logic
-    // Spawn next occurrence on:
-    // 1) Transitioning to DONE from any non-DONE status (TODO or IN_PROGRESS)
-    // 2) Already DONE + recurrence pattern changed (re-spawn with new pattern)
-    const isTransitionToDone =
-      effectiveStatus === "DONE" && row.status !== "DONE";
-    const isRecurrenceChangeWhileDone =
-      effectiveStatus === "DONE" &&
-      row.status === "DONE" &&
-      updates.recurring != null;
-
-    if (
-      (isTransitionToDone || isRecurrenceChangeWhileDone) &&
-      effRecType !== "NONE"
-    ) {
-      // When recurrence pattern changed on a completed task,
-      // remove old future TODO instances spawned by the previous pattern
-      if (isRecurrenceChangeWhileDone) {
-        const cleanupResult = db
-          .prepare(
-            "DELETE FROM todos WHERE groupId = ? AND status = 'TODO' AND dueDate > ?",
-          )
-          .run(groupId, effectiveDueDate);
-        if (cleanupResult.changes > 0) {
-          db.prepare(
-            "UPDATE todo_groups SET occurrenceCount = occurrenceCount - ? WHERE id = ?",
-          ).run(cleanupResult.changes, groupId);
+        if (updates.recurring) {
+          effRecType = updates.recurring.type;
+          effRecWeekly = updates.recurring.weeklyDays || null;
+          effRecMonthDay = updates.recurring.monthlyDay || null;
+          effRecMonthNth = updates.recurring.monthlyNthWeek || null;
+          effRecMonthDOW =
+            updates.recurring.monthlyDayOfWeek !== undefined
+              ? updates.recurring.monthlyDayOfWeek
+              : null;
+          effRecYearMonth = updates.recurring.yearlyMonth || null;
+          effRecYearDay = updates.recurring.yearlyDay || null;
+          effStartDate =
+            updates.recurring.startDate !== undefined
+              ? updates.recurring.startDate
+              : row.startDate;
+          effEndOption =
+            updates.recurring.endOption !== undefined
+              ? updates.recurring.endOption
+              : row.endOption;
+          effEndDate =
+            updates.recurring.endDate !== undefined
+              ? updates.recurring.endDate
+              : row.endDate;
+          effEndOccurrences =
+            updates.recurring.endOccurrences !== undefined
+              ? updates.recurring.endOccurrences
+              : row.endOccurrences;
         }
-      }
-      // Check count condition
-      if (
-        effEndOption === "OCCURRENCES" &&
-        effEndOccurrences &&
-        row.occurrenceCount >= effEndOccurrences
-      ) {
-        return res.json({ message: "Updated", changes: todoResult.changes });
-      }
 
-      const { getNextOccurrence } = await import("../utils/recurringDate");
-      const nextDate = getNextOccurrence(
-        effectiveDueDate,
-        {
-          type: effRecType,
-          weeklyDays: effRecWeekly,
-          monthlyDay: effRecMonthDay,
-          monthlyNthWeek: effRecMonthNth,
-          monthlyDayOfWeek: effRecMonthDOW,
-          yearlyMonth: effRecYearMonth,
-          yearlyDay: effRecYearDay,
-        },
-        true, // ignoreToday=true ensures we sequentially spawn missed past dates
-      );
+        const effectiveDueDate =
+          updates.dueDate !== undefined ? updates.dueDate : row.dueDate;
+        const effectiveStatus =
+          updates.status !== undefined ? updates.status : row.status;
+        const effectiveCompletedAt =
+          updates.completedAt !== undefined
+            ? updates.completedAt
+            : row.completedAt;
 
-      if (nextDate) {
-        // Check date condition
-        if (effEndOption === "DATE" && effEndDate) {
-          const { startOfDay } = await import("date-fns");
-          if (nextDate.getTime() > startOfDay(new Date(effEndDate)).getTime()) {
-            return res.json({
-              message: "Updated",
-              changes: todoResult.changes,
-            });
+        const groupId = row.groupId;
+
+        if (effectiveIsPinned) {
+          effRecType = "NONE";
+        }
+
+        db.prepare(
+          `
+        UPDATE todo_groups SET
+          title = ?, description = ?, isImportant = ?, priority = ?, isPinned = ?,
+          recurringType = ?, recurringWeeklyDays = ?, recurringMonthlyDay = ?,
+          recurringMonthlyNthWeek = ?, recurringMonthlyDayOfWeek = ?,
+          recurringYearlyMonth = ?, recurringYearlyDay = ?,
+          slackEnabled = ?, slackNotificationTime = ?,
+          startDate = ?, endOption = ?, endDate = ?, endOccurrences = ?
+        WHERE id = ?
+      `,
+        ).run(
+          effectiveTitle,
+          effectiveDesc,
+          effectiveImportant,
+          effectivePriority,
+          effectiveIsPinned,
+          effRecType,
+          effRecWeekly ? JSON.stringify(effRecWeekly) : null,
+          effRecMonthDay,
+          effRecMonthNth,
+          effRecMonthDOW,
+          effRecYearMonth,
+          effRecYearDay,
+          effectiveSlackEnabled,
+          effectiveSlackTime,
+          effStartDate,
+          effEndOption,
+          effEndDate,
+          effEndOccurrences,
+          groupId,
+        );
+
+        const todoResult = db
+          .prepare(
+            `UPDATE todos SET dueDate = ?, status = ?, completedAt = ? WHERE id = ?`,
+          )
+          .run(effectiveDueDate, effectiveStatus, effectiveCompletedAt, id);
+
+        const isTransitionToDone =
+          effectiveStatus === "DONE" && row.status !== "DONE";
+        const isRecurrenceChangeWhileDone =
+          effectiveStatus === "DONE" &&
+          row.status === "DONE" &&
+          updates.recurring != null;
+
+        if (
+          (isTransitionToDone || isRecurrenceChangeWhileDone) &&
+          effRecType !== "NONE"
+        ) {
+          let adjustedOccurrenceCount = Number(row.occurrenceCount) || 0;
+
+          if (isRecurrenceChangeWhileDone) {
+            const cleanupResult = db
+              .prepare(
+                "DELETE FROM todos WHERE groupId = ? AND status = 'TODO' AND dueDate > ?",
+              )
+              .run(groupId, effectiveDueDate);
+            if (cleanupResult.changes > 0) {
+              adjustedOccurrenceCount = Math.max(
+                0,
+                adjustedOccurrenceCount - cleanupResult.changes,
+              );
+              // Clamp occurrenceCount to prevent negative values
+              db.prepare(
+                "UPDATE todo_groups SET occurrenceCount = MAX(0, occurrenceCount - ?) WHERE id = ?",
+              ).run(cleanupResult.changes, groupId);
+            }
+          }
+
+          if (
+            effEndOption === "OCCURRENCES" &&
+            effEndOccurrences &&
+            adjustedOccurrenceCount >= effEndOccurrences
+          ) {
+            return {
+              status: 200,
+              body: { message: "Updated", changes: todoResult.changes },
+            };
+          }
+
+          const nextDate = getNextOccurrence(
+            effectiveDueDate,
+            {
+              type: effRecType,
+              weeklyDays: effRecWeekly,
+              monthlyDay: effRecMonthDay,
+              monthlyNthWeek: effRecMonthNth,
+              monthlyDayOfWeek: effRecMonthDOW,
+              yearlyMonth: effRecYearMonth,
+              yearlyDay: effRecYearDay,
+            },
+            true,
+          );
+
+          if (nextDate) {
+            if (effEndOption === "DATE" && effEndDate) {
+              if (
+                nextDate.getTime() >
+                startOfDay(safeParseDate(effEndDate)).getTime()
+              ) {
+                return {
+                  status: 200,
+                  body: { message: "Updated", changes: todoResult.changes },
+                };
+              }
+            }
+
+            const nextDateStr = format(nextDate, "yyyy-MM-dd");
+
+            const existing = db
+              .prepare("SELECT id FROM todos WHERE groupId = ? AND dueDate = ?")
+              .get(groupId, nextDateStr);
+            if (existing) {
+              return {
+                status: 200,
+                body: { message: "Updated", changes: todoResult.changes },
+              };
+            }
+
+            db.prepare(
+              `INSERT INTO todos (id, groupId, dueDate, status, completedAt)
+             VALUES (?, ?, ?, 'TODO', NULL)`,
+            ).run(uuidv7(), groupId, nextDateStr);
+
+            db.prepare(
+              "UPDATE todo_groups SET occurrenceCount = occurrenceCount + 1 WHERE id = ?",
+            ).run(groupId);
+          }
+
+          return {
+            status: 200,
+            body: { message: "Updated", changes: todoResult.changes },
+          };
+        } else if (
+          effectiveStatus !== "DONE" &&
+          row.status === "DONE" &&
+          effRecType !== "NONE"
+        ) {
+          const rollbackResult = db
+            .prepare(
+              `DELETE FROM todos
+             WHERE groupId = ? AND status = 'TODO' AND dueDate > ?`,
+            )
+            .run(groupId, row.dueDate);
+          if (rollbackResult.changes > 0) {
+            db.prepare(
+              "UPDATE todo_groups SET occurrenceCount = MAX(0, occurrenceCount - ?) WHERE id = ?",
+            ).run(rollbackResult.changes, groupId);
+            return {
+              status: 200,
+              body: {
+                message: "Updated and rolled back",
+                changes: rollbackResult.changes,
+              },
+            };
           }
         }
 
-        const { format } = await import("date-fns-tz");
-        const nextDateStr = format(nextDate, "yyyy-MM-dd");
+        return {
+          status: 200,
+          body: { message: "Updated", changes: todoResult.changes },
+        };
+      },
+    );
 
-        const existing = db
-          .prepare("SELECT id FROM todos WHERE groupId = ? AND dueDate = ?")
-          .get(groupId, nextDateStr);
-        if (existing) {
-          return res.json({ message: "Updated", changes: todoResult.changes });
-        }
-
-        const spawnSql = `
-          INSERT INTO todos (id, groupId, dueDate, status, completedAt)
-          VALUES (?, ?, ?, 'TODO', NULL)
-        `;
-        db.prepare(spawnSql).run(uuidv7(), groupId, nextDateStr);
-
-        // Increment occurrence count
-        db.prepare(
-          "UPDATE todo_groups SET occurrenceCount = occurrenceCount + 1 WHERE id = ?",
-        ).run(groupId);
-      }
-
-      return res.json({ message: "Updated", changes: todoResult.changes });
-    } else if (
-      effectiveStatus !== "DONE" &&
-      row.status === "DONE" &&
-      effRecType !== "NONE"
-    ) {
-      // Rollback: revert from DONE to TODO/IN_PROGRESS — delete auto-spawned future tasks
-      const rollbackSql = `
-        DELETE FROM todos
-        WHERE groupId = ? AND status = 'TODO' AND dueDate > ?
-      `;
-      const rollbackResult = db.prepare(rollbackSql).run(groupId, row.dueDate);
-      if (rollbackResult.changes > 0) {
-        db.prepare(
-          "UPDATE todo_groups SET occurrenceCount = occurrenceCount - ? WHERE id = ?",
-        ).run(rollbackResult.changes, groupId);
-        return res.json({
-          message: "Updated and rolled back",
-          changes: rollbackResult.changes,
-        });
-      }
-    }
-
-    res.json({ message: "Updated", changes: todoResult.changes });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    const outcome = updateTx();
+    res.status(outcome.status).json(outcome.body);
+  } catch {
+    res.status(500).json({ error: "Failed to update todo" });
   }
 });
 
 // Complete Virtual Task (Skip intermediate)
-router.post(
-  "/:id/complete-virtual",
-  requireAdmin,
-  async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { targetDate } = req.body; // YYYY-MM-DD
+router.post("/:id/complete-virtual", (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { targetDate } = req.body ?? {};
 
-    const fetchSql = `
+  if (typeof targetDate !== "string" || !DATE_STR_REGEX.test(targetDate)) {
+    return res
+      .status(400)
+      .json({ error: "Valid targetDate (YYYY-MM-DD) is required." });
+  }
+
+  const fetchSql = `
     SELECT
       t.id, t.groupId, t.dueDate, t.status, t.completedAt,
       g.title, g.description, g.isImportant,
@@ -458,196 +492,240 @@ router.post(
     WHERE t.id = ?
   `;
 
-    try {
-      const row = db.prepare(fetchSql).get(id) as any;
-      if (!row) return res.status(404).json({ error: "Base task not found" });
+  try {
+    const completeTx = db.transaction(
+      (): { status: number; body: Record<string, unknown> } => {
+        const row = db.prepare(fetchSql).get(id) as any;
+        if (!row)
+          return { status: 404, body: { error: "Base task not found" } };
 
-      const { getNextOccurrence } = await import("../utils/recurringDate");
-      const { startOfDay } = await import("date-fns");
-      const { format: formatTz } = await import("date-fns-tz");
+        const recConfig = {
+          type: row.recurringType,
+          weeklyDays: row.recurringWeeklyDays
+            ? JSON.parse(row.recurringWeeklyDays)
+            : null,
+          monthlyDay: row.recurringMonthlyDay,
+          monthlyNthWeek: row.recurringMonthlyNthWeek,
+          monthlyDayOfWeek: row.recurringMonthlyDayOfWeek,
+          yearlyMonth: row.recurringYearlyMonth,
+          yearlyDay: row.recurringYearlyDay,
+        };
 
-      const recConfig = {
-        type: row.recurringType,
-        weeklyDays: row.recurringWeeklyDays
-          ? JSON.parse(row.recurringWeeklyDays)
-          : null,
-        monthlyDay: row.recurringMonthlyDay,
-        monthlyNthWeek: row.recurringMonthlyNthWeek,
-        monthlyDayOfWeek: row.recurringMonthlyDayOfWeek,
-        yearlyMonth: row.recurringYearlyMonth,
-        yearlyDay: row.recurringYearlyDay,
-      };
-
-      let currentDate = new Date(row.dueDate);
-      const targetDateObj = new Date(targetDate);
-      const datesToInsert = [];
-      let newInstances = 0;
-
-      while (true) {
-        const nextDate = getNextOccurrence(currentDate, recConfig, true);
-        if (!nextDate) break;
-
-        const nextDateMs = startOfDay(nextDate).getTime();
+        // Use safeParseDate for both base and target to avoid UTC vs local midnight mismatch
+        let currentDate = safeParseDate(row.dueDate);
+        const targetDateObj = safeParseDate(targetDate);
         const targetDateMs = startOfDay(targetDateObj).getTime();
+        const datesToInsert: Date[] = [];
+        let iterations = 0;
 
-        if (nextDateMs > targetDateMs) {
-          break; // past the target
+        // Cap loop iterations to prevent DoS from far-future targetDate inputs
+        while (iterations < MAX_VIRTUAL_ITERATIONS) {
+          const nextDate = getNextOccurrence(currentDate, recConfig, true);
+          if (!nextDate) break;
+
+          const nextDateMs = startOfDay(nextDate).getTime();
+          if (nextDateMs > targetDateMs) {
+            break;
+          }
+
+          datesToInsert.push(nextDate);
+          currentDate = nextDate;
+          iterations++;
+
+          if (nextDateMs === targetDateMs) {
+            break;
+          }
         }
 
-        datesToInsert.push(nextDate);
-        currentDate = nextDate;
-        newInstances++;
-
-        if (nextDateMs === targetDateMs) {
-          break;
-        }
-      }
-
-      if (datesToInsert.length === 0) {
-        return res
-          .status(400)
-          .json({ error: "Target date is not a valid future occurrence." });
-      }
-
-      const allInserts = datesToInsert.map((d) => ({
-        date: d,
-        status:
-          startOfDay(d).getTime() === startOfDay(targetDateObj).getTime()
-            ? "DONE"
-            : "TODO",
-      }));
-
-      // Generate one more occurrence to act as the next pending task
-      const nextAfterTarget = getNextOccurrence(currentDate, recConfig, true);
-      if (nextAfterTarget) {
-        const nextMs = startOfDay(nextAfterTarget).getTime();
-        let canSpawn = true;
-        if (row.endOption === "DATE" && row.endDate) {
-          if (nextMs > startOfDay(new Date(row.endDate)).getTime())
-            canSpawn = false;
-        }
-        if (row.endOption === "OCCURRENCES" && row.endOccurrences) {
-          if (row.occurrenceCount + newInstances >= row.endOccurrences)
-            canSpawn = false;
+        if (
+          iterations >= MAX_VIRTUAL_ITERATIONS &&
+          startOfDay(currentDate).getTime() < targetDateMs
+        ) {
+          return {
+            status: 400,
+            body: { error: "Target date is too far in the future." },
+          };
         }
 
-        if (canSpawn) {
-          allInserts.push({ date: nextAfterTarget, status: "TODO" });
+        if (datesToInsert.length === 0) {
+          return {
+            status: 400,
+            body: { error: "Target date is not a valid future occurrence." },
+          };
         }
-      }
 
-      // Use a transaction for batch insert
-      const insertStmt = db.prepare(
-        `INSERT INTO todos (id, groupId, dueDate, status, completedAt) VALUES (?, ?, ?, ?, ?)`,
-      );
-      const insertMany = db.transaction((items: typeof allInserts) => {
-        for (const item of items) {
+        const allInserts = datesToInsert.map((d) => ({
+          date: d,
+          status: startOfDay(d).getTime() === targetDateMs ? "DONE" : "TODO",
+        }));
+
+        const nextAfterTarget = getNextOccurrence(currentDate, recConfig, true);
+        if (nextAfterTarget) {
+          const nextMs = startOfDay(nextAfterTarget).getTime();
+          let canSpawn = true;
+          if (row.endOption === "DATE" && row.endDate) {
+            if (nextMs > startOfDay(safeParseDate(row.endDate)).getTime()) {
+              canSpawn = false;
+            }
+          }
+          if (row.endOption === "OCCURRENCES" && row.endOccurrences) {
+            if (
+              row.occurrenceCount + datesToInsert.length >=
+              row.endOccurrences
+            ) {
+              canSpawn = false;
+            }
+          }
+
+          if (canSpawn) {
+            allInserts.push({ date: nextAfterTarget, status: "TODO" });
+          }
+        }
+
+        // Skip dates that already exist for this group to prevent duplicate rows
+        const existingRows = db
+          .prepare("SELECT dueDate FROM todos WHERE groupId = ?")
+          .all(row.groupId) as { dueDate: string }[];
+        const existingDates = new Set(existingRows.map((r) => r.dueDate));
+
+        const insertStmt = db.prepare(
+          `INSERT INTO todos (id, groupId, dueDate, status, completedAt) VALUES (?, ?, ?, ?, ?)`,
+        );
+        let insertedCount = 0;
+        for (const item of allInserts) {
+          const dateStr = format(item.date, "yyyy-MM-dd");
+          if (existingDates.has(dateStr)) continue;
+          existingDates.add(dateStr);
+
           const isDone = item.status === "DONE";
           const completedStr = isDone ? new Date().toISOString() : null;
           insertStmt.run(
             uuidv7(),
             row.groupId,
-            formatTz(item.date, "yyyy-MM-dd"),
+            dateStr,
             item.status,
             completedStr,
           );
+          insertedCount++;
         }
-      });
-      insertMany(allInserts);
 
-      const totalInstances = allInserts.length;
-      db.prepare(
-        "UPDATE todo_groups SET occurrenceCount = occurrenceCount + ? WHERE id = ?",
-      ).run(totalInstances, row.groupId);
+        if (insertedCount > 0) {
+          db.prepare(
+            "UPDATE todo_groups SET occurrenceCount = occurrenceCount + ? WHERE id = ?",
+          ).run(insertedCount, row.groupId);
+        }
 
-      res.json({ message: "Successfully skipped and completed virtual task." });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
-  },
-);
+        return {
+          status: 200,
+          body: { message: "Successfully skipped and completed virtual task." },
+        };
+      },
+    );
+
+    const outcome = completeTx();
+    res.status(outcome.status).json(outcome.body);
+  } catch {
+    res.status(500).json({ error: "Failed to complete virtual task" });
+  }
+});
 
 // Copy to Today (create a one-time copy of a task for today)
-router.post(
-  "/:id/copy-to-today",
-  requireAdmin,
-  (req: Request, res: Response) => {
-    const { id } = req.params;
+router.post("/:id/copy-to-today", (req: Request, res: Response) => {
+  const { id } = req.params;
 
-    const fetchSql = `
-      SELECT t.groupId, g.title, g.description, g.isImportant, g.priority,
-             g.slackEnabled, g.slackNotificationTime, g.notificationMinutesBefore
-      FROM todos t
-      JOIN todo_groups g ON t.groupId = g.id
-      WHERE t.id = ?
-    `;
+  const fetchSql = `
+    SELECT t.groupId, g.title, g.description, g.isImportant, g.priority,
+           g.slackEnabled, g.slackNotificationTime, g.notificationMinutesBefore
+    FROM todos t
+    JOIN todo_groups g ON t.groupId = g.id
+    WHERE t.id = ?
+  `;
 
-    try {
-      const row = db.prepare(fetchSql).get(id) as any;
-      if (!row) return res.status(404).json({ error: "Todo not found" });
+  try {
+    const copyTx = db.transaction(
+      (): { status: number; body: Record<string, unknown> } => {
+        const row = db.prepare(fetchSql).get(id) as any;
+        if (!row) return { status: 404, body: { error: "Todo not found" } };
 
-      // Use admin timezone for correct "today" date
-      const tzRow = db
-        .prepare("SELECT value FROM system_settings WHERE key = 'timezone'")
-        .get() as any;
-      const timezone = tzRow?.value || "Asia/Seoul";
-      const today = formatInTimeZone(new Date(), timezone, "yyyy-MM-dd");
-      const newGroupId = uuidv7();
-      const newTodoId = uuidv7();
+        const tzRow = db
+          .prepare("SELECT value FROM system_settings WHERE key = 'timezone'")
+          .get() as { value: string } | undefined;
+        const timezone = tzRow?.value || "Asia/Seoul";
+        const today = formatInTimeZone(new Date(), timezone, "yyyy-MM-dd");
+        const newGroupId = uuidv7();
+        const newTodoId = uuidv7();
 
-      // Create a non-recurring copy marked as isCopied
-      const groupSql = `
+        db.prepare(
+          `
         INSERT INTO todo_groups (
           id, title, description, isImportant, priority, isCopied,
           recurringType, slackEnabled, slackNotificationTime,
           notificationMinutesBefore, startDate, endOption, occurrenceCount
         ) VALUES (?, ?, ?, ?, ?, 1, 'NONE', ?, ?, ?, ?, 'NONE', 1)
-      `;
-      db.prepare(groupSql).run(
-        newGroupId,
-        row.title,
-        row.description,
-        row.isImportant,
-        row.priority,
-        row.slackEnabled,
-        row.slackNotificationTime,
-        row.notificationMinutesBefore,
-        today,
-      );
+      `,
+        ).run(
+          newGroupId,
+          row.title,
+          row.description,
+          row.isImportant,
+          row.priority,
+          row.slackEnabled,
+          row.slackNotificationTime,
+          row.notificationMinutesBefore,
+          today,
+        );
 
-      const todoSql = `
-        INSERT INTO todos (id, groupId, dueDate, status, completedAt)
-        VALUES (?, ?, ?, 'TODO', NULL)
-      `;
-      db.prepare(todoSql).run(newTodoId, newGroupId, today);
+        db.prepare(
+          `INSERT INTO todos (id, groupId, dueDate, status, completedAt)
+         VALUES (?, ?, ?, 'TODO', NULL)`,
+        ).run(newTodoId, newGroupId, today);
 
-      res.json({ id: newTodoId, groupId: newGroupId });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
-  },
-);
+        return { status: 200, body: { id: newTodoId, groupId: newGroupId } };
+      },
+    );
+
+    const outcome = copyTx();
+    res.status(outcome.status).json(outcome.body);
+  } catch {
+    res.status(500).json({ error: "Failed to copy task to today" });
+  }
+});
 
 // Delete
-router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
-  // If we delete the todo, do we delete the group?
-  // Our schema is structured so deleting a group cascades.
-  // Let's find the groupId and delete that, which will cascade.
+router.delete("/:id", (req: Request, res: Response) => {
   try {
     const row = db
       .prepare("SELECT groupId FROM todos WHERE id = ?")
-      .get(req.params.id) as any;
+      .get(req.params.id) as { groupId: string } | undefined;
     if (!row) return res.status(404).json({ error: "Todo not found" });
+
+    // Query attachment filenames before cascading delete so physical files are not orphaned on disk
+    const attachments = db
+      .prepare("SELECT filename FROM todo_attachments WHERE groupId = ?")
+      .all(row.groupId) as { filename: string }[];
 
     const result = db
       .prepare("DELETE FROM todo_groups WHERE id = ?")
       .run(row.groupId);
+
+    for (const att of attachments) {
+      const safeName = path.basename(att.filename);
+      const resolved = path.resolve(UPLOAD_DIR, safeName);
+      if (resolved.startsWith(UPLOAD_DIR + path.sep)) {
+        try {
+          if (fs.existsSync(resolved)) fs.unlinkSync(resolved);
+        } catch {
+          /* ignore cleanup errors */
+        }
+      }
+    }
+
     res.json({
       message: "Deleted group and instance(s)",
       changes: result.changes,
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to delete todo" });
   }
 });
 

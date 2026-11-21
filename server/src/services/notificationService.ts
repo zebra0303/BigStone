@@ -1,45 +1,55 @@
-import cron from "node-cron";
+import cron, { ScheduledTask } from "node-cron";
 import db from "../db/database";
 import { formatInTimeZone } from "date-fns-tz";
 import { sendSlackNotification } from "../utils/slack";
 
-/**
- * Fetches the system timezone from settings.
- * Defaults to Asia/Seoul if not set.
- */
 function getSystemTimezone(): string {
   try {
     const row = db
       .prepare("SELECT value FROM system_settings WHERE key = 'timezone'")
-      .get() as any;
-    return row ? row.value : "Asia/Seoul";
+      .get() as { value: string } | undefined;
+    return row?.value || "Asia/Seoul";
   } catch {
     return "Asia/Seoul";
   }
 }
 
+/** Escape Slack mrkdwn control characters in user-provided text. */
+function escapeSlackText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 /**
- * Starts the notification scheduler.
- * Runs every minute to check if any tasks need a notification.
+ * Starts the notification scheduler and returns its handle for graceful shutdown.
  */
-export function startNotificationService() {
-  cron.schedule("* * * * *", async () => {
-    const timezone = getSystemTimezone();
+export function startNotificationService(): ScheduledTask {
+  // Track notifications sent per day to avoid duplicate bursts within the same minute
+  const sentToday = new Set<string>();
+  let lastCheckedDay = "";
 
-    const now = new Date();
-    const currentTime = formatInTimeZone(now, timezone, "HH:mm");
-    const todayStr = formatInTimeZone(now, timezone, "yyyy-MM-dd");
-
-    console.log(
-      `[Notification Check] Checking at ${currentTime} for date ${todayStr} (TZ: ${timezone})`,
-    );
-
+  const task = cron.schedule("* * * * *", async () => {
     try {
-      // Find tasks that:
-      // 1. Have slackEnabled = 1
-      // 2. Have notificationTime matching the current time
-      // 3. Have dueDate matching today (dueDate is stored as local YYYY-MM-DD)
-      // 4. Are not completed
+      const timezone = getSystemTimezone();
+      const now = new Date();
+      let currentTime: string;
+      let todayStr: string;
+      try {
+        currentTime = formatInTimeZone(now, timezone, "HH:mm");
+        todayStr = formatInTimeZone(now, timezone, "yyyy-MM-dd");
+      } catch {
+        // Fallback to Asia/Seoul if DB contains an invalid IANA timezone string
+        currentTime = formatInTimeZone(now, "Asia/Seoul", "HH:mm");
+        todayStr = formatInTimeZone(now, "Asia/Seoul", "yyyy-MM-dd");
+      }
+
+      if (todayStr !== lastCheckedDay) {
+        sentToday.clear();
+        lastCheckedDay = todayStr;
+      }
+
       const query = `
         SELECT
           tg.id as groupId,
@@ -60,42 +70,50 @@ export function startNotificationService() {
         .prepare(query)
         .all(currentTime, todayStr) as any[];
 
-      for (const task of tasksToNotify) {
-        console.log(
-          `[Notification] Sending Slack notification for task: ${task.title} (ID: ${task.todoId})`,
-        );
+      let sentCount = 0;
+      for (const item of tasksToNotify) {
+        const dedupKey = `${item.todoId}:${todayStr}:${currentTime}`;
+        if (sentToday.has(dedupKey)) continue;
 
         const priorityEmoji =
-          task.priority === "HIGH"
+          item.priority === "HIGH"
             ? "🔴"
-            : task.priority === "MEDIUM"
+            : item.priority === "MEDIUM"
               ? "🟡"
               : "🟢";
-
         const priorityText =
-          task.priority === "HIGH"
+          item.priority === "HIGH"
             ? "높음"
-            : task.priority === "MEDIUM"
+            : item.priority === "MEDIUM"
               ? "보통"
               : "낮음";
 
         const message = `[BigStone 알림] 오늘 할 일이 있습니다!`;
+        const safeTitle = escapeSlackText(String(item.title ?? ""));
+        const safeDesc = item.description
+          ? `\n*설명:* ${escapeSlackText(String(item.description))}`
+          : "";
+
         const blocks = [
           {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*${message}*\n*제목:* ${task.title}\n*우선순위:* ${priorityEmoji} ${priorityText}${task.description ? `\n*설명:* ${task.description}` : ""}`,
+              text: `*${message}*\n*제목:* ${safeTitle}\n*우선순위:* ${priorityEmoji} ${priorityText}${safeDesc}`,
             },
           },
         ];
 
-        await sendSlackNotification(message, blocks);
+        const ok = await sendSlackNotification(message, blocks);
+        if (ok) {
+          sentToday.add(dedupKey);
+          sentCount++;
+        }
       }
 
-      if (tasksToNotify.length > 0) {
+      if (sentCount > 0) {
         console.log(
-          `[Notification] Sent ${tasksToNotify.length} Slack notifications at ${currentTime}`,
+          `[Notification] Sent ${sentCount} Slack notification(s) at ${currentTime}`,
         );
       }
     } catch (error) {
@@ -104,4 +122,5 @@ export function startNotificationService() {
   });
 
   console.log("Notification service started (checking every minute).");
+  return task;
 }

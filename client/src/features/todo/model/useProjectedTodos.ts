@@ -37,14 +37,18 @@ export function useProjectedTodos(todos: Todo[], displayDates: Date[]) {
         ? Math.min(...displayDates.map((d) => startOfDay(d).getTime()))
         : 0;
 
-    // Track existing instances to avoid projecting over real tasks
-    const existingDatesPerGroup = new Map<string, Set<string>>();
+    // Track active (non-DONE) vs DONE dates separately so completing one future occurrence early
+    // does not prematurely terminate subsequent virtual projections in the series
+    const activeDatesPerGroup = new Map<string, Set<string>>();
+    const doneDatesPerGroup = new Map<string, Set<string>>();
     todos.forEach((todo) => {
       if (todo.groupId) {
-        if (!existingDatesPerGroup.has(todo.groupId)) {
-          existingDatesPerGroup.set(todo.groupId, new Set());
+        const targetMap =
+          todo.status === "DONE" ? doneDatesPerGroup : activeDatesPerGroup;
+        if (!targetMap.has(todo.groupId)) {
+          targetMap.set(todo.groupId, new Set());
         }
-        existingDatesPerGroup
+        targetMap
           .get(todo.groupId)!
           .add(format(safeParseDate(todo.dueDate), "yyyy-MM-dd"));
       }
@@ -66,14 +70,6 @@ export function useProjectedTodos(todos: Todo[], displayDates: Date[]) {
           if (!nextDate) break;
 
           const nextDateStr = format(nextDate, "yyyy-MM-dd");
-          if (todo.groupId) {
-            if (existingDatesPerGroup.get(todo.groupId)?.has(nextDateStr)) {
-              // A real task exists here; stop projection line to let the real task take over
-              break;
-            }
-            existingDatesPerGroup.get(todo.groupId)?.add(nextDateStr);
-          }
-
           const nextDateMs = startOfDay(nextDate).getTime();
 
           // Stop if beyond calendar view
@@ -94,12 +90,32 @@ export function useProjectedTodos(todos: Todo[], displayDates: Date[]) {
             if (runningOccurences >= todo.recurring.endOccurrences) break;
           }
 
-          // Push only if visible
+          if (todo.groupId) {
+            if (activeDatesPerGroup.get(todo.groupId)?.has(nextDateStr)) {
+              // Another active real task exists here; let that real task continue projecting
+              break;
+            }
+            if (doneDatesPerGroup.get(todo.groupId)?.has(nextDateStr)) {
+              // Early-completed occurrence exists on this date: skip rendering virtual duplicate and keep advancing
+              currentRefDate = nextDate;
+              projectionCount++;
+              runningOccurences++;
+              continue;
+            }
+            if (!activeDatesPerGroup.has(todo.groupId)) {
+              activeDatesPerGroup.set(todo.groupId, new Set());
+            }
+            activeDatesPerGroup.get(todo.groupId)!.add(nextDateStr);
+          }
+
+          // Push only if visible; reset status to TODO so IN_PROGRESS never bleeds into future virtual items
           if (nextDateMs >= minDateMs) {
             projected.push({
               ...todo,
               id: `virtual-${todo.id}-${projectionCount}`,
               dueDate: nextDate,
+              status: "TODO",
+              completedAt: undefined,
               isVirtual: true,
             });
           }

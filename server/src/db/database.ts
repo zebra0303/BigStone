@@ -48,12 +48,16 @@ try {
   // Ignore error if column already exists
 }
 
-// Add Slack notification columns
+// Add Slack notification columns independently so an existing column never skips the other
 try {
   db.exec("ALTER TABLE todo_groups ADD COLUMN slackEnabled BOOLEAN DEFAULT 0");
+} catch {
+  // Ignore error if column already exists
+}
+try {
   db.exec("ALTER TABLE todo_groups ADD COLUMN slackNotificationTime TEXT");
 } catch {
-  // Ignore error if columns already exist
+  // Ignore error if column already exists
 }
 
 // Add isPinned column for tasks that show at top of every day until completed
@@ -111,6 +115,14 @@ db.exec(`
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL
   )
+`);
+
+// Indexes for common query/join patterns (eliminates O(N*M) scans on attachments and due dates)
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_todos_group_id ON todos(groupId);
+  CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(dueDate);
+  CREATE INDEX IF NOT EXISTS idx_todos_group_due ON todos(groupId, dueDate);
+  CREATE INDEX IF NOT EXISTS idx_todo_attachments_group_id ON todo_attachments(groupId);
 `);
 
 export default db;

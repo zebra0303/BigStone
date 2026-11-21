@@ -4,43 +4,38 @@ import { v7 as uuidv7 } from "uuid";
 import { requireAdmin } from "../middleware/auth";
 
 const router = Router();
+const DATE_STR_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+// Protect all retrospective endpoints including private GET/summary routes
+router.use(requireAdmin);
 
 // Get all retrospectives (newest first)
-router.get("/", (req: Request, res: Response) => {
+router.get("/", (_req: Request, res: Response) => {
   try {
     const rows = db
       .prepare("SELECT * FROM retrospectives ORDER BY periodEnd DESC")
       .all();
     res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch retrospectives" });
   }
 });
 
-// Get a single retrospective by id
-router.get("/:id", (req: Request, res: Response) => {
-  try {
-    const row = db
-      .prepare("SELECT * FROM retrospectives WHERE id = ?")
-      .get(req.params.id);
-    if (!row) return res.status(404).json({ error: "Retrospective not found" });
-    res.json(row);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Get task summary for a period (completed & incomplete counts per day)
+// Register static /summary/tasks BEFORE parameterized /:id route
 router.get("/summary/tasks", (req: Request, res: Response) => {
   const { start, end } = req.query;
-  if (!start || !end) {
-    return res
-      .status(400)
-      .json({ error: "start and end query params required" });
+  if (
+    typeof start !== "string" ||
+    typeof end !== "string" ||
+    !DATE_STR_REGEX.test(start) ||
+    !DATE_STR_REGEX.test(end)
+  ) {
+    return res.status(400).json({
+      error: "Valid start and end (YYYY-MM-DD) query params required",
+    });
   }
 
   try {
-    // Include pinned tasks completed within the period (by completedAt date)
     const tasks = db
       .prepare(
         `SELECT t.id, t.dueDate, t.status, t.completedAt,
@@ -71,14 +66,28 @@ router.get("/summary/tasks", (req: Request, res: Response) => {
     };
 
     res.json(summary);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch task summary" });
+  }
+});
+
+// Get a single retrospective by id
+router.get("/:id", (req: Request, res: Response) => {
+  try {
+    const row = db
+      .prepare("SELECT * FROM retrospectives WHERE id = ?")
+      .get(req.params.id);
+    if (!row) return res.status(404).json({ error: "Retrospective not found" });
+    res.json(row);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch retrospective" });
   }
 });
 
 // Create a new retrospective
-router.post("/", requireAdmin, (req: Request, res: Response) => {
-  const { periodStart, periodEnd, keepText, problemText, tryText } = req.body;
+router.post("/", (req: Request, res: Response) => {
+  const { periodStart, periodEnd, keepText, problemText, tryText } =
+    req.body ?? {};
 
   if (!periodStart || !periodEnd) {
     return res
@@ -108,20 +117,20 @@ router.post("/", requireAdmin, (req: Request, res: Response) => {
       id,
       periodStart,
       periodEnd,
-      keepText,
-      problemText,
-      tryText,
+      keepText: keepText || "",
+      problemText: problemText || "",
+      tryText: tryText || "",
       createdAt: now,
       updatedAt: now,
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to create retrospective" });
   }
 });
 
 // Update a retrospective
-router.put("/:id", requireAdmin, (req: Request, res: Response) => {
-  const { keepText, problemText, tryText } = req.body;
+router.put("/:id", (req: Request, res: Response) => {
+  const { keepText, problemText, tryText } = req.body ?? {};
 
   try {
     const existing = db
@@ -136,13 +145,13 @@ router.put("/:id", requireAdmin, (req: Request, res: Response) => {
     ).run(keepText ?? "", problemText ?? "", tryText ?? "", now, req.params.id);
 
     res.json({ message: "Updated", updatedAt: now });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to update retrospective" });
   }
 });
 
 // Delete a retrospective
-router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
+router.delete("/:id", (req: Request, res: Response) => {
   try {
     const result = db
       .prepare("DELETE FROM retrospectives WHERE id = ?")
@@ -150,8 +159,8 @@ router.delete("/:id", requireAdmin, (req: Request, res: Response) => {
     if (result.changes === 0)
       return res.status(404).json({ error: "Retrospective not found" });
     res.json({ message: "Deleted" });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: "Failed to delete retrospective" });
   }
 });
 

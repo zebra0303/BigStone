@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Footer } from "@/widgets/footer";
 import { AUTH_UNAUTHORIZED_EVENT, clearAuthSession } from "@/shared/lib/errors";
+import { applyThemeSettings } from "@/shared/lib/theme";
 
 export function AdminPage() {
   const { t, i18n } = useTranslation();
@@ -154,11 +155,10 @@ export function AdminPage() {
       }
 
       if (isSetup) {
-        // Login successful
+        // Login successful — setting isAuthenticated triggers useEffect to fetchSettings once
         localStorage.setItem("is_admin_logged_in", "true");
         localStorage.setItem("admin_token_refreshed_at", String(Date.now()));
         setIsAuthenticated(true);
-        fetchSettings();
       } else {
         // Setup successful, now switch to login mode
         setIsSetup(true);
@@ -194,47 +194,16 @@ export function AdminPage() {
         }),
       });
       if (res.ok) {
-        // Update local i18n instance immediately
+        // Update local i18n instance and document lang immediately
         i18n.changeLanguage(language);
+        document.documentElement.lang = language;
 
-        // Save theme to localStorage and apply it
-        localStorage.setItem("theme", theme);
-        if (theme === "dark") {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-
-        // Update meta theme-color to match selected theme
-        const metaThemeColor = document.querySelector(
-          'meta[name="theme-color"]',
-        );
-        if (metaThemeColor) {
-          metaThemeColor.setAttribute(
-            "content",
-            theme === "dark" ? "#111827" : "#ffffff",
-          );
-        }
-
-        // Save primary color to localStorage and apply it
-        localStorage.setItem("primary_color", primaryColor);
-        document.documentElement.style.setProperty("--primary", primaryColor);
-
-        // Basic brightness check to set foreground color
-        const hex = primaryColor.replace("#", "");
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-        const foreground = brightness > 155 ? "#000000" : "#ffffff";
-        document.documentElement.style.setProperty(
-          "--primary-foreground",
-          foreground,
-        );
-
-        // Save font family to localStorage and apply it
-        localStorage.setItem("font_family", fontFamily);
-        document.documentElement.style.setProperty("--font-family", fontFamily);
+        // Apply theme, HSL primary color tokens, and font uniformly
+        applyThemeSettings({
+          theme,
+          primary_color: primaryColor,
+          font_family: fontFamily,
+        });
 
         alert(t("admin.save_success"));
       } else if (res.status === 401) {

@@ -113,6 +113,8 @@ export function TodoItem({ todo }: TodoItemProps) {
     const realId = todo.id.startsWith("virtual-")
       ? todo.id.replace(/^virtual-/, "").replace(/-\d+$/, "")
       : todo.id;
+    // Close modal explicitly since @zebra/core ConfirmModal no longer fires onCancel on confirm
+    setIsDeleteConfirmOpen(false);
     deleteTodo.mutate(realId);
   };
 
@@ -252,7 +254,8 @@ export function TodoItem({ todo }: TodoItemProps) {
             </div>
           </div>
 
-          <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-1 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+          {/* Always visible on touch devices; reveal on hover or keyboard focus on desktop */}
+          <div className="absolute right-2 top-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-1 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
             {!isToday && !isDone && (
               <Button
                 variant="ghost"
