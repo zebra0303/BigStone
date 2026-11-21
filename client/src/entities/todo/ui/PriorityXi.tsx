@@ -1,5 +1,5 @@
 import { cn } from "@/shared/lib";
-import type { TodoPriority } from "@/entities/todo/model/types";
+import type { TodoPriority } from "../model/types";
 
 interface PriorityXiProps {
   priority?: TodoPriority;
@@ -7,6 +7,7 @@ interface PriorityXiProps {
   size?: "sm" | "md" | "lg";
 }
 
+// Moved from shared/ui to entities/todo/ui because it depends on domain TodoPriority
 export function PriorityXi({
   priority,
   className,
@@ -65,16 +66,15 @@ export function PriorityXi({
           <svg
             viewBox="0 0 24 12"
             className={cn("w-full h-auto", style.tieColor)}
+            aria-hidden="true"
           >
-            {/* Simple Bowtie Shape */}
-            <path d="M2 1 L10 6 L2 11 Z" /> {/* Left wing */}
-            <path d="M22 1 L14 6 L22 11 Z" /> {/* Right wing */}
-            <circle cx="12" cy="6" r="2.5" /> {/* Center knot */}
+            <path d="M2 1 L10 6 L2 11 Z" />
+            <path d="M22 1 L14 6 L22 11 Z" />
+            <circle cx="12" cy="6" r="2.5" />
           </svg>
         </div>
       )}
 
-      {/* Very subtle border overlay to keep circular feel */}
       <div className="absolute inset-0 rounded-full border border-black/5 pointer-events-none" />
     </div>
   );

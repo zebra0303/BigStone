@@ -20,5 +20,4 @@ export {
 } from "@zebra/core/client";
 
 export * from "./PageLoader";
-export * from "./PriorityXi";
-export * from "./Toast";
+export { useToast } from "./useToast";

@@ -3,13 +3,16 @@ import { RouterProvider } from "react-router-dom";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { ErrorBoundary } from "@zebra/core/client";
+import { ErrorBoundary, ToastContainer } from "@zebra/core/client";
 import { appRouter } from "./routers/appRouter";
 import i18n from "@/shared/config/i18n";
 import { applyThemeSettings } from "@/shared/lib/theme";
 import { AUTH_UNAUTHORIZED_EVENT } from "@/shared/lib/errors";
+import { useToast } from "@/shared/ui";
 
 function App() {
+  // Mount ToastContainer once at the app root so any page/feature can dispatch toasts via useToast
+  const { toasts, removeToast } = useToast();
   const queryClient = useMemo(
     () =>
       new QueryClient({
@@ -81,6 +84,7 @@ function App() {
         persistOptions={{ persister }}
       >
         <RouterProvider router={appRouter} />
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
       </PersistQueryClientProvider>
     </ErrorBoundary>
   );

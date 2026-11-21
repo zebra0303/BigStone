@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { format, subDays } from "date-fns";
 import {
-  ChevronLeft,
   CheckCircle,
   XCircle,
   Save,
@@ -12,21 +10,22 @@ import {
   Pin,
   CopyPlus,
 } from "lucide-react";
-import { Button } from "@zebra/core/client";
+import { Button, ConfirmModal } from "@zebra/core/client";
 import { Footer } from "@/widgets/footer";
-import { getDateLocale } from "@/shared/lib";
+import { PageHeader } from "@/widgets/page-header";
+import { getDateLocale, safeParseDate } from "@/shared/lib";
 import {
   retrospectiveApi,
   type TaskSummary,
   type Retrospective,
 } from "@/shared/api";
-import { Toast } from "@/shared/ui";
+import { useToast } from "@/shared/ui";
 
 type PeriodType = "7" | "14" | "30";
 
 export function RetrospectivePage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const showToast = useToast((s) => s.showToast);
 
   const [period, setPeriod] = useState<PeriodType>("7");
   const [summary, setSummary] = useState<TaskSummary | null>(null);
@@ -34,26 +33,39 @@ export function RetrospectivePage() {
   const [problemText, setProblemText] = useState("");
   const [tryText, setTryText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
 
   // Past retrospectives
   const [pastRetros, setPastRetros] = useState<Retrospective[]>([]);
-  const [currentRetroId, setCurrentRetroId] = useState<string | null>(null);
+  const [activeRetro, setActiveRetro] = useState<Retrospective | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<"tasks" | null>(
     "tasks",
   );
 
-  const periodDays = parseInt(period);
-  const endDate = format(new Date(), "yyyy-MM-dd");
-  const startDate = format(subDays(new Date(), periodDays - 1), "yyyy-MM-dd");
+  const periodDays = parseInt(period, 10);
+  const defaultEndDate = format(new Date(), "yyyy-MM-dd");
+  const defaultStartDate = format(
+    subDays(new Date(), periodDays - 1),
+    "yyyy-MM-dd",
+  );
 
-  // Fetch task summary for the selected period
+  // Display loaded retrospective's actual period when viewing a past entry
+  const displayStartDate = activeRetro?.periodStart ?? defaultStartDate;
+  const displayEndDate = activeRetro?.periodEnd ?? defaultEndDate;
+
+  // Fetch task summary for the active period with cancellation to prevent stale overwrites
   useEffect(() => {
+    let cancelled = false;
     retrospectiveApi
-      .getTaskSummary(startDate, endDate)
-      .then(setSummary)
+      .getTaskSummary(displayStartDate, displayEndDate)
+      .then((data) => {
+        if (!cancelled) setSummary(data);
+      })
       .catch(() => {});
-  }, [startDate, endDate]);
+    return () => {
+      cancelled = true;
+    };
+  }, [displayStartDate, displayEndDate]);
 
   // Fetch past retrospectives
   useEffect(() => {
@@ -82,120 +94,95 @@ export function RetrospectivePage() {
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      if (currentRetroId) {
-        await retrospectiveApi.update(currentRetroId, {
+      if (activeRetro) {
+        await retrospectiveApi.update(activeRetro.id, {
           keepText,
           problemText,
           tryText,
         });
       } else {
         const result = await retrospectiveApi.create({
-          periodStart: startDate,
-          periodEnd: endDate,
+          periodStart: defaultStartDate,
+          periodEnd: defaultEndDate,
           keepText,
           problemText,
           tryText,
         });
-        setCurrentRetroId(result.id);
+        setActiveRetro(result);
       }
-      setToastMessage(t("retro.saved", "회고가 저장되었습니다"));
-      // Refresh list
+      showToast(t("retro.saved", "회고가 저장되었습니다"), "success");
       const retros = await retrospectiveApi.getAll();
       setPastRetros(retros);
     } catch {
-      setToastMessage(t("common.save_failed", "저장 실패"));
+      showToast(t("common.save_failed", "저장 실패"), "error");
     } finally {
       setIsSaving(false);
     }
-  }, [currentRetroId, keepText, problemText, tryText, startDate, endDate, t]);
+  }, [
+    activeRetro,
+    keepText,
+    problemText,
+    tryText,
+    defaultStartDate,
+    defaultEndDate,
+    showToast,
+    t,
+  ]);
 
   const handleLoadRetro = (retro: Retrospective) => {
-    setCurrentRetroId(retro.id);
+    setActiveRetro(retro);
     setKeepText(retro.keepText);
     setProblemText(retro.problemText);
     setTryText(retro.tryText);
-    // Load the corresponding task summary
-    retrospectiveApi
-      .getTaskSummary(retro.periodStart, retro.periodEnd)
-      .then(setSummary)
-      .catch(() => {});
   };
 
-  const handleDeleteRetro = async (id: string) => {
+  const handleConfirmDeleteRetro = async () => {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
+    setDeleteTargetId(null);
     try {
       await retrospectiveApi.delete(id);
       setPastRetros((prev) => prev.filter((r) => r.id !== id));
-      if (currentRetroId === id) {
-        setCurrentRetroId(null);
+      if (activeRetro?.id === id) {
+        setActiveRetro(null);
         setKeepText("");
         setProblemText("");
         setTryText("");
       }
-      setToastMessage(t("retro.deleted", "회고가 삭제되었습니다"));
+      showToast(t("retro.deleted", "회고가 삭제되었습니다"), "success");
     } catch {
-      setToastMessage(t("common.save_failed", "삭제 실패"));
+      showToast(t("common.save_failed", "삭제 실패"), "error");
     }
   };
 
   const handleNewRetro = () => {
-    setCurrentRetroId(null);
+    setActiveRetro(null);
     setKeepText("");
     setProblemText("");
     setTryText("");
-    // Reset to current period
-    retrospectiveApi
-      .getTaskSummary(startDate, endDate)
-      .then(setSummary)
-      .catch(() => {});
   };
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-6 min-h-screen">
-      {/* Header */}
-      <header className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <PageHeader
+        title={t("retro.title")}
+        subtitle={t("retro.subtitle")}
+        rightSlot={
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => navigate("/")}
-            className="shrink-0 flex items-center gap-1 -ml-2 text-gray-500 hover:!text-primary transition-colors font-bold"
+            onClick={handleNewRetro}
+            className="dark:bg-gray-800 dark:border-gray-700"
           >
-            <ChevronLeft className="h-5 w-5" />
-            {t("common.today", "Home")}
+            {t("retro.new", "새 회고")}
           </Button>
-
-          <div className="h-8 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
-
-          <div className="flex items-center gap-3">
-            <img
-              src="/bigxi.png"
-              alt="BigXi"
-              className="w-8 h-8 object-contain drop-shadow-sm"
-            />
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-100">
-                {t("retro.title")}
-              </h1>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                {t("retro.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleNewRetro}
-          className="dark:bg-gray-800 dark:border-gray-700"
-        >
-          {t("retro.new", "새 회고")}
-        </Button>
-      </header>
+        }
+      />
 
       {/* Period Selector */}
-      {!currentRetroId && (
+      {!activeRetro && (
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-gray-400" />
+          <Clock className="h-4 w-4 text-gray-400" aria-hidden="true" />
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {t("retro.period", "기간")}:
           </span>
@@ -204,6 +191,7 @@ export function RetrospectivePage() {
               key={p}
               variant={period === p ? "primary" : "outline"}
               size="xs"
+              aria-pressed={period === p}
               onClick={() => setPeriod(p)}
               className="px-3"
               style={
@@ -230,7 +218,7 @@ export function RetrospectivePage() {
               {t("retro.summary", "요약")}
             </h3>
             <span className="text-xs text-gray-400">
-              {startDate} ~ {endDate}
+              {displayStartDate} ~ {displayEndDate}
             </span>
           </div>
 
@@ -286,6 +274,8 @@ export function RetrospectivePage() {
           {/* Task List (collapsible) */}
           <div>
             <button
+              type="button"
+              aria-expanded={expandedSection === "tasks"}
               onClick={() =>
                 setExpandedSection(expandedSection === "tasks" ? null : "tasks")
               }
@@ -299,8 +289,9 @@ export function RetrospectivePage() {
                 {Object.entries(tasksByDate).map(([date, tasks]) => (
                   <div key={date}>
                     <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1">
+                      {/* Use safeParseDate to prevent UTC timezone off-by-one day shift */}
                       {format(
-                        new Date(date),
+                        safeParseDate(date),
                         t("task.date_format", "M월 d일"),
                         {
                           locale: getDateLocale(),
@@ -430,14 +421,18 @@ export function RetrospectivePage() {
           {pastRetros.map((retro) => (
             <div
               key={retro.id}
-              className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                currentRetroId === retro.id
+              className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                activeRetro?.id === retro.id
                   ? "border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20"
                   : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50"
               }`}
-              onClick={() => handleLoadRetro(retro)}
             >
-              <div>
+              {/* Semantic button for keyboard & screen-reader accessibility */}
+              <button
+                type="button"
+                onClick={() => handleLoadRetro(retro)}
+                className="flex-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              >
                 <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
                   {retro.periodStart} ~ {retro.periodEnd}
                 </div>
@@ -445,26 +440,34 @@ export function RetrospectivePage() {
                   {t("retro.created_at", "작성")}:{" "}
                   {format(new Date(retro.createdAt), "yyyy-MM-dd HH:mm")}
                 </div>
-              </div>
+              </button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteRetro(retro.id);
-                }}
-                className="h-7 w-7 text-gray-400 hover:text-red-500"
+                aria-label={t("common.delete", "삭제")}
+                onClick={() => setDeleteTargetId(retro.id)}
+                className="h-7 w-7 text-gray-400 hover:text-red-500 shrink-0"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               </Button>
             </div>
           ))}
         </div>
       )}
 
-      {toastMessage && (
-        <Toast message={toastMessage} onClose={() => setToastMessage("")} />
-      )}
+      <ConfirmModal
+        isOpen={deleteTargetId !== null}
+        title={t("common.delete", "삭제")}
+        message={t("retro.delete_confirm", "이 회고를 삭제하시겠습니까?")}
+        variant="danger"
+        confirmLabel={t("common.delete", "삭제")}
+        cancelLabel={t("common.cancel", "취소")}
+        onConfirm={() => {
+          void handleConfirmDeleteRetro();
+        }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
+
       <Footer />
     </div>
   );

@@ -1,19 +1,25 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { useTodos } from "@/features/todo/model/hooks";
-import { TodoList } from "@/features/todo/ui/TodoList";
-import { Button, Input } from "@zebra/core/client";
+import { useTodos, TodoList } from "@/features/todo";
+import { Input } from "@zebra/core/client";
 import { Select } from "@/shared/ui";
-import { ChevronLeft, Search as SearchIcon } from "lucide-react";
-import type { Todo } from "@/entities/todo/model/types";
+import { Search as SearchIcon } from "lucide-react";
+import type { Todo } from "@/entities/todo";
+import { safeParseDate } from "@/shared/lib";
 import { Footer } from "@/widgets/footer";
+import { PageHeader } from "@/widgets/page-header";
 
 type FilterStatus = "ALL" | "TODO" | "IN_PROGRESS" | "DONE";
 
+const PRIORITY_ORDER = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+
+function getPriorityScore(todo: Todo): number {
+  if (todo.priority) return PRIORITY_ORDER[todo.priority];
+  return todo.isImportant ? PRIORITY_ORDER.HIGH : PRIORITY_ORDER.MEDIUM;
+}
+
 export function SearchPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data: todos = [] } = useTodos();
 
   const [keyword, setKeyword] = useState("");
@@ -28,77 +34,56 @@ export function SearchPage() {
         todo.description?.toLowerCase().includes(keyword.toLowerCase());
 
       const matchStatus =
-        filterStatus === "ALL" ||
-        (filterStatus === "TODO" && todo.status === "TODO") ||
-        (filterStatus === "IN_PROGRESS" && todo.status === "IN_PROGRESS") ||
-        (filterStatus === "DONE" && todo.status === "DONE");
+        filterStatus === "ALL" || todo.status === filterStatus;
 
       return matchKeyword && matchStatus;
     });
 
-    // 2. Deduplicate recurring tasks (Keep only one per groupId)
-    // If it's a standalone task, groupId might be undefined depending on DB, but our backend assigns groupId to all tasks.
-    // We will keep the earliest due date instance among the matches for a group.
+    // 2. Deduplicate recurring tasks: prefer active (non-DONE) instances over past DONE ones
     const groupMap = new Map<string, Todo>();
 
     filtered.forEach((todo) => {
-      const gId = todo.groupId || todo.id; // fallback to id if no groupId
+      const gId = todo.groupId || todo.id;
 
       if (!groupMap.has(gId)) {
         groupMap.set(gId, todo);
       } else {
-        // Keep the one with the earlier due date (closest to today/past)
         const existing = groupMap.get(gId)!;
-        const existingDate = new Date(existing.dueDate).getTime();
-        const currentDate = new Date(todo.dueDate).getTime();
+        const existingActive = existing.status !== "DONE";
+        const currentActive = todo.status !== "DONE";
 
+        if (currentActive && !existingActive) {
+          groupMap.set(gId, todo);
+          return;
+        }
+        if (existingActive && !currentActive) {
+          return;
+        }
+
+        const existingDate = safeParseDate(existing.dueDate).getTime();
+        const currentDate = safeParseDate(todo.dueDate).getTime();
         if (currentDate < existingDate) {
           groupMap.set(gId, todo);
         }
       }
     });
 
-    // 3. Sort results (Important first, then by dueDate)
+    // 3. Sort results by priority (HIGH > MEDIUM > LOW), then dueDate
     return Array.from(groupMap.values()).sort((a, b) => {
-      if (a.isImportant && !b.isImportant) return -1;
-      if (!a.isImportant && b.isImportant) return 1;
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      const scoreDiff = getPriorityScore(b) - getPriorityScore(a);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (
+        safeParseDate(a.dueDate).getTime() - safeParseDate(b.dueDate).getTime()
+      );
     });
   }, [todos, keyword, filterStatus]);
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-8 min-h-screen">
-      <header className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/")}
-            className="shrink-0 flex items-center gap-1 -ml-2 text-gray-500 hover:!text-primary transition-colors font-bold"
-          >
-            <ChevronLeft className="h-5 w-5" />
-            {t("common.today", "Home")}
-          </Button>
-
-          <div className="h-8 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
-
-          <div className="flex items-center gap-3">
-            <img
-              src="/bigxi.png"
-              alt="BigXi"
-              className="w-8 h-8 object-contain drop-shadow-sm"
-            />
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-100">
-                {t("common.search")}
-              </h1>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                {t("common.search_desc")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        title={t("common.search")}
+        subtitle={t("common.search_desc")}
+      />
 
       <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row gap-4">

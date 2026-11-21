@@ -7,7 +7,7 @@ import type {
   TodoPriority,
 } from "@/entities/todo/model/types";
 import { useCreateTodo, TODO_QUERY_KEY } from "@/features/todo/model/hooks";
-import { todoApi } from "@/shared/api";
+import { todoApi } from "@/entities/todo";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Textarea } from "@zebra/core/client";
 import { Select } from "@/shared/ui";

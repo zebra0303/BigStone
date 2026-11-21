@@ -12,7 +12,7 @@
     "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
     "install:all": "npm install",
     "build": "npm run build -w client && npm run build -w server",
-    "lint": "npm run lint -w client",
+    "lint": "npm run lint -w client && npm run lint -w server",
     "test": "npm run test -w client && npm run test -w server",
     "prepare": "husky"
   },
@@ -22,6 +22,7 @@
       "prettier --check"
     ],
     "server/src/**/*.ts": [
+      "eslint --no-warn-ignored --config server/eslint.config.mjs",
       "prettier --check"
     ],
     "*.{json,md,css}": [

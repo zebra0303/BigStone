@@ -1,2 +1,2 @@
-export * from "./todoApi";
+export { apiClient } from "./client";
 export * from "./retrospectiveApi";

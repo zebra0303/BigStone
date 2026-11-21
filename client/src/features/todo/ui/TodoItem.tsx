@@ -24,7 +24,7 @@ import { safeParseDate, getDateLocale, cn } from "@/shared/lib";
 
 import { TodoEditModal } from "./TodoEditModal";
 import { LinkifiedText } from "@/shared/lib";
-import { Toast } from "@/shared/ui";
+import { useToast } from "@/shared/ui";
 
 interface TodoItemProps {
   todo: Todo;
@@ -40,7 +40,8 @@ export function TodoItem({ todo }: TodoItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  // Use shared @zebra/core toast store rendered at the app root
+  const showToast = useToast((s) => s.showToast);
 
   const isDone = todo.status === "DONE";
   const isInProgress = todo.status === "IN_PROGRESS";
@@ -98,8 +99,9 @@ export function TodoItem({ todo }: TodoItemProps) {
       : todo.id;
     copyToToday.mutate(realId, {
       onSuccess: () =>
-        setToastMessage(
+        showToast(
           t("task.copied_to_today", "오늘 일정으로 복사되었습니다"),
+          "success",
         ),
     });
   };
@@ -329,10 +331,6 @@ export function TodoItem({ todo }: TodoItemProps) {
 
       {isEditModalOpen && (
         <TodoEditModal todo={todo} onClose={() => setIsEditModalOpen(false)} />
-      )}
-
-      {toastMessage && (
-        <Toast message={toastMessage} onClose={() => setToastMessage("")} />
       )}
 
       <ConfirmModal

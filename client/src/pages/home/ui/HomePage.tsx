@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useTodos } from "@/features/todo/model/hooks";
-import { TodoCreate } from "@/features/todo/ui/TodoCreate";
-import { TodoList } from "@/features/todo/ui/TodoList";
+import {
+  useTodos,
+  TodoCreate,
+  TodoList,
+  useProjectedTodos,
+} from "@/features/todo";
 import { Button } from "@zebra/core/client";
 import {
   format,
@@ -23,8 +26,6 @@ import {
 import { Link } from "react-router-dom";
 import { safeParseDate, getDateLocale, cn } from "@/shared/lib";
 import { Footer } from "@/widgets/footer";
-
-import { useProjectedTodos } from "@/features/todo/model/useProjectedTodos";
 
 type ViewMode = "1DAY" | "3DAY" | "WEEK_ALL" | "WEEK_WORK";
 
@@ -92,14 +93,14 @@ export function HomePage() {
 
     // Collect pinned tasks visible on this date
     const pinnedForDate = pinnedTodos.filter((todo) => {
-      const dueDateMs = startOfDay(safeParseDate(todo.dueDate)).getTime();
+      const parsedDue = safeParseDate(todo.dueDate);
+      const dueDateMs = startOfDay(parsedDue).getTime();
       if (dateMs < dueDateMs) return false; // before task start
-      if (todo.status === "DONE" && todo.completedAt) {
-        // Show on completedAt date but not after
-        const completedDateStr = format(
-          new Date(todo.completedAt),
-          "yyyy-MM-dd",
-        );
+      if (todo.status === "DONE") {
+        // Fall back to dueDate if a completed pinned task lacks completedAt so it does not linger forever
+        const completedDateStr = todo.completedAt
+          ? format(new Date(todo.completedAt), "yyyy-MM-dd")
+          : format(parsedDue, "yyyy-MM-dd");
         return dateStr <= completedDateStr;
       }
       return true; // not done: show on all dates
@@ -231,91 +232,43 @@ export function HomePage() {
         </div>
 
         <div className="flex flex-col items-end gap-3 shrink-0">
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-0.5 rounded-lg border dark:border-gray-700">
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => handleViewModeChange("1DAY")}
-              className={cn(
-                "whitespace-nowrap px-3 transition-all duration-200",
-                viewMode === "1DAY"
-                  ? "shadow-sm font-bold"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
-              )}
-              style={
-                viewMode === "1DAY"
-                  ? {
-                      backgroundColor: "hsl(var(--primary))",
-                      color: "hsl(var(--primary-foreground))",
-                    }
-                  : {}
-              }
-            >
-              {t("home.view_1day")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => handleViewModeChange("3DAY")}
-              className={cn(
-                "whitespace-nowrap px-3 transition-all duration-200",
-                viewMode === "3DAY"
-                  ? "shadow-sm font-bold"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
-              )}
-              style={
-                viewMode === "3DAY"
-                  ? {
-                      backgroundColor: "hsl(var(--primary))",
-                      color: "hsl(var(--primary-foreground))",
-                    }
-                  : {}
-              }
-            >
-              {t("home.view_3day")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => handleViewModeChange("WEEK_WORK")}
-              className={cn(
-                "whitespace-nowrap px-3 transition-all duration-200",
-                viewMode === "WEEK_WORK"
-                  ? "shadow-sm font-bold"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
-              )}
-              style={
-                viewMode === "WEEK_WORK"
-                  ? {
-                      backgroundColor: "hsl(var(--primary))",
-                      color: "hsl(var(--primary-foreground))",
-                    }
-                  : {}
-              }
-            >
-              {t("home.view_week_work")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => handleViewModeChange("WEEK_ALL")}
-              className={cn(
-                "whitespace-nowrap px-3 transition-all duration-200",
-                viewMode === "WEEK_ALL"
-                  ? "shadow-sm font-bold"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
-              )}
-              style={
-                viewMode === "WEEK_ALL"
-                  ? {
-                      backgroundColor: "hsl(var(--primary))",
-                      color: "hsl(var(--primary-foreground))",
-                    }
-                  : {}
-              }
-            >
-              {t("home.view_week_all")}
-            </Button>
+          <div
+            role="group"
+            aria-label={t("home.view_mode", "View mode")}
+            className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-0.5 rounded-lg border dark:border-gray-700"
+          >
+            {(
+              [
+                { mode: "1DAY", label: t("home.view_1day") },
+                { mode: "3DAY", label: t("home.view_3day") },
+                { mode: "WEEK_WORK", label: t("home.view_week_work") },
+                { mode: "WEEK_ALL", label: t("home.view_week_all") },
+              ] as const
+            ).map(({ mode, label }) => (
+              <Button
+                key={mode}
+                variant="ghost"
+                size="xs"
+                aria-pressed={viewMode === mode}
+                onClick={() => handleViewModeChange(mode)}
+                className={cn(
+                  "whitespace-nowrap px-3 transition-all duration-200",
+                  viewMode === mode
+                    ? "shadow-sm font-bold"
+                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
+                )}
+                style={
+                  viewMode === mode
+                    ? {
+                        backgroundColor: "hsl(var(--primary))",
+                        color: "hsl(var(--primary-foreground))",
+                      }
+                    : {}
+                }
+              >
+                {label}
+              </Button>
+            ))}
           </div>
 
           <div className="flex items-center gap-2 flex-nowrap">
@@ -323,9 +276,10 @@ export function HomePage() {
               variant="outline"
               size="xs"
               onClick={handlePrev}
+              aria-label={t("common.prev", "Previous period")}
               className="dark:bg-gray-800 dark:border-gray-700 shrink-0 w-7 h-7 p-0"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
+              <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
 
             <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-2 h-7 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus-within:ring-2 focus-within:ring-primary transition-colors shrink-0">
@@ -344,9 +298,10 @@ export function HomePage() {
               variant="outline"
               size="xs"
               onClick={handleNext}
+              aria-label={t("common.next", "Next period")}
               className="dark:bg-gray-800 dark:border-gray-700 shrink-0 w-7 h-7 p-0"
             >
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
             <Button
               variant="secondary"

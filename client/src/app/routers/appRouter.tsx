@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { PageLoader } from "@/shared/ui";
 
@@ -63,5 +63,10 @@ export const appRouter = createBrowserRouter([
         <AdminPage />
       </SuspendedRoute>
     ),
+  },
+  // Fallback route prevents unhandled 404 crashes on unknown paths
+  {
+    path: "*",
+    element: <Navigate to="/" replace />,
   },
 ]);

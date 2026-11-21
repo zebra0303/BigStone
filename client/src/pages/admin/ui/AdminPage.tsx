@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { Button, Input } from "@zebra/core/client";
 import { Select } from "@/shared/ui";
 import {
-  ChevronLeft,
   Lock,
   Globe,
   Save,
@@ -15,12 +13,12 @@ import {
   KeyRound,
 } from "lucide-react";
 import { Footer } from "@/widgets/footer";
+import { PageHeader } from "@/widgets/page-header";
 import { AUTH_UNAUTHORIZED_EVENT, clearAuthSession } from "@/shared/lib/errors";
 import { applyThemeSettings } from "@/shared/lib/theme";
 
 export function AdminPage() {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(
     localStorage.getItem("is_admin_logged_in") === "true",
@@ -299,44 +297,21 @@ export function AdminPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-8 min-h-screen">
-      <header className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/")}
-            className="shrink-0 flex items-center gap-1 -ml-2 text-gray-500 hover:!text-primary transition-colors font-bold"
-          >
-            <ChevronLeft className="h-5 w-5" />
-            {t("common.today", "Home")}
-          </Button>
-
-          <div className="h-8 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
-
-          <div className="flex items-center gap-3">
-            <img
-              src="/bigxi.png"
-              alt="BigXi"
-              className="w-8 h-8 object-contain drop-shadow-sm"
-            />
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-100">
-                {t("admin.title")}
-              </h1>
-            </div>
-          </div>
-        </div>
-        {isAuthenticated && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="dark:bg-gray-800 dark:border-gray-700"
-          >
-            {t("admin.logout")}
-          </Button>
-        )}
-      </header>
+      <PageHeader
+        title={t("admin.title")}
+        rightSlot={
+          isAuthenticated ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="dark:bg-gray-800 dark:border-gray-700"
+            >
+              {t("admin.logout")}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {!isAuthenticated ? (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm max-w-sm mx-auto mt-12">

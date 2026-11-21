@@ -1,7 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { todoApi } from "@/shared/api";
-import type { Todo } from "@/entities/todo/model/types";
-import { useTodoStore } from "@/entities/todo/model/store";
+import { todoApi, useTodoStore, type Todo } from "@/entities/todo";
 import { useEffect } from "react";
 import { tryRefreshToken } from "@/shared/lib/errors";
 

@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
-import type { TodoPriority } from "@/entities/todo/model/types";
+import { useClickOutside } from "@zebra/core/client";
+import { PriorityXi, type TodoPriority } from "@/entities/todo";
 import { cn } from "@/shared/lib";
-import { PriorityXi } from "@/shared/ui";
 
 interface PrioritySelectProps {
   value: TodoPriority;
@@ -20,18 +20,8 @@ export function PrioritySelect({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Reuse @zebra/core useClickOutside (supports pointerdown and ref-stable handlers)
+  useClickOutside(containerRef, () => setIsOpen(false), isOpen);
 
   const options: { val: TodoPriority; label: string }[] = [
     {
@@ -51,10 +41,21 @@ export function PrioritySelect({
   const selected = options.find((o) => o.val === value) || options[1];
 
   return (
-    <div className={cn("relative", className)} ref={containerRef}>
+    <div
+      className={cn("relative", className)}
+      ref={containerRef}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && isOpen) {
+          e.stopPropagation();
+          setIsOpen(false);
+        }
+      }}
+    >
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         className="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
       >
         <span className="flex items-center gap-2">
@@ -63,15 +64,23 @@ export function PrioritySelect({
             {selected.label}
           </span>
         </span>
-        <ChevronDown className="h-4 w-4 opacity-50 dark:text-gray-400" />
+        <ChevronDown
+          className="h-4 w-4 opacity-50 dark:text-gray-400"
+          aria-hidden="true"
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg">
+        <div
+          role="listbox"
+          className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg"
+        >
           {options.map((opt) => (
             <button
               key={opt.val}
               type="button"
+              role="option"
+              aria-selected={opt.val === value}
               onClick={() => {
                 onChange(opt.val);
                 setIsOpen(false);
