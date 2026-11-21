@@ -9,6 +9,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import { AppError } from "@zebra/core/server";
+import { createCorsDelegate } from "./middleware/cors";
 import db from "./db/database";
 import todosRouter from "./routes/todos";
 import settingsRouter from "./routes/settings";
@@ -28,30 +29,12 @@ app.use(helmet());
 // Parse cookies
 app.use(cookieParser());
 
-// CORS: restrict to known origins
+// CORS: allow same-origin requests automatically behind reverse proxies, restrict cross-origin to allowlist
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
   : [`http://localhost:${process.env.VITE_PORT || 5173}`];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, curl, mobile apps)
-      if (!origin) return callback(null, true);
-
-      const isAllowed =
-        allowedOrigins.includes("*") || allowedOrigins.includes(origin);
-
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.warn(`CORS blocked request from origin: ${origin}`);
-        callback(new AppError("Not allowed by CORS", 403, "CORS_FORBIDDEN"));
-      }
-    },
-    credentials: true,
-  }),
-);
+app.use(cors(createCorsDelegate(allowedOrigins)));
 
 // Body size limit
 app.use(express.json({ limit: "1mb" }));
