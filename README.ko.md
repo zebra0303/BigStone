@@ -22,17 +22,18 @@
 
 ## 기술 스택
 
-| 영역            | 기술                                               |
-| --------------- | -------------------------------------------------- |
-| Frontend        | React 19, TypeScript, Vite 7, Tailwind CSS 3       |
-| State           | Zustand 5, TanStack Query 5                        |
-| Backend         | Express 5, TypeScript, better-sqlite3              |
-| Auth            | bcrypt, JWT, express-rate-limit                    |
-| 알림            | node-cron, Slack Incoming Webhook                  |
-| PWA             | vite-plugin-pwa, Workbox                           |
-| 보안            | helmet, CORS, 계정 잠금                            |
-| Architecture    | FSD (Feature-Sliced Design), npm workspaces        |
-| 공유 라이브러리 | @zebra/core (공통 UI, 유틸리티, 타입, 에러 핸들링) |
+| 영역            | 기술                                                    |
+| --------------- | ------------------------------------------------------- |
+| Frontend        | React 19, TypeScript, Vite 7, Tailwind CSS 3            |
+| State           | Zustand 5, TanStack Query 5                             |
+| Backend         | Express 5, TypeScript, better-sqlite3                   |
+| Auth            | bcrypt, JWT, express-rate-limit                         |
+| 알림            | node-cron, Slack Incoming Webhook                       |
+| PWA             | vite-plugin-pwa, Workbox                                |
+| 보안            | helmet, 동일 출처 CORS 위임, SSRF 방어, 계정 잠금       |
+| Architecture    | FSD (Feature-Sliced Design), npm workspaces             |
+| 공유 라이브러리 | @zebra/core (공통 UI, ApiClient, JWT/SSRF, 에러 핸들링) |
+| 테스트          | Vitest + Testing Library (16 스위트, 124개 테스트)      |
 
 ## 시작하기
 
@@ -87,8 +88,8 @@ cloudflared tunnel --url http://localhost:<VITE_PORT>
 npm run dev            # 개발 서버 실행 (client + server)
 npm run build          # 프로덕션 빌드
 npm run start          # 프로덕션 실행
-npm test               # 테스트 실행 (Vitest)
-npm run lint -w client # ESLint 검사
+npm test               # 테스트 실행 (Vitest, client + server)
+npm run lint           # ESLint 검사 (client + server)
 npx prettier --write . # 전체 포맷팅
 ```
 
@@ -96,21 +97,23 @@ npx prettier --write . # 전체 포맷팅
 
 ```
 BigStone/
-├── client/                    # React 프론트엔드
+├── client/                    # React 프론트엔드 (FSD)
 │   └── src/
-│       ├── app/               # 전역 설정, 라우팅, 테마 초기화
+│       ├── app/               # 전역 설정, 라우팅, ErrorBoundary, ToastContainer
 │       ├── pages/             # HomePage, SearchPage, AdminPage, RetrospectivePage
-│       ├── features/          # Todo CRUD 훅 및 UI 컴포넌트
-│       ├── entities/          # Todo 타입 정의 및 Zustand 스토어
-│       └── shared/            # API 클라이언트, UI 컴포넌트, 유틸리티, i18n
+│       ├── widgets/           # PageHeader 등 복합 UI 블록
+│       ├── features/          # Todo CRUD 훅, 가상 투영, UI 컴포넌트
+│       ├── entities/          # Todo API, PriorityXi, 타입 정의, Zustand 스토어
+│       └── shared/            # ApiClient 래퍼, UI 재노출, 유틸리티, i18n
 ├── server/                    # Express 백엔드
 │   └── src/
 │       ├── db/                # SQLite 초기화 및 스키마
 │       ├── routes/            # REST API (todos, settings, attachments, retrospectives)
-│       ├── middleware/        # JWT 인증 미들웨어
+│       ├── middleware/        # JWT 인증 미들웨어, 동일 출처 CORS 위임
 │       ├── services/          # Slack 알림 스케줄러 (node-cron)
-│       └── utils/             # 반복 일정 계산 로직, Slack 웹훅
+│       └── utils/             # 반복 일정 계산 로직, SSRF 방어 Slack 웹훅
 ├── .env.example               # 환경 변수 템플릿
+├── .npmrc                     # npm 12 @zebra/core Git 의존성 정책
 ├── CLAUDE.md                  # AI 개발 지침
 └── package.json               # 워크스페이스 루트
 ```
@@ -118,12 +121,13 @@ BigStone/
 ## 보안
 
 - **비밀번호**: bcrypt (10 라운드) 해싱
-- **토큰**: HttpOnly 쿠키 JWT 7일 만료, 활동 시 자동 갱신 (1일 간격 스로틀)
+- **토큰**: HttpOnly 쿠키 JWT 7일 만료, 활동 시 자동 갱신 (1일 간격 스로틀), `@zebra/core/server` 기반 프로덕션 `JWT_SECRET` 필수 검증
 - **Rate Limit**: IP당 15분 내 로그인 10회 제한
 - **계정 잠금**: 연속 5회 실패 시 15분 잠금 (DB 저장, IP 변경 우회 불가)
 - **보안 헤더**: helmet (XSS, 클릭재킹 방지)
-- **CORS**: 출처 화이트리스트 검증
-- **파일 업로드**: 10MB 제한, UUID 파일명, 강제 다운로드 헤더
+- **CORS**: 요청별 출처 위임 미들웨어로 허용 화이트리스트 및 동일 출처(same-origin) 요청만 허용
+- **SSRF 방어**: Slack 웹훅 URL 검증 및 `@zebra/core/server` `safeFetch` 사용
+- **파일 업로드**: 10MB 제한, UUID 파일명, 비인증 `/uploads` 정적 서빙 제거(인증된 다운로드 라우트만 허용), 강제 다운로드 헤더
 - **PWA 캐시**: 인증 엔드포인트 제외, GET만 캐시, 성공 응답만 저장
 
 ## 라이선스
